@@ -1,5 +1,5 @@
 import SmoothScroll from "@/components/animations/SmoothScroll";
-import SceneLoader from "@/components/3d/SceneLoader";
+import FilmStage from "@/components/film/FilmStage";
 import Cursor from "@/components/ui/Cursor";
 import Navbar from "@/components/ui/Navbar";
 import Hero from "@/components/sections/Hero";
@@ -15,15 +15,14 @@ import Footer from "@/components/sections/Footer";
 export default function Home() {
   return (
     <SmoothScroll>
-      <SceneLoader />
+      {/* Real licensed footage, sequenced by scroll. Sections declare their
+          backing scene with data-scene; the stage cross-dissolves to match. */}
+      <FilmStage />
       <Cursor />
       <Navbar />
       <main id="main" className="relative">
-        {/* Transparent cinematic zone — the 3D environment shows through */}
-        <div data-canvas-zone="">
-          <Hero />
-          <Journey />
-        </div>
+        <Hero />
+        <Journey />
 
         {/* Editorial chapters over solid ink */}
         <Philosophy />
@@ -32,10 +31,8 @@ export default function Home() {
         <Insights />
         <About />
 
-        {/* Return to the environment for the sunrise */}
-        <div data-canvas-zone="">
-          <Finale />
-        </div>
+        {/* Return to the mountain for the close */}
+        <Finale />
       </main>
       <Footer />
     </SmoothScroll>

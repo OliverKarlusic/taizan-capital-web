@@ -11,6 +11,7 @@ import MagneticButton from "@/components/ui/MagneticButton";
 export default function Finale() {
   return (
     <section
+      data-scene="fuji"
       aria-label="Closing"
       className="relative flex min-h-[130vh] flex-col items-center justify-center px-6 text-center"
     >

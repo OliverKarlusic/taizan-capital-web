@@ -9,31 +9,35 @@ gsap.registerPlugin(ScrollTrigger);
 
 const CHAPTERS = [
   {
+    scene: "fuji",
     kanji: "山",
-    label: "The Summit — Foundations",
+    label: "The Mountain — Foundations",
     text: "Building wealth begins with strong foundations.",
     detail:
-      "Like the mountain, a portfolio must be engineered to stand through every season.",
+      "Above the clouds there is perspective. The mountain does not move for weather.",
   },
   {
-    kanji: "雲",
-    label: "Above the Clouds — Allocation",
-    text: "Capital allocation determines long-term outcomes.",
-    detail:
-      "Weather moves below the summit. Position yourself above it, and the storms become scenery.",
-  },
-  {
-    kanji: "静",
-    label: "The Stillness — Discipline",
+    scene: "forest",
+    kanji: "森",
+    label: "The Forest — Patience",
     text: "Discipline and patience protect wealth.",
     detail:
-      "In stillness there is judgement. We act deliberately, or not at all.",
+      "A cedar forest is planted in rows by people who will never sit in its shade. We invest the same way.",
+  },
+  {
+    scene: "river",
+    kanji: "川",
+    label: "The River — Compounding",
+    text: "Compounding rewards those who never interrupt it.",
+    detail:
+      "Water does not hurry, yet nothing withstands it. Continuous, patient force is how stone is carved.",
   },
 ];
 
 /**
- * Three full-height cinematic chapters floating over the 3D environment.
- * Each chapter's copy eases in as the camera travels deeper into the scene.
+ * Three full-height cinematic chapters. Each declares its backing scene via
+ * data-scene, and the film stage cross-dissolves the real footage to match
+ * as the chapter enters the viewport.
  */
 export default function Journey() {
   const root = useRef<HTMLDivElement>(null);
@@ -88,7 +92,8 @@ export default function Journey() {
         <section
           key={i}
           data-chapter=""
-          className="relative flex min-h-screen items-center justify-center px-6"
+          data-scene={c.scene}
+          className="relative flex min-h-[110vh] items-center justify-center px-6"
         >
           <div
             aria-hidden="true"

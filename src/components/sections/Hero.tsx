@@ -9,6 +9,7 @@ export default function Hero() {
   return (
     <section
       id="top"
+      data-scene="fuji"
       aria-label="Taizan Capital — introduction"
       className="relative flex min-h-screen flex-col items-center justify-center px-6 text-center"
     >
