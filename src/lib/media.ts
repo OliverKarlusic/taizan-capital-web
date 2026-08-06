@@ -8,7 +8,7 @@
  *
  * ── Connecting footage ──────────────────────────────────────────────
  * 1. Encode the licensed master into the rendition ladder below.
- * 2. Drop the files in public/Media/hero/<scene>/ (or upload to a CDN).
+ * 2. Drop the files in public/media/hero/<scene>/ (or upload to a CDN).
  * 3. Fill in `poster`, `renditions` and `credit`.
  *
  * ── Serving from a CDN ──────────────────────────────────────────────
@@ -75,7 +75,7 @@ export const SCENES: FilmScene[] = [
     kanji: "山",
     title: "Mount Fuji",
     meaning: "Stability, legacy, perspective",
-    folder: "/Media/hero/01-fuji",
+    folder: "/media/hero/01-fuji",
     poster: null,
     renditions: [],
     credit: null,
@@ -94,7 +94,7 @@ export const SCENES: FilmScene[] = [
     kanji: "森",
     title: "Japanese Forest",
     meaning: "Patience, discipline, cultivation",
-    folder: "/Media/hero/02-forest",
+    folder: "/media/hero/02-forest",
     poster: null,
     renditions: [],
     credit: null,
@@ -113,7 +113,7 @@ export const SCENES: FilmScene[] = [
     kanji: "川",
     title: "River",
     meaning: "Compounding, continuous growth",
-    folder: "/Media/hero/03-river",
+    folder: "/media/hero/03-river",
     poster: null,
     renditions: [],
     credit: null,
@@ -129,6 +129,71 @@ export const SCENES: FilmScene[] = [
     },
   },
 ];
+
+/* ── Hero parallax layers ───────────────────────────────────────────
+   The four depth planes of the opening. Layer order is depth order:
+   atmosphere sits furthest and travels least, foreground sits nearest
+   and travels most, which is what sells movement through a landscape
+   rather than a sliding backdrop.
+
+   `src: null` renders a sourcing frame naming the asset required. As
+   with the film scenes, nothing generated ever fills these slots.
+   ─────────────────────────────────────────────────────────────────── */
+
+export interface HeroLayer {
+  id: "atmosphere" | "environment" | "foreground";
+  /** Depth label for the sourcing frame. */
+  label: string;
+  /** Travel across the scroll, in % of viewport height. Nearer = more. */
+  travel: number;
+  /** Still image (webp/avif) under /public, or null while unsourced. */
+  src: string | null;
+  /** Optional video for this plane; takes precedence over `src`. */
+  video: { src: string; type: string }[] | null;
+  /** Poster for the video plane. */
+  poster: string | null;
+  /** Exactly what real asset belongs here. */
+  brief: string;
+}
+
+export const HERO_LAYERS: HeroLayer[] = [
+  {
+    id: "atmosphere",
+    label: "Layer 1 — Atmosphere",
+    travel: 8,
+    src: null,
+    video: null,
+    poster: null,
+    brief:
+      "Real morning haze / high cloud plate, wide and soft, shot against sky. Transparent or near-black background so it composites over the environment. PNG or WebP with alpha, 2560w+.",
+  },
+  {
+    id: "environment",
+    label: "Layer 2 — Environment",
+    travel: 22,
+    // Video takes this plane when supplied: /media/hero/layers/fuji-background.mp4
+    video: null,
+    src: null,
+    poster: null,
+    brief:
+      "Real Mount Fuji landscape — mountain silhouette above a cloud layer, sunrise light, atmospheric depth. Licensed footage (mp4/webm) preferred; a licensed still (webp, 3840w) is an acceptable substitute.",
+  },
+  {
+    id: "foreground",
+    label: "Layer 4 — Foreground",
+    travel: 55,
+    src: null,
+    video: null,
+    poster: null,
+    brief:
+      "Real near-field natural elements with alpha — pine or maple branches, mist bank, or rock texture, shot dark and backlit so it silhouettes. WebP/PNG with alpha, 2560w+.",
+  },
+];
+
+/** True once any real asset has been connected for a hero layer. */
+export function hasLayerAsset(layer: HeroLayer): boolean {
+  return Boolean(layer.src) || Boolean(layer.video?.length);
+}
 
 export const SCENE_BY_ID = Object.fromEntries(
   SCENES.map((s) => [s.id, s]),

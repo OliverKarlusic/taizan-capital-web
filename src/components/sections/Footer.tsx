@@ -10,14 +10,27 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-6 py-20 lg:px-10">
         <div className="grid grid-cols-1 gap-14 md:grid-cols-12">
           <div className="md:col-span-5">
-            <p className="flex items-baseline gap-3">
-              <span className="font-serif text-2xl tracking-[0.18em] text-paper">
-                TAIZAN
-              </span>
-              <span className="text-[0.65rem] tracking-[0.3em] text-gold">
-                泰山資本
-              </span>
-            </p>
+            <div className="flex items-center gap-5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/media/brand/taizan-mark.webp"
+                srcSet="/media/brand/taizan-mark.webp 1x, /media/brand/taizan-mark@2x.webp 2x"
+                alt=""
+                width={605}
+                height={478}
+                loading="lazy"
+                decoding="async"
+                className="h-16 w-auto"
+              />
+              <p className="flex flex-col leading-none">
+                <span className="font-serif text-2xl tracking-[0.18em] text-paper">
+                  TAIZAN
+                </span>
+                <span className="mt-2 text-[0.6rem] tracking-[0.36em] text-gold">
+                  泰山資本 · CAPITAL
+                </span>
+              </p>
+            </div>
             <p className="mt-6 max-w-sm text-sm font-light leading-[1.9] text-stone">
               Asset management in the tradition of the mountain — patient,
               disciplined, and built for the generations that follow.

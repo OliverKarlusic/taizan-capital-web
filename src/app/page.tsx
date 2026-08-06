@@ -2,7 +2,7 @@ import SmoothScroll from "@/components/animations/SmoothScroll";
 import FilmStage from "@/components/film/FilmStage";
 import Cursor from "@/components/ui/Cursor";
 import Navbar from "@/components/ui/Navbar";
-import Hero from "@/components/sections/Hero";
+import CinematicParallaxHero from "@/components/ui/cinematic-parallax-hero";
 import Journey from "@/components/sections/Journey";
 import Philosophy from "@/components/sections/Philosophy";
 import Approach from "@/components/sections/Approach";
@@ -21,7 +21,8 @@ export default function Home() {
       <Cursor />
       <Navbar />
       <main id="main" className="relative">
-        <Hero />
+        {/* Layered parallax opening, then the film stage takes over */}
+        <CinematicParallaxHero />
         <Journey />
 
         {/* Editorial chapters over solid ink */}

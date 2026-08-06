@@ -11,6 +11,64 @@ const LINKS = [
   { href: "#about", label: "About" },
 ];
 
+/**
+ * Brand lockup: the ensō emblem beside a live-type wordmark.
+ *
+ * The emblem is the supplied brand asset, cropped to the mark and re-encoded
+ * (1.7 MB PNG → 64 KB WebP, with a 2x for retina). The wordmark stays as
+ * live type rather than the artwork's baked-in lettering — that lettering is
+ * malformed in the source file and would be unreadable at navbar size, and
+ * type also scales losslessly, weighs nothing, and stays selectable.
+ */
+function Wordmark({ compact }: { compact: boolean }) {
+  return (
+    <a
+      href="#top"
+      aria-label="Taizan Capital — home"
+      className="group inline-flex items-center gap-4 lg:gap-6"
+    >
+      <picture>
+        <source
+          srcSet="/media/brand/taizan-mark.webp 1x, /media/brand/taizan-mark@2x.webp 2x"
+          type="image/webp"
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/media/brand/taizan-mark.webp"
+          alt=""
+          width={605}
+          height={478}
+          decoding="async"
+          fetchPriority="high"
+          className={`w-auto transition-[height] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            compact ? "h-11 lg:h-14" : "h-14 lg:h-20"
+          }`}
+        />
+      </picture>
+      <span className="inline-flex flex-col leading-none">
+      <span
+        className={`font-serif text-paper transition-[font-size,letter-spacing] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          compact
+            ? "text-[1.4rem] tracking-[0.2em] lg:text-[1.9rem]"
+            : "text-[1.65rem] tracking-[0.22em] lg:text-[2.6rem]"
+        }`}
+      >
+        TAIZAN
+      </span>
+      <span
+        className={`mt-2 text-gold transition-[font-size,opacity] duration-700 ${
+          compact
+            ? "text-[0.48rem] tracking-[0.36em] lg:text-[0.58rem]"
+            : "text-[0.52rem] tracking-[0.4em] lg:text-[0.68rem]"
+        }`}
+      >
+        泰山資本 · CAPITAL
+      </span>
+      </span>
+    </a>
+  );
+}
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -32,23 +90,26 @@ export default function Navbar() {
   return (
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-700 ${
-        scrolled ? "glass py-4" : "bg-transparent py-7"
+        scrolled
+          ? "glass py-4 lg:py-5"
+          : "bg-transparent pb-6 pt-6 lg:pb-8 lg:pt-11"
       }`}
     >
+      {/* Keeps the mark legible where the hero footage runs bright */}
+      {!scrolled ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-40 bg-gradient-to-b from-ink/70 to-transparent"
+        />
+      ) : null}
+
       <nav
         aria-label="Primary"
-        className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 lg:px-10"
+        className="mx-auto flex w-full max-w-[110rem] items-center justify-between px-6 lg:px-14"
       >
-        <a href="#top" className="flex items-baseline gap-3">
-          <span className="font-serif text-xl tracking-[0.18em] text-paper">
-            TAIZAN
-          </span>
-          <span className="text-[0.62rem] tracking-[0.3em] text-gold">
-            泰山資本
-          </span>
-        </a>
+        <Wordmark compact={scrolled} />
 
-        <ul className="hidden items-center gap-10 lg:flex">
+        <ul className="hidden items-center gap-10 lg:flex xl:gap-12">
           {LINKS.map((l) => (
             <li key={l.href}>
               <a
@@ -62,7 +123,7 @@ export default function Navbar() {
           <li>
             <a
               href="#contact"
-              className="border border-gold/50 px-6 py-2.5 text-[0.68rem] font-medium uppercase tracking-[0.24em] text-gold transition-all duration-500 hover:bg-gold hover:text-ink"
+              className="border border-gold/50 px-7 py-3 text-[0.68rem] font-medium uppercase tracking-[0.24em] text-gold transition-all duration-500 hover:bg-gold hover:text-ink"
             >
               Contact
             </a>
@@ -76,7 +137,7 @@ export default function Navbar() {
           aria-label={open ? "Close menu" : "Open menu"}
           onClick={() => setOpen((v) => !v)}
         >
-          {open ? <X size={22} /> : <Menu size={22} />}
+          {open ? <X size={24} /> : <Menu size={24} />}
         </button>
       </nav>
 

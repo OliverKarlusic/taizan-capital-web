@@ -1,45 +1,21 @@
 "use client";
 
 import Reveal from "@/components/animations/Reveal";
-import TiltCard from "@/components/ui/TiltCard";
+import PortfolioGallery from "@/components/ui/portfolio-gallery";
 import { DrawdownChart } from "@/components/charts/lazy";
-import { Globe2, Shield, Scale, Landmark } from "lucide-react";
 
 const METRICS = [
-  {
-    icon: Shield,
-    value: "0.94",
-    label: "Sharpe ratio",
-    caption: "Risk-adjusted efficiency across the composite mandate",
-  },
-  {
-    icon: Scale,
-    value: "6.8%",
-    label: "Realised volatility",
-    caption: "Roughly half of broad-equity volatility over the cycle",
-  },
-  {
-    icon: Landmark,
-    value: "−16%",
-    label: "Deepest drawdown",
-    caption: "Worst peak-to-trough loss across two decades of stress",
-  },
-  {
-    icon: Globe2,
-    value: "38",
-    label: "Markets held",
-    caption: "Diversified across developed and select emerging markets",
-  },
+  { value: "0.94", label: "Sharpe ratio" },
+  { value: "6.8%", label: "Realised volatility" },
+  { value: "−16%", label: "Deepest drawdown" },
+  { value: "38", label: "Markets held" },
 ];
 
-const REGIONS = [
-  { name: "North America", pct: 34 },
-  { name: "Europe & UK", pct: 26 },
-  { name: "Japan", pct: 18 },
-  { name: "Asia-Pacific ex-Japan", pct: 14 },
-  { name: "Emerging Markets", pct: 8 },
-];
-
+/**
+ * Portfolio Management — the holdings gallery is the centrepiece, with the
+ * institutional evidence (risk metrics, stress behaviour) beneath it. The
+ * order is the argument: what we own, then how it behaves when tested.
+ */
 export default function Portfolio() {
   return (
     <section
@@ -63,75 +39,42 @@ export default function Portfolio() {
           </Reveal>
           <Reveal delay={0.2}>
             <p className="mt-7 max-w-xl text-sm font-light leading-[1.9] text-paper-dim">
-              Diversification across geographies, asset classes and time
-              horizons — engineered so that no single event, market or decision
-              can compromise the whole.
+              Six convictions, held across geographies and decades. Each is
+              owned as a business rather than traded as a position — which is
+              why the list changes slowly, and deliberately.
             </p>
           </Reveal>
         </div>
+      </div>
 
-        <div className="mt-16 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          {METRICS.map((m, i) => (
-            <Reveal key={m.label} delay={i * 0.08}>
-              <TiltCard className="border border-paper/10 bg-ink-soft p-7 transition-colors duration-500 hover:border-gold/30">
-                <m.icon
-                  size={18}
-                  strokeWidth={1.4}
-                  className="text-gold"
-                  aria-hidden="true"
-                />
-                <p className="tabular mt-6 font-serif text-4xl text-paper">
-                  {m.value}
-                </p>
-                <p className="mt-2 text-[0.68rem] uppercase tracking-[0.24em] text-gold">
+      {/* Gallery breaks the grid — it wants the full width */}
+      <Reveal delay={0.15}>
+        <div className="mt-20 overflow-hidden">
+          <PortfolioGallery />
+        </div>
+      </Reveal>
+
+      <div className="mx-auto mt-24 max-w-7xl px-6 lg:px-10">
+        <Reveal>
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-10 border-y border-paper/10 py-10 lg:grid-cols-4">
+            {METRICS.map((m) => (
+              <div key={m.label}>
+                <dt className="text-[0.62rem] uppercase tracking-[0.22em] text-stone">
                   {m.label}
-                </p>
-                <p className="mt-3 text-xs font-light leading-relaxed text-stone">
-                  {m.caption}
-                </p>
-              </TiltCard>
-            </Reveal>
-          ))}
-        </div>
+                </dt>
+                <dd className="tabular mt-3 font-serif text-4xl text-paper">
+                  {m.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </Reveal>
 
-        <div className="mt-16 grid grid-cols-1 gap-10 lg:grid-cols-12">
-          <Reveal className="lg:col-span-5" delay={0.1}>
-            <div className="h-full border border-paper/8 bg-ink-soft p-6 sm:p-8">
-              <h3 className="font-serif text-xl text-paper">
-                Global Diversification
-              </h3>
-              <p className="mt-1 text-xs tracking-wide text-stone">
-                Geographic exposure, % of portfolio
-              </p>
-              <ul className="mt-8 space-y-6">
-                {REGIONS.map((r) => (
-                  <li key={r.name}>
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-sm font-light text-paper-dim">
-                        {r.name}
-                      </span>
-                      <span className="tabular text-sm text-paper">
-                        {r.pct}%
-                      </span>
-                    </div>
-                    <div className="mt-2.5 h-px w-full bg-paper/10">
-                      <div
-                        className="h-px bg-gold transition-[width] duration-1000"
-                        style={{ width: `${r.pct * 2.6}%` }}
-                      />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-8 text-[0.65rem] leading-relaxed tracking-wide text-stone-dim">
-                Illustrative exposure for design purposes only.
-              </p>
-            </div>
-          </Reveal>
-          <Reveal className="lg:col-span-7" delay={0.2}>
+        <Reveal delay={0.15}>
+          <div className="mt-14">
             <DrawdownChart />
-          </Reveal>
-        </div>
+          </div>
+        </Reveal>
 
         <Reveal delay={0.15}>
           <p className="mt-14 border-l border-gold/40 pl-6 font-serif text-xl italic leading-relaxed text-stone sm:text-2xl">
@@ -140,6 +83,12 @@ export default function Portfolio() {
             possible.”
           </p>
         </Reveal>
+
+        <p className="mt-10 text-[0.65rem] leading-relaxed tracking-wide text-stone-dim">
+          Holdings shown are investment themes, not named securities. All
+          returns, weightings and risk figures are illustrative and do not
+          represent actual performance.
+        </p>
       </div>
     </section>
   );

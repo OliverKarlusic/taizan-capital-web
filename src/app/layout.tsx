@@ -48,7 +48,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`lenis ${cormorant.variable} ${inter.variable}`}
+      // `dark` is permanent: the brand is dark-only, so shadcn components
+      // must not flip to their light theme on a light-mode OS.
+      className={`lenis dark ${cormorant.variable} ${inter.variable}`}
     >
       <body className="antialiased">
         <a href="#main" className="skip-link">
