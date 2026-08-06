@@ -1,0 +1,58 @@
+# Taizan Capital Creative Direction
+
+The website should feel like entering a cinematic Japanese environment.
+
+Do NOT create:
+- video game environments
+- procedural mountains
+- fake 3D terrain
+- fantasy landscapes
+
+The goal is:
+- National Geographic aerial footage
+- luxury documentary cinematography
+- realistic drone footage
+
+Mount Fuji is not an object.
+Mount Fuji is an entire environment.
+
+Camera:
+- above the clouds
+- looking towards the snowy summit
+- distant helicopter/drone perspective
+- slow and stable movement
+
+Environment:
+- massive sky
+- realistic cloud formations
+- atmospheric depth
+- sunrise lighting
+- snow-covered summit
+
+The feeling:
+- calm confidence
+- discipline
+- long-term thinking
+
+Mount Fuji represents:
+- permanence
+- foundation
+
+Clouds represent:
+- uncertainty
+
+Above the clouds represents:
+- perspective
+- clarity
+
+Prioritise realism over complexity.
+
+If true 3D is unavailable:
+use:
+- real footage
+- photographic layers
+- depth
+- parallax
+- cinematic transitions
+
+Never create a fake mountain model.
