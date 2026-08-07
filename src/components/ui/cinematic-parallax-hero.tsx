@@ -141,6 +141,7 @@ export default function CinematicParallaxHero({
   const vignetteRef = useRef<HTMLDivElement>(null);
   const poolRef = useRef<HTMLDivElement>(null);
   const washRef = useRef<HTMLDivElement>(null);
+  const glowRef = useRef<HTMLDivElement>(null);
   const [riverMounted, setRiverMounted] = useState(false);
   // The forest plate is not rendered until the fog is already dense, so it
   // cannot exist "underneath" the mountain and does not decode during it.
@@ -327,7 +328,7 @@ export default function CinematicParallaxHero({
       }
       tl.to(
         veilRef.current,
-        { opacity: 0.55, ease: "power2.inOut", duration: 0.08 },
+        { opacity: 0.72, ease: "power2.inOut", duration: 0.08 },
         0.31,
       );
 
@@ -369,6 +370,13 @@ export default function CinematicParallaxHero({
          the middle of a frame that should have been its brightest.
 
          They return the moment an environment does. */
+      if (glowRef.current) {
+        tl.to(glowRef.current, { opacity: 1, ease: "power2.in", duration: 0.08 }, 0.31);
+        tl.to(glowRef.current, { opacity: 0, ease: "power2.out", duration: 0.07 }, 0.44);
+        tl.to(glowRef.current, { opacity: 0.9, ease: "power2.in", duration: 0.05 }, 0.67);
+        tl.to(glowRef.current, { opacity: 0, ease: "power2.out", duration: 0.06 }, 0.77);
+      }
+
       [poolRef, washRef, vignetteRef].forEach((r) => {
         if (!r.current) return;
         tl.to(r.current, { opacity: 0, ease: "power2.out", duration: 0.06 }, 0.30);
@@ -412,7 +420,7 @@ export default function CinematicParallaxHero({
       }
       tl.to(
         veilRef.current,
-        { opacity: 0.5, ease: "power2.inOut", duration: 0.05 },
+        { opacity: 0.68, ease: "power2.inOut", duration: 0.05 },
         0.67,
       );
       if (forestPlaneRef.current) {
@@ -606,7 +614,7 @@ export default function CinematicParallaxHero({
         data-fog-veil
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-0 will-change-[opacity]"
-        style={{ backgroundColor: "#dfe4e8" }}
+        style={{ backgroundColor: "#eceeed" }}
       />
 
       {/* ── Cinematic treatment stack, bottom to top ──
@@ -684,6 +692,24 @@ export default function CinematicParallaxHero({
           }}
         />
       </div>
+
+      {/* Sun through cloud.
+
+          Grey fog and lit fog differ by one thing: a light source inside
+          it. Without this the frame is an evenly filled field and the eye
+          reads it as a flat surface; with it the brightness has a
+          direction and the cloud gains volume. Positioned to match the sun
+          the hero was graded for, so the light does not move when the
+          mountain disappears into it. */}
+      <div
+        ref={glowRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-0 mix-blend-screen"
+        style={{
+          background:
+            "radial-gradient(ellipse 70% 55% at 62% 34%, rgba(255,247,232,0.95), rgba(246,238,224,0.45) 42%, transparent 74%)",
+        }}
+      />
 
       {/* Film grain — static SVG noise, faint. What keeps digital video
           from feeling like a screensaver. */}
