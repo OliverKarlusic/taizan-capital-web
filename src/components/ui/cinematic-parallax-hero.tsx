@@ -85,6 +85,14 @@ export default function CinematicParallaxHero({
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
+
+    // Documentary pacing. Playing the master slightly under speed makes the
+    // cloud movement contemplative rather than brisk — the single cheapest
+    // change that separates a luxury edit from stock footage. Applied even
+    // under reduced motion, since it removes movement rather than adding it.
+    const video = root.querySelector<HTMLVideoElement>("video");
+    if (video) video.playbackRate = 0.82;
+
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const ctx = gsap.context(() => {
@@ -104,6 +112,15 @@ export default function CinematicParallaxHero({
           i === 0 ? 0 : "<",
         );
       });
+
+      // A slow push on the environment plane. This is the "camera" — 6% of
+      // scale across the whole hero, which is felt rather than seen.
+      tl.fromTo(
+        "[data-parallax-layer='environment']",
+        { scale: 1.08 },
+        { scale: 1.14, ease: "none" },
+        0,
+      );
 
       // The brand plate drifts up and dissolves as the landscape descends.
       tl.to(
@@ -133,22 +150,67 @@ export default function CinematicParallaxHero({
         <LayerPlate layer={HERO_LAYERS[0]} />
       </div>
 
-      {/* 2 — Environment */}
+      {/* 2 — Environment, carrying the grade.
+          The grade lives on the plane, not the composite, so the type and
+          logo above stay unfiltered. Values are deliberately conservative:
+          a touch more contrast for the cinematic floor, saturation eased
+          back so the snow reads ivory rather than digital blue-white, and
+          the natural colour left otherwise alone. */}
       <div
         data-parallax-layer="environment"
-        className="absolute inset-0 scale-110 will-change-transform"
+        className="absolute inset-0 will-change-transform [filter:contrast(1.07)_saturate(0.88)_brightness(0.96)]"
       >
         <LayerPlate layer={HERO_LAYERS[1]} />
       </div>
 
-      {/* Legibility scrim — sits between the landscape and the type */}
+      {/* ── Cinematic treatment stack, bottom to top ──
+          Every overlay is transparent across the middle of the frame; the
+          footage stays the visual. */}
+
+      {/* Tonal wash — cools the shadows toward ink, leaves highlights alone */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-[radial-gradient(ellipse_78%_60%_at_50%_46%,rgba(10,10,10,0.55),rgba(10,10,10,0.2)_62%,transparent_88%)]"
+        className="absolute inset-0 mix-blend-multiply"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(14,16,18,0.35) 0%, transparent 30%, transparent 62%, rgba(10,10,10,0.5) 100%)",
+        }}
+      />
+
+      {/* Legibility: radial pool behind the type block only */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-[radial-gradient(ellipse_62%_48%_at_50%_47%,rgba(10,10,10,0.5),rgba(10,10,10,0.16)_60%,transparent_82%)]"
+      />
+      {/* Legibility: anchor gradients for navbar and fold */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-ink/60 to-transparent"
       />
       <div
         aria-hidden="true"
-        className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent to-ink"
+        className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-transparent via-ink/40 to-ink"
+      />
+
+      {/* Vignette — pulls the corners in half a stop */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 120% 90% at 50% 45%, transparent 68%, rgba(10,10,10,0.42) 100%)",
+        }}
+      />
+
+      {/* Film grain — static SVG noise, faint. What keeps digital video
+          from feeling like a screensaver. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 opacity-[0.05] mix-blend-overlay"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+          backgroundSize: "240px 240px",
+        }}
       />
 
       {/* 3 — Brand */}

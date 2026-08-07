@@ -45,3 +45,6 @@ next-env.d.ts
 
 # hero masters are large; keep source video out of git
 public/media/hero/*.mp4
+
+# production build output (kept separate from the dev server cache)
+/.next-build/
