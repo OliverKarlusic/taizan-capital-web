@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- full-bleed parallax plates are
    sized by CSS inside transformed layers; next/image adds nothing here. */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
@@ -11,6 +11,9 @@ import {
   hasLayerAsset,
   mediaUrl,
   pickRenditions,
+  selectRenditions,
+  hasFootage,
+  SCENE_BY_ID,
   type HeroLayer,
 } from "@/lib/media";
 import { useAdaptiveMedia } from "@/hooks/useAdaptiveMedia";
@@ -110,7 +113,53 @@ export default function CinematicParallaxHero({
   tagline?: string;
 }) {
   const rootRef = useRef<HTMLElement>(null);
+  const forestRef = useRef<HTMLVideoElement>(null);
   const { targetWidth } = useAdaptiveMedia();
+
+  const forest = useMemo(() => {
+    const scene = SCENE_BY_ID.forest;
+    return hasFootage(scene) ? selectRenditions(scene, targetWidth) : null;
+  }, [targetWidth]);
+
+  /**
+   * Decode budget. Three 4K plates decoding at once is the one real
+   * performance risk in this transition, so only two ever run: the forest
+   * starts just before the fog closes, and Fuji is paused the moment the
+   * whiteout has hidden it. Both are driven off scroll progress rather than
+   * a timer, so a fast scroller and a slow one get the same behaviour.
+   */
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    let started = false;
+    const onScroll = () => {
+      const r = root.getBoundingClientRect();
+      const span = r.height - window.innerHeight;
+      const p = span > 0 ? Math.min(Math.max(-r.top / span, 0), 1) : 0;
+
+      const fv = forestRef.current;
+      if (fv && !started && p > 0.24) {
+        started = true;
+        fv.load();
+        fv.playbackRate = 0.9;
+        fv.play().catch(() => undefined);
+      }
+
+      const hero = root.querySelector<HTMLVideoElement>(
+        "[data-parallax-layer='environment'] video",
+      );
+      if (hero) {
+        // Past the whiteout Fuji is invisible; stop paying to decode it.
+        if (p > 0.62 && !hero.paused) hero.pause();
+        else if (p <= 0.6 && hero.paused) hero.play().catch(() => undefined);
+      }
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [forest]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -135,11 +184,11 @@ export default function CinematicParallaxHero({
         },
       });
 
-      HERO_LAYERS.forEach((layer, i) => {
+      HERO_LAYERS.forEach((layer) => {
         tl.to(
           `[data-parallax-layer="${layer.id}"]`,
-          { yPercent: layer.travel, ease: "none" },
-          i === 0 ? 0 : "<",
+          { yPercent: layer.travel, ease: "none", duration: 1 },
+          0,
         );
       });
 
@@ -148,15 +197,78 @@ export default function CinematicParallaxHero({
       tl.fromTo(
         "[data-parallax-layer='environment']",
         { scale: 1.08 },
-        { scale: 1.14, ease: "none" },
+        { scale: 1.14, ease: "none", duration: 1 },
         0,
       );
 
-      // The brand plate drifts up and dissolves as the landscape descends.
+      // The brand plate drifts up, but it must be fully gone well before it
+      // can reach the fixed navigation — otherwise the buttons ghost across
+      // the nav links mid-scroll. Drift is small and the dissolve completes
+      // in the first third of the timeline, so the two never share space.
       tl.to(
         "[data-parallax-layer='brand']",
-        { yPercent: -14, opacity: 0, ease: "none" },
-        "<",
+        { yPercent: -7, ease: "none", duration: 1 },
+        0,
+      );
+      tl.to(
+        "[data-parallax-layer='brand']",
+        { opacity: 0, ease: "power2.in", duration: 0.34 },
+        0,
+      );
+
+      /* ── The mist bridge ──────────────────────────────────────────
+         Not a crossfade. The mist we already have swells until it is the
+         whole frame, the mountain dissolves *into* it, and the forest is
+         revealed underneath before the fog recedes. The visitor sees one
+         continuous descent through cloud, never a cut between two videos.
+
+         Timings are staggered so the forest arrives while the frame is at
+         its whitest — the switch is hidden inside the fog, which is the
+         only honest bridge between two plates that share no colour. */
+
+      const mist = "[data-parallax-layer='atmosphere'] video";
+
+      // 1. Fog closes in: opacity up, mask opens to the full frame, and the
+      //    filter releases so the plate reaches its own natural brightness.
+      tl.to(
+        mist,
+        {
+          opacity: 0.95,
+          filter: "brightness(1.05) contrast(1.1) saturate(0.8)",
+          maskImage:
+            "linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,1) 40%, rgba(0,0,0,1) 100%)",
+          ease: "power2.inOut",
+          duration: 0.3,
+        },
+        0.34,
+      );
+
+      // 2. Fuji dissolves into the fog rather than into the forest.
+      tl.to(
+        "[data-parallax-layer='environment']",
+        { opacity: 0, ease: "power1.in", duration: 0.16 },
+        0.5,
+      );
+
+      // 3. Forest emerges from the same fog, at peak whiteout.
+      tl.to(
+        "[data-forest-plane]",
+        { opacity: 1, ease: "power1.out", duration: 0.22 },
+        0.52,
+      );
+
+      // 4. Fog thins back to a low drift among the trunks, where it belongs.
+      tl.to(
+        mist,
+        {
+          opacity: 0.3,
+          filter: "brightness(0.72) contrast(1.5) saturate(0.75)",
+          maskImage:
+            "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.5) 45%, rgba(0,0,0,0.85) 100%)",
+          ease: "power2.inOut",
+          duration: 0.28,
+        },
+        0.66,
       );
     }, root);
 
@@ -164,12 +276,17 @@ export default function CinematicParallaxHero({
   }, []);
 
   return (
+    // The section is 2.6 viewports tall with a sticky stage inside it. That
+    // extra length is the transition: the descent through cloud has to be
+    // travelled through, not triggered. It is still one section — the forest
+    // is a plane in this film, never a separate page section.
     <section
       ref={rootRef}
       id="top"
       aria-label="Taizan Capital — introduction"
-      className="relative h-screen overflow-hidden bg-ink"
+      className="relative h-[260vh] bg-ink"
     >
+      <div className="sticky top-0 h-screen overflow-hidden">
       {/* 2 — Environment, carrying the grade.
           The grade lives on the plane, not the composite, so the type and
           logo above stay unfiltered. Values are deliberately conservative:
@@ -181,6 +298,32 @@ export default function CinematicParallaxHero({
         className="absolute inset-0 will-change-transform [filter:contrast(1.07)_saturate(0.88)_brightness(0.96)]"
       >
         <LayerPlate layer={HERO_LAYERS[1]} targetWidth={targetWidth} />
+      </div>
+
+      {/* 2b — Forest. Sits directly above Fuji and is revealed underneath the
+          mist whiteout, so the visitor never sees a cut — only the mountain
+          vanishing into cloud and the forest emerging from the same cloud.
+          No parallax and no scale: this footage already carries a moving
+          camera and shallow depth of field, and adding our own would fight
+          the optics we paid for. */}
+      <div
+        data-forest-plane
+        className="absolute inset-0 opacity-0 will-change-[opacity]"
+      >
+        {forest ? (
+          <video
+            ref={forestRef}
+            className="absolute inset-0 h-full w-full object-cover [filter:contrast(1.05)_saturate(0.92)_brightness(0.94)]"
+            muted
+            loop
+            playsInline
+            preload="none"
+          >
+            {forest.map((r) => (
+              <source key={r.src} src={mediaUrl(r.src)} type={r.type} />
+            ))}
+          </video>
+        ) : null}
       </div>
 
       {/* 1 — Atmosphere. Sits above the environment because haze is between
@@ -297,7 +440,7 @@ export default function CinematicParallaxHero({
       >
         <LayerPlate layer={HERO_LAYERS[2]} targetWidth={targetWidth} />
       </div>
-
+      </div>
     </section>
   );
 }

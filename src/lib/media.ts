@@ -94,9 +94,13 @@ export const SCENES: FilmScene[] = [
     kanji: "森",
     title: "Japanese Forest",
     meaning: "Patience, discipline, cultivation",
-    folder: "/media/hero/02-forest",
+    folder: "/media/forest",
     poster: null,
-    renditions: [],
+    renditions: [
+      { src: "/media/forest/forest-854.mp4", type: "video/mp4", width: 854 },
+      { src: "/media/forest/forest-1280.mp4", type: "video/mp4", width: 1280 },
+      { src: "/media/forest/forest-1920.mp4", type: "video/mp4", width: 1920 },
+    ],
     credit: null,
     requirement: {
       shot: "Real footage inside a cedar or bamboo forest — tall straight trunks receding into mist, shafts of low light. Cultivated forest reads better than wild: the order in the planting is the point.",

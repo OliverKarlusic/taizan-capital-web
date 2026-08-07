@@ -30,7 +30,18 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import ffmpegPath from "ffmpeg-static";
 
-const MEDIA_DIR = "public/media/hero";
+const MEDIA_ROOT = "public/media";
+
+/** Every mp4 under public/media, at any depth. */
+async function findSources(dir) {
+  const out = [];
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...(await findSources(full)));
+    else if (entry.name.endsWith(".mp4")) out.push(full);
+  }
+  return out;
+}
 
 /** The ladder. Width drives everything; CRF is tuned per tier. */
 const TIERS = [
@@ -137,20 +148,18 @@ async function main() {
   const force = args.includes("--force");
   const filters = args.filter((a) => !a.startsWith("--"));
 
-  await mkdir(MEDIA_DIR, { recursive: true });
+  await mkdir(MEDIA_ROOT, { recursive: true });
 
-  const sources = (await readdir(MEDIA_DIR))
-    .filter((f) => f.endsWith(".mp4"))
+  const sources = (await findSources(MEDIA_ROOT))
     // Skip files that are themselves rendition output
     .filter((f) => {
-      const m = f.match(/-(\d+)\.mp4$/);
+      const m = path.basename(f).match(/-(\d+)\.mp4$/);
       return !(m && TIER_WIDTHS.has(m[1]));
     })
-    .filter((f) => !filters.length || filters.some((s) => f.includes(s)))
-    .map((f) => path.join(MEDIA_DIR, f));
+    .filter((f) => !filters.length || filters.some((s) => f.includes(s)));
 
   if (!sources.length) {
-    console.log("No source videos found in", MEDIA_DIR);
+    console.log("No source videos found under", MEDIA_ROOT);
     return;
   }
 
