@@ -1,112 +1,92 @@
 /**
- * Portfolio holdings shown in the circular gallery.
+ * The five investment convictions.
  *
- * These are investment *themes*, not named public companies. Attaching an
- * invented annual return to a real, identifiable company would be fabricated
- * financial data about a real entity — the one thing a firm like this can
- * never ship, even in a design concept. Themes carry the same institutional
- * weight without that problem. Swap in real holdings once real, sourced
- * figures exist.
+ * No returns, no performance figures, no expected-outcome language. Nothing
+ * here can be read as a promise, because no verified client performance
+ * data exists yet. When it does, it belongs in its own section with its own
+ * disclosures — not on a philosophy card.
  *
- * Images follow the same rule as the hero footage: real licensed photography
- * only. A holding with `image: null` renders a sourcing frame naming the
- * shot it needs — never generated artwork.
+ * Imagery is drawn from Taizan's own licensed footage rather than sourced
+ * separately. Each card is a still from the film the visitor has just
+ * travelled through, so the section reads as the journey's index rather
+ * than a product grid — and nothing here is generated.
  */
 
-export interface Holding {
+export interface Conviction {
   slug: string;
-  /** Theme or holding name. */
-  company: string;
-  category:
-    | "Technology"
-    | "Healthcare"
-    | "Infrastructure"
-    | "Global Equity"
-    | "Real Assets"
-    | "Private Markets";
-  /** Real licensed photography under /public, or null while unsourced. */
+  /** Two-digit chapter number, matching the film's numbering. */
+  index: string;
+  name: string;
+  /** The single line the card must communicate. */
+  message: string;
+  /** What the mandate is, in one sentence. Never a claim about outcomes. */
+  purpose: string;
+  /** Four words. The philosophy, stated plainly. */
+  principles: [string, string, string, string];
+  /** Real image under /public, or null while unsourced. */
   image: string | null;
-  /** One line of investment reasoning. */
-  description: string;
-  /** Annualised return, illustrative. */
-  performance: string;
-  /** Portfolio weighting, illustrative. */
-  allocation: string;
-  /** What real photograph this slot requires. */
-  imageBrief: string;
+  /** What real photography this slot needs, if it has none. */
+  imageBrief: string | null;
 }
 
-export const HOLDINGS: Holding[] = [
+export const CONVICTIONS: Conviction[] = [
   {
-    slug: "precision-manufacturing",
-    company: "Precision Manufacturing",
-    category: "Technology",
-    image: null,
-    description:
-      "Machine-tool and robotics businesses with decades-long customer relationships and pricing power that survives the cycle.",
-    performance: "+11.4% p.a.",
-    allocation: "14.0%",
-    imageBrief:
-      "Real factory-floor photography — CNC or robotics assembly, cool industrial light, no people identifiable, no stock-photo staging.",
+    slug: "long-term-growth",
+    index: "01",
+    name: "Long-Term Growth",
+    message: "True wealth is built through time and ownership.",
+    purpose:
+      "Long-term ownership of exceptional businesses and assets, held through cycles rather than traded across them.",
+    principles: ["Patience", "Compounding", "Quality", "Longevity"],
+    image: "/media/portfolio/01-long-term-growth.jpg",
+    imageBrief: null,
   },
   {
-    slug: "clinical-diagnostics",
-    company: "Clinical Diagnostics",
-    category: "Healthcare",
-    image: null,
-    description:
-      "Recurring-revenue diagnostics and life-science tooling. Demand is structural, not cyclical, and regulation is a moat.",
-    performance: "+9.8% p.a.",
-    allocation: "11.5%",
-    imageBrief:
-      "Real laboratory photography — instrumentation detail, shallow depth of field, clinical and restrained. No models in lab coats.",
+    slug: "dividend-income",
+    index: "02",
+    name: "Dividend Income",
+    message: "Ownership creates lasting income.",
+    purpose:
+      "Sustainable income through ownership of quality dividend-paying equities, selected for the durability of the business behind the payment.",
+    principles: ["Consistency", "Reliability", "Independence", "Endurance"],
+    image: "/media/portfolio/02-dividend-income.jpg",
+    imageBrief: null,
   },
   {
-    slug: "grid-infrastructure",
-    company: "Grid Infrastructure",
-    category: "Infrastructure",
+    slug: "growth-maximisation",
+    index: "03",
+    name: "Growth Maximisation",
+    message: "Growth requires conviction.",
+    purpose:
+      "A higher-growth mandate for investors who accept greater volatility in pursuit of long-term capital appreciation.",
+    principles: ["Innovation", "Opportunity", "Ambition", "Judgement"],
+    // The one card the film cannot supply. Nothing in the mountain, forest
+    // or river material speaks to innovation or emerging industry, and a
+    // mismatched still would be worse than none.
     image: null,
-    description:
-      "Regulated transmission and storage assets. Inflation-linked cash flows with contract terms measured in decades.",
-    performance: "+8.2% p.a.",
-    allocation: "16.5%",
     imageBrief:
-      "Real photography of transmission infrastructure or a substation — architectural framing, overcast light, monumental not industrial-grim.",
+      "Real photography of precision manufacturing, research instrumentation or advanced infrastructure. Architectural framing, cool restrained light, no people, no screens, no abstract 'tech' graphics. Landscape, 1440x1080 or larger.",
   },
   {
-    slug: "japanese-governance",
-    company: "Japanese Governance Reform",
-    category: "Global Equity",
-    image: null,
-    description:
-      "Balance-sheet reform across the Topix. A generational reallocation of idle corporate capital, moving at a deliberate pace.",
-    performance: "+13.1% p.a.",
-    allocation: "12.0%",
-    imageBrief:
-      "Real architectural photography of a Tokyo financial-district building — Marunouchi or Otemachi, early morning, no signage or logos.",
+    slug: "satellite",
+    index: "04",
+    name: "Satellite",
+    message: "A strong foundation allows room for exploration.",
+    purpose:
+      "A flexible mandate that complements core holdings through selective, thematic opportunities beyond them.",
+    principles: ["Adaptability", "Precision", "Perspective", "Selectivity"],
+    image: "/media/portfolio/04-satellite.jpg",
+    imageBrief: null,
   },
   {
-    slug: "timber-farmland",
-    company: "Timber & Farmland",
-    category: "Real Assets",
-    image: null,
-    description:
-      "Biological growth compounds regardless of market sentiment. The asset appreciates while you wait for the price.",
-    performance: "+7.6% p.a.",
-    allocation: "9.0%",
-    imageBrief:
-      "Real photography of managed forestry or agricultural land — aerial or wide, ordered planting rows visible, soft natural light.",
-  },
-  {
-    slug: "succession-capital",
-    company: "Succession Capital",
-    category: "Private Markets",
-    image: null,
-    description:
-      "Minority stakes in founder-led businesses at generational handover. Patient capital where speed is a liability.",
-    performance: "+15.3% p.a.",
-    allocation: "8.5%",
-    imageBrief:
-      "Real photography of a workshop or family-owned manufacturing interior — craft detail, warm but restrained, documentary not lifestyle.",
+    slug: "impact",
+    index: "05",
+    name: "Impact",
+    message: "Capital can build a better future.",
+    purpose:
+      "Investment in companies creating measurable environmental and social outcomes alongside financial ones.",
+    principles: ["Sustainability", "Responsibility", "Stewardship", "Purpose"],
+    image: "/media/portfolio/05-impact.jpg",
+    imageBrief: null,
   },
 ];

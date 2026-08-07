@@ -2,14 +2,6 @@
 
 import Reveal from "@/components/animations/Reveal";
 import PortfolioGallery from "@/components/ui/portfolio-gallery";
-import { DrawdownChart } from "@/components/charts/lazy";
-
-const METRICS = [
-  { value: "0.94", label: "Sharpe ratio" },
-  { value: "6.8%", label: "Realised volatility" },
-  { value: "−16%", label: "Deepest drawdown" },
-  { value: "38", label: "Markets held" },
-];
 
 /**
  * Portfolio Management — the holdings gallery is the centrepiece, with the
@@ -39,9 +31,9 @@ export default function Portfolio() {
           </Reveal>
           <Reveal delay={0.2}>
             <p className="mt-7 max-w-xl text-sm font-light leading-[1.9] text-paper-dim">
-              Six convictions, held across geographies and decades. Each is
-              owned as a business rather than traded as a position — which is
-              why the list changes slowly, and deliberately.
+              Five convictions, each a way of owning rather than a product to
+              buy. They differ in horizon and in temperament, not in
+              discipline — and the list changes slowly, and deliberately.
             </p>
           </Reveal>
         </div>
@@ -55,26 +47,7 @@ export default function Portfolio() {
       </Reveal>
 
       <div className="mx-auto mt-24 max-w-7xl px-6 lg:px-10">
-        <Reveal>
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-10 border-y border-paper/10 py-10 lg:grid-cols-4">
-            {METRICS.map((m) => (
-              <div key={m.label}>
-                <dt className="text-[0.62rem] uppercase tracking-[0.22em] text-stone">
-                  {m.label}
-                </dt>
-                <dd className="tabular mt-3 font-serif text-4xl text-paper">
-                  {m.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </Reveal>
 
-        <Reveal delay={0.15}>
-          <div className="mt-14">
-            <DrawdownChart />
-          </div>
-        </Reveal>
 
         <Reveal delay={0.15}>
           <p className="mt-14 border-l border-gold/40 pl-6 font-serif text-xl italic leading-relaxed text-stone sm:text-2xl">
@@ -84,10 +57,12 @@ export default function Portfolio() {
           </p>
         </Reveal>
 
-        <p className="mt-10 text-[0.65rem] leading-relaxed tracking-wide text-stone-dim">
-          Holdings shown are investment themes, not named securities. All
-          returns, weightings and risk figures are illustrative and do not
-          represent actual performance.
+        <p className="mt-10 max-w-3xl text-[0.65rem] leading-relaxed tracking-wide text-stone-dim">
+          The convictions above describe investment approach only. No
+          returns, risk metrics or performance figures are shown anywhere in
+          this section, and none should be inferred. Verified client
+          performance data will be published separately, with its
+          disclosures, once it exists.
         </p>
       </div>
     </section>
