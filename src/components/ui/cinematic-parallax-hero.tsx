@@ -177,10 +177,20 @@ export default function CinematicParallaxHero({
         }}
       />
 
-      {/* Legibility: radial pool behind the type block only */}
+      {/* Legibility: a tight pool sized to the type block, plus a wide
+          feather so it has no visible edge. Concentrating the darkening
+          where the words are — rather than spreading it thinly across the
+          frame — means the mountain and snow read brighter than they did
+          with the broader, weaker version this replaces. */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-[radial-gradient(ellipse_62%_48%_at_50%_47%,rgba(10,10,10,0.5),rgba(10,10,10,0.16)_60%,transparent_82%)]"
+        className="absolute inset-0"
+        style={{
+          background: [
+            "radial-gradient(ellipse 46% 33% at 50% 43%, rgba(10,10,10,0.60), rgba(10,10,10,0.30) 54%, transparent 78%)",
+            "radial-gradient(ellipse 78% 58% at 50% 45%, rgba(10,10,10,0.16), transparent 76%)",
+          ].join(","),
+        }}
       />
       {/* Legibility: anchor gradients for navbar and fold */}
       <div
@@ -218,11 +228,15 @@ export default function CinematicParallaxHero({
         data-parallax-layer="brand"
         className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6 text-center will-change-transform"
       >
-        <p className="overline-label mb-8">泰山資本 — The Great Mountain</p>
-        <h1 className="font-serif text-[clamp(2.8rem,8vw,7rem)] font-medium leading-[1.02] tracking-tight text-paper">
+        {/* hero-legible is applied to the type, not the buttons — the solid
+            button has dark text and would gain a halo from it. */}
+        <p className="hero-legible overline-label mb-8">
+          泰山資本 — The Great Mountain
+        </p>
+        <h1 className="hero-legible font-serif text-[clamp(2.8rem,8vw,7rem)] font-medium leading-[1.02] tracking-tight text-paper">
           {title}
         </h1>
-        <p className="mt-8 max-w-xl text-base font-light leading-relaxed text-paper-dim sm:text-lg">
+        <p className="hero-legible mt-8 max-w-xl text-base font-light leading-relaxed text-paper sm:text-lg">
           {tagline}
         </p>
 
@@ -237,7 +251,7 @@ export default function CinematicParallaxHero({
 
         <a
           href="#journey"
-          className="mt-16 flex flex-col items-center gap-3 text-stone transition-colors duration-500 hover:text-gold"
+          className="hero-legible mt-16 flex flex-col items-center gap-3 text-paper-dim transition-colors duration-500 hover:text-gold"
         >
           <span className="text-[0.62rem] uppercase tracking-[0.34em]">
             Begin the Ascent

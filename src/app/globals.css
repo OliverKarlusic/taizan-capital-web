@@ -27,6 +27,22 @@
   color-scheme: dark;
 }
 
+/**
+ * Per-glyph legibility over moving footage.
+ *
+ * A soft, wide shadow behind each letterform is a gradient that follows the
+ * type exactly — it buys contrast only where a glyph actually is, so the
+ * snow and mountain stay at full brightness. Two layers: a tight one for
+ * edge definition against bright snow, and a wide diffuse one that acts as
+ * a local pool. Cheaper and far less destructive than darkening the frame.
+ */
+.hero-legible {
+  text-shadow:
+    0 1px 2px rgba(10, 10, 10, 0.55),
+    0 4px 12px rgba(10, 10, 10, 0.45),
+    0 12px 48px rgba(10, 10, 10, 0.65);
+}
+
 /* ─────────────────────────────────────────────────────────────
    shadcn/ui compatibility layer
    Additive only — the Taizan tokens above are untouched. Two things
