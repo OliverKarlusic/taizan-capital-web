@@ -154,6 +154,18 @@ export interface HeroLayer {
   poster: string | null;
   /** Exactly what real asset belongs here. */
   brief: string;
+  /** mix-blend-mode used to composite this plane over the ones below. */
+  blend?: string;
+  /** Plane opacity. */
+  opacity?: number;
+  /** CSS filter applied to the plate before compositing. */
+  filter?: string;
+  /**
+   * CSS mask-image. Lets an atmospheric plate be confined to part of the
+   * frame instead of veiling all of it — essential for a full-frame fog
+   * plate, which would otherwise erase the subject behind it.
+   */
+  mask?: string;
 }
 
 export const HERO_LAYERS: HeroLayer[] = [
@@ -162,10 +174,27 @@ export const HERO_LAYERS: HeroLayer[] = [
     label: "Layer 1 — Atmosphere",
     travel: 8,
     src: null,
-    video: null,
+    // Real mist footage. This plate is dense fog filling the whole frame on
+    // a light background — not wisps shot against black — so it cannot be
+    // composited flat or it erases the mountain entirely. Three things make
+    // it read as atmosphere instead of a veil:
+    //
+    //   filter  drops the base level so `screen` adds light only where the
+    //           fog is genuinely brighter than its own average, rather than
+    //           lifting the whole frame into milk;
+    //   screen  is the physically right operator for haze, which is
+    //           scattered light adding to the scene, never subtracting;
+    //   mask    confines it to the lower band where the cloud sea already
+    //           sits, so it reads as depth *between viewer and mountain*
+    //           and leaves the summit and sky untouched.
+    video: [{ src: "/media/hero/mist-overlay.mp4", type: "video/mp4" }],
     poster: null,
+    blend: "screen",
+    opacity: 0.22,
+    filter: "brightness(0.62) contrast(1.75) saturate(0.7)",
+    mask: "linear-gradient(180deg, transparent 0%, transparent 34%, rgba(0,0,0,0.55) 58%, rgba(0,0,0,0.9) 78%, rgba(0,0,0,0.45) 100%)",
     brief:
-      "Real morning haze / high cloud plate, wide and soft, shot against sky. Transparent or near-black background so it composites over the environment. PNG or WebP with alpha, 2560w+.",
+      "Real morning haze / high cloud plate, wide and soft. Wisps shot against a dark sky composite most cleanly; a full-frame fog plate works but must be masked to a band.",
   },
   {
     id: "environment",

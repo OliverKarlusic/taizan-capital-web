@@ -44,10 +44,21 @@ function LayerPlate({ layer }: { layer: HeroLayer }) {
   // which planes are still missing.
   if (!hasLayerAsset(layer)) return null;
 
+  // Compositing is declared in the manifest so a plate's treatment travels
+  // with the asset it belongs to, rather than being scattered through JSX.
+  const composite: React.CSSProperties = {
+    mixBlendMode: layer.blend as React.CSSProperties["mixBlendMode"],
+    opacity: layer.opacity,
+    filter: layer.filter,
+    maskImage: layer.mask,
+    WebkitMaskImage: layer.mask,
+  };
+
   if (layer.video?.length) {
     return (
       <video
         className="absolute inset-0 h-full w-full object-cover"
+        style={composite}
         muted
         loop
         playsInline
@@ -142,14 +153,6 @@ export default function CinematicParallaxHero({
       aria-label="Taizan Capital — introduction"
       className="relative h-screen overflow-hidden bg-ink"
     >
-      {/* 1 — Atmosphere (furthest, slowest) */}
-      <div
-        data-parallax-layer="atmosphere"
-        className="absolute inset-0 scale-110 will-change-transform"
-      >
-        <LayerPlate layer={HERO_LAYERS[0]} />
-      </div>
-
       {/* 2 — Environment, carrying the grade.
           The grade lives on the plane, not the composite, so the type and
           logo above stay unfiltered. Values are deliberately conservative:
@@ -161,6 +164,16 @@ export default function CinematicParallaxHero({
         className="absolute inset-0 will-change-transform [filter:contrast(1.07)_saturate(0.88)_brightness(0.96)]"
       >
         <LayerPlate layer={HERO_LAYERS[1]} />
+      </div>
+
+      {/* 1 — Atmosphere. Sits above the environment because haze is between
+          the viewer and the mountain, not behind it. It travels least of
+          any plane, so it reads as distant air rather than passing cloud. */}
+      <div
+        data-parallax-layer="atmosphere"
+        className="absolute inset-0 scale-110 will-change-transform"
+      >
+        <LayerPlate layer={HERO_LAYERS[0]} />
       </div>
 
       {/* ── Cinematic treatment stack, bottom to top ──
