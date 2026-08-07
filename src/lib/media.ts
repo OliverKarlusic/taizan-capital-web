@@ -171,10 +171,16 @@ export const HERO_LAYERS: HeroLayer[] = [
     id: "environment",
     label: "Layer 2 — Environment",
     travel: 22,
-    // Video takes this plane when supplied: /media/hero/layers/fuji-background.mp4
-    video: null,
+    // Real licensed hero footage. This is the primary visual — not a
+    // placeholder, and never to be swapped for generated imagery.
+    video: [
+      {
+        src: "/media/hero/taizan-hero.mp4",
+        type: "video/mp4",
+      },
+    ],
     src: null,
-    poster: null,
+    poster: "/media/hero/hero-poster.jpg",
     brief:
       "Real Mount Fuji landscape — mountain silhouette above a cloud layer, sunrise light, atmospheric depth. Licensed footage (mp4/webm) preferred; a licensed still (webp, 3840w) is an acceptable substitute.",
   },

@@ -38,21 +38,11 @@ gsap.registerPlugin(ScrollTrigger);
  */
 
 function LayerPlate({ layer }: { layer: HeroLayer }) {
-  if (!hasLayerAsset(layer)) {
-    return (
-      <div className="absolute inset-0">
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              "repeating-conic-gradient(#f4f3ee 0% 25%, transparent 0% 50%)",
-            backgroundSize: "56px 56px",
-          }}
-        />
-      </div>
-    );
-  }
+  // An unsourced plane renders nothing at all. The atmosphere and foreground
+  // planes composite *over* the environment, so a placeholder pattern here
+  // would veil the real footage behind it. The status card below reports
+  // which planes are still missing.
+  if (!hasLayerAsset(layer)) return null;
 
   if (layer.video?.length) {
     return (

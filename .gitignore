@@ -42,3 +42,6 @@ next-env.d.ts
 
 # local capture output from dev tooling
 /.captures/
+
+# hero masters are large; keep source video out of git
+public/media/hero/*.mp4
