@@ -77,14 +77,14 @@ function Card({ c, front }: { c: Conviction; front: boolean }) {
         }}
       />
 
-      <figcaption className="relative flex h-full flex-col justify-end p-8 sm:p-9">
+      <figcaption className="relative flex h-full flex-col justify-end p-7 sm:p-8">
         <p className="text-[0.58rem] uppercase tracking-[0.32em] text-gold">
           {c.index}
         </p>
-        <h3 className="mt-4 font-serif text-[1.6rem] leading-[1.16] text-paper sm:text-[1.85rem]">
+        <h3 className="mt-3 font-serif text-[1.45rem] leading-[1.15] text-paper sm:text-[1.65rem]">
           {c.name}
         </h3>
-        <p className="mt-4 border-t border-paper/15 pt-4 font-serif text-base italic leading-snug text-paper-dim">
+        <p className="mt-3 border-t border-paper/15 pt-3 font-serif text-[0.95rem] italic leading-snug text-paper-dim">
           {c.statement}
         </p>
 
@@ -99,7 +99,7 @@ function Card({ c, front }: { c: Conviction; front: boolean }) {
           }}
         >
           <div className="overflow-hidden">
-            <p className="mt-4 text-xs font-light leading-[1.8] text-stone">
+            <p className="mt-3 text-[0.72rem] font-light leading-[1.7] text-stone">
               {c.purpose}
             </p>
           </div>
@@ -223,7 +223,7 @@ export default function PortfolioGallery() {
     return (
       <ul className="mx-auto grid max-w-7xl gap-6 px-6 sm:grid-cols-2 lg:grid-cols-3 lg:px-10">
         {CONVICTIONS.map((c) => (
-          <li key={c.slug} className="h-[30rem]">
+          <li key={c.slug} className="h-[28rem]">
             <Card c={c} front />
           </li>
         ))}
@@ -234,7 +234,7 @@ export default function PortfolioGallery() {
   return (
     <div ref={sectionRef} className="select-none">
       <div
-        className="relative h-[32rem] cursor-grab active:cursor-grabbing sm:h-[34rem]"
+        className="relative h-[25rem] cursor-grab active:cursor-grabbing sm:h-[28rem]"
         style={{ perspective: "1150px" }}
         role="group"
         aria-roledescription="carousel"

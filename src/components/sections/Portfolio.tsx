@@ -15,12 +15,12 @@ export default function Portfolio() {
     <section
       id="portfolio"
       aria-labelledby="portfolio-title"
-      className="relative z-10 bg-ink py-28 sm:py-40"
+      className="relative z-10 scroll-mt-28 bg-ink py-24 sm:py-32"
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
-        <div className="max-w-3xl">
+        <div className="mx-auto max-w-3xl text-center">
           <Reveal>
-            <p className="overline-label mb-6">04 — Portfolio Management</p>
+            <p className="overline-label mb-6">04 — Investment Portfolio</p>
           </Reveal>
           <Reveal delay={0.1}>
             <h2
@@ -32,7 +32,7 @@ export default function Portfolio() {
             </h2>
           </Reveal>
           <Reveal delay={0.2}>
-            <p className="mt-7 max-w-xl text-sm font-light leading-[1.9] text-paper-dim">
+            <p className="mx-auto mt-7 max-w-xl text-sm font-light leading-[1.9] text-paper-dim">
               Five convictions, each a way of owning rather than a product to
               buy. They differ in horizon and in temperament, not in
               discipline — and the list changes slowly, and deliberately.
@@ -43,12 +43,12 @@ export default function Portfolio() {
 
       {/* Gallery breaks the grid — it wants the full width */}
       <Reveal delay={0.15}>
-        <div className="mt-20 overflow-hidden">
+        <div className="mt-14 overflow-hidden">
           <PortfolioGallery />
         </div>
       </Reveal>
 
-      <div className="mx-auto mt-24 max-w-7xl px-6 lg:px-10">
+      <div className="mx-auto mt-20 max-w-7xl px-6 lg:px-10">
         <Reveal delay={0.15}>
           <p className="mt-14 border-l border-gold/40 pl-6 font-serif text-xl italic leading-relaxed text-stone sm:text-2xl">
             “The first rule of compounding is to never interrupt it
