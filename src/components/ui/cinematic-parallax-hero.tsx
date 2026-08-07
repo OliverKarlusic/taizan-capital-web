@@ -139,6 +139,8 @@ export default function CinematicParallaxHero({
   const riverRef = useRef<HTMLVideoElement>(null);
   const currentRef = useRef<HTMLDivElement>(null);
   const vignetteRef = useRef<HTMLDivElement>(null);
+  const poolRef = useRef<HTMLDivElement>(null);
+  const washRef = useRef<HTMLDivElement>(null);
   const [riverMounted, setRiverMounted] = useState(false);
   // The forest plate is not rendered until the fog is already dense, so it
   // cannot exist "underneath" the mountain and does not decode during it.
@@ -356,13 +358,24 @@ export default function CinematicParallaxHero({
         tl.to(mist, { opacity: 0.32, ease: "power2.out", duration: 0.1 }, 0.45);
       }
 
-      // Vignette out through both cloud beats, back for the environments.
-      if (vignetteRef.current) {
-        tl.to(vignetteRef.current, { opacity: 0, ease: "power2.out", duration: 0.06 }, 0.31);
-        tl.to(vignetteRef.current, { opacity: 1, ease: "power2.in", duration: 0.06 }, 0.45);
-        tl.to(vignetteRef.current, { opacity: 0, ease: "power2.out", duration: 0.04 }, 0.67);
-        tl.to(vignetteRef.current, { opacity: 1, ease: "power2.in", duration: 0.05 }, 0.78);
-      }
+      /* The whole darkening stack stands down inside fog.
+
+         This is what was making the cloud beats read as murk rather than
+         weather. Three layers exist to serve an environment with a subject
+         and type over it: a multiply wash for the sky, a dark radial pool
+         behind the headline, and a vignette for depth. In fog there is no
+         subject, no type and no depth — but all three were still at full
+         strength, and the pool in particular painted a dark ellipse across
+         the middle of a frame that should have been its brightest.
+
+         They return the moment an environment does. */
+      [poolRef, washRef, vignetteRef].forEach((r) => {
+        if (!r.current) return;
+        tl.to(r.current, { opacity: 0, ease: "power2.out", duration: 0.06 }, 0.30);
+        tl.to(r.current, { opacity: 1, ease: "power2.in", duration: 0.06 }, 0.45);
+        tl.to(r.current, { opacity: 0, ease: "power2.out", duration: 0.04 }, 0.66);
+        tl.to(r.current, { opacity: 1, ease: "power2.in", duration: 0.05 }, 0.78);
+      });
 
       // FOREST — its statement, over its own environment.
       if (forestTextRef.current) {
@@ -603,6 +616,7 @@ export default function CinematicParallaxHero({
       {/* Tonal wash — cools the shadows toward ink, leaves highlights alone */}
       <div
         aria-hidden="true"
+        ref={washRef}
         className="absolute inset-0 mix-blend-multiply"
         style={{
           background:
@@ -616,6 +630,7 @@ export default function CinematicParallaxHero({
           frame — means the mountain and snow read brighter than they did
           with the broader, weaker version this replaces. */}
       <div
+        ref={poolRef}
         aria-hidden="true"
         className="absolute inset-0"
         style={{

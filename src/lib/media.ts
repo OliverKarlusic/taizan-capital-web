@@ -204,7 +204,10 @@ export const HERO_LAYERS: HeroLayer[] = [
     poster: null,
     blend: "screen",
     opacity: 0.22,
-    filter: "brightness(0.62) contrast(1.75) saturate(0.7)",
+    // brightness was 0.62, which is why the plate went murky rather than
+    // luminous once it reached full opacity. Fog scatters light; it is the
+    // brightest thing in a frame, never the darkest.
+    filter: "brightness(1.05) contrast(1.25) saturate(0.72)",
     mask: "linear-gradient(180deg, transparent 0%, transparent 34%, rgba(0,0,0,0.55) 58%, rgba(0,0,0,0.9) 78%, rgba(0,0,0,0.45) 100%)",
     brief:
       "Real morning haze / high cloud plate, wide and soft. Wisps shot against a dark sky composite most cleanly; a full-frame fog plate works but must be masked to a band.",
