@@ -842,7 +842,7 @@ export default function CinematicParallaxHero({
         <p className="hero-legible overline-label mb-8">
           泰山資本 — The Great Mountain
         </p>
-        <h1 className="hero-legible font-serif text-[clamp(2.8rem,8vw,7rem)] font-medium leading-[1.02] tracking-tight text-paper">
+        <h1 className="hero-legible font-serif text-[clamp(2.4rem,7.2vw,7rem)] font-medium leading-[1.12] tracking-tight text-paper">
           {title}
         </h1>
         <p className="hero-legible mt-8 max-w-xl text-base font-light leading-relaxed text-paper sm:text-lg">

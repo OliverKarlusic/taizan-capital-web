@@ -35,9 +35,15 @@ gsap.registerPlugin(ScrollTrigger);
    the ring opens 72-degree gaps between five cards and the front of the
    carousel is literally empty half the time — which is what happens if you
    pick a radius that merely "looks about right". */
-const CARD_W = 400;
+const CARD_MAX = 400;
 const GAP = 34;
-const RADIUS = Math.round(((CARD_W + GAP) * 5) / (2 * Math.PI));
+/** Card never exceeds the viewport minus a safe gutter, so the ring cannot
+ *  push content past the frame on a narrow screen. Radius follows the card:
+ *  cards sit shoulder to shoulder only when 2*pi*R = N*(W+gap). */
+function ringMetrics(vw: number) {
+  const w = Math.min(CARD_MAX, Math.max(240, vw - 72));
+  return { w, radius: Math.round(((w + GAP) * 5) / (2 * Math.PI)) };
+}
 
 function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -115,6 +121,15 @@ export default function PortfolioGallery() {
   const ringRef = useRef<HTMLDivElement>(null);
   const angle = useRef({ value: 0 });
   const [active, setActive] = useState(0);
+  const [metrics, setMetrics] = useState(() => ringMetrics(1440));
+
+  useEffect(() => {
+    const on = () => setMetrics(ringMetrics(window.innerWidth));
+    on();
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, []);
+  const { w: CARD_W, radius: RADIUS } = metrics;
 
   const step = 360 / CONVICTIONS.length;
 
@@ -139,7 +154,7 @@ export default function PortfolioGallery() {
         CONVICTIONS.length) %
       CONVICTIONS.length;
     setActive(nearest);
-  }, [step]);
+  }, [step, RADIUS]);
 
   const rotateTo = useCallback(
     (deg: number) => {
@@ -182,7 +197,7 @@ export default function PortfolioGallery() {
 
     ScrollTrigger.refresh();
     return () => ctx.revert();
-  }, [reduced, render, step]);
+  }, [reduced, render, step, RADIUS]);
 
   // Pointer drag
   useEffect(() => {

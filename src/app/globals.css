@@ -28,6 +28,36 @@
 }
 
 /**
+ * Global text containment.
+ *
+ * No text may leave the visible frame. These rules fix the two causes we
+ * actually measured rather than hiding the result:
+ *
+ * 1. A flex or grid child defaults to min-width:auto, which refuses to
+ *    shrink below its content and so stops long headings from wrapping.
+ *    Measured on the Philosophy and About headings: scrollWidth 918 inside
+ *    a 464px box. min-width:0 lets them wrap as intended.
+ * 2. A single long word or unbroken string can still exceed a narrow
+ *    column. overflow-wrap breaks it rather than pushing the layout wide.
+ *
+ * There is deliberately no overflow:hidden here — that would conceal
+ * overflow instead of preventing it.
+ */
+h1, h2, h3, h4, p, li, blockquote, figcaption, a {
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+/* Last-resort guard: the document itself must never scroll sideways. If
+   this ever engages, something upstream is still wrong — it is a tripwire,
+   not a fix. */
+html,
+body {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+/**
  * Per-glyph legibility over moving footage.
  *
  * A soft, wide shadow behind each letterform is a gradient that follows the
