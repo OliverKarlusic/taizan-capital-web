@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- full-bleed parallax plates are
    sized by CSS inside transformed layers; next/image adds nothing here. */
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
@@ -132,6 +132,11 @@ export default function CinematicParallaxHero({
   const atmosphereRef = useRef<HTMLDivElement>(null);
   const foregroundRef = useRef<HTMLDivElement>(null);
 
+  const mountainRef = useRef<HTMLDivElement>(null);
+  // The forest plate is not rendered until the fog is already dense, so it
+  // cannot exist "underneath" the mountain and does not decode during it.
+  const [forestMounted, setForestMounted] = useState(false);
+
   const { ready, targetWidth } = useAdaptiveMedia();
 
   const forest = useMemo(() => {
@@ -156,10 +161,13 @@ export default function CinematicParallaxHero({
       const span = r.height - window.innerHeight;
       const p = span > 0 ? Math.min(Math.max(-r.top / span, 0), 1) : 0;
 
+      // Mount the forest inside the transition, once the veil is dense
+      // enough to hide its arrival. Never before.
+      if (!forestMounted && p > 0.5) setForestMounted(true);
+
       const fv = forestRef.current;
-      if (fv && !started && p > 0.24) {
+      if (fv && !started) {
         started = true;
-        fv.load();
         fv.playbackRate = 0.9;
         fv.play().catch(() => undefined);
       }
@@ -167,15 +175,16 @@ export default function CinematicParallaxHero({
       const hero = envRef.current?.querySelector("video") ?? null;
       if (hero) {
         // Past the whiteout Fuji is invisible; stop paying to decode it.
-        if (p > 0.62 && !hero.paused) hero.pause();
-        else if (p <= 0.6 && hero.paused) hero.play().catch(() => undefined);
+        // Fuji is at opacity 0 from 0.60; stop paying to decode it.
+        if (p > 0.64 && !hero.paused) hero.pause();
+        else if (p <= 0.62 && hero.paused) hero.play().catch(() => undefined);
       }
     };
 
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [forest]);
+  }, [forest, forestMounted]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -231,75 +240,82 @@ export default function CinematicParallaxHero({
         0,
       );
 
-      // The brand plate drifts up, but it must be fully gone well before it
-      // can reach the fixed navigation — otherwise the buttons ghost across
-      // the nav links mid-scroll. Drift is small and the dissolve completes
-      // in the first third of the timeline, so the two never share space.
+      /* ── The five beats ───────────────────────────────────────────
+         HERO       0.00–0.16  Fuji. Wordmark, tagline, CTAs.
+         MOUNTAIN   0.16–0.44  Fuji alone. "Building wealth begins with
+                               strong foundations."
+         TRANSITION 0.44–0.60  Mist thickens, veil blooms, Fuji -> 0.
+         CLOUD      0.60–0.68  Neither mountain nor forest. Brief.
+         FOREST     0.68–1.00  Forest resolves through clearing fog.
+
+         The two environments never coexist: Fuji reaches 0 at 0.60 and the
+         forest does not leave 0 until 0.68. The gap is the descent through
+         cloud — long enough to register as a passage, short enough that it
+         never becomes a chapter of its own. Fog is punctuation, not a
+         paragraph. */
+
+      // HERO — brand type clears early, well before the fixed navigation.
+      tl.to(brandRef.current, { yPercent: -7, ease: "none", duration: 1 }, 0);
       tl.to(
         brandRef.current,
-        { yPercent: -7, ease: "none", duration: 1 },
-        0,
-      );
-      tl.to(
-        brandRef.current,
-        { opacity: 0, ease: "power2.in", duration: 0.34 },
-        0,
+        { opacity: 0, ease: "power2.in", duration: 0.1 },
+        0.1,
       );
 
-      /* ── The mist bridge ──────────────────────────────────────────
-         Not a crossfade. The mist we already have swells until it is the
-         whole frame, the mountain dissolves *into* it, and the forest is
-         revealed underneath before the fog recedes. The visitor sees one
-         continuous descent through cloud, never a cut between two videos.
-
-         Timings are staggered so the forest arrives while the frame is at
-         its whitest — the switch is hidden inside the fog, which is the
-         only honest bridge between two plates that share no colour. */
-
-      /* Every property below is numeric. The previous version animated
-         `maskImage` alongside opacity, and GSAP cannot interpolate a CSS
-         gradient string — it discarded the whole tween, which is why the
-         mist sat at its base value for the entire scroll.
-
-         The mask is now static. Depth is carried by two numeric channels
-         instead: the mist plate's own opacity, and a pale veil that swells
-         to carry the cut. That veil is what a film optical does — the fog
-         thickens, the frame blooms toward white, and the next environment
-         is already underneath when it clears. */
+      // MOUNTAIN — the chapter statement, over Fuji, with room to be read.
+      if (mountainRef.current) {
+        tl.fromTo(
+          mountainRef.current,
+          { opacity: 0, y: 26 },
+          { opacity: 1, y: 0, ease: "power2.out", duration: 0.08 },
+          0.2,
+        );
+        tl.to(
+          mountainRef.current,
+          { opacity: 0, y: -22, ease: "power2.in", duration: 0.07 },
+          0.4,
+        );
+      }
 
       const mist = mistRef.current;
 
-      // 1. Fog thickens.
-      tl.to(mist, { opacity: 0.6, ease: "power2.in", duration: 0.3 }, 0.34);
-
-      // 2. The veil blooms — this is the cut.
+      // TRANSITION — fog thickens, then the veil blooms to carry the cut.
+      if (mist) {
+        tl.to(mist, { opacity: 0.78, ease: "power2.in", duration: 0.18 }, 0.44);
+      }
       tl.to(
         veilRef.current,
-        { opacity: 0.94, ease: "power2.inOut", duration: 0.26 },
-        0.4,
+        { opacity: 0.96, ease: "power2.inOut", duration: 0.16 },
+        0.46,
       );
 
-      // 3. Fuji dissolves inside the bloom, never against the forest.
+      // Fuji dissolves inside the bloom and is fully gone by 0.60.
       tl.to(
         envRef.current,
-        { opacity: 0, ease: "power1.in", duration: 0.14 },
-        0.52,
+        { opacity: 0, ease: "power1.in", duration: 0.12 },
+        0.48,
       );
 
-      // 4. Forest is revealed underneath, at peak veil.
-      tl.to(
-        forestPlaneRef.current,
-        { opacity: 1, ease: "none", duration: 0.16 },
-        0.54,
-      );
+      // CLOUD — 0.60 to 0.68 carries no tween on either environment.
+      // Atmosphere only, and briefly.
 
-      // 5. The veil clears and the fog settles to a low drift among trunks.
+      // FOREST — emerges from the same fog that swallowed the mountain.
+      if (forestPlaneRef.current) {
+        tl.to(
+          forestPlaneRef.current,
+          { opacity: 1, ease: "power1.out", duration: 0.13 },
+          0.68,
+        );
+      }
       tl.to(
         veilRef.current,
-        { opacity: 0, ease: "power2.inOut", duration: 0.3 },
-        0.66,
+        { opacity: 0, ease: "power2.inOut", duration: 0.17 },
+        0.70,
       );
-      tl.to(mist, { opacity: 0.3, ease: "power2.out", duration: 0.3 }, 0.66);
+      if (mist) {
+        tl.to(mist, { opacity: 0.32, ease: "power2.out", duration: 0.2 }, 0.72);
+      }
+
     }, root);
 
     // The section is 260vh and its plates load asynchronously, so the
@@ -318,15 +334,16 @@ export default function CinematicParallaxHero({
   }, [ready, targetWidth, forest]);
 
   return (
-    // The section is 2.6 viewports tall with a sticky stage inside it. That
-    // extra length is the transition: the descent through cloud has to be
-    // travelled through, not triggered. It is still one section — the forest
-    // is a plane in this film, never a separate page section.
+    // 5.2 viewports tall with a sticky stage inside. The length is the
+    // pacing: the mountain gets a long hold, and the descent through cloud
+    // is travelled through rather than triggered. Still one section — hero
+    // and Mountain are one environment, and the forest is a plane in the
+    // same film, never a separate page section.
     <section
       ref={rootRef}
       id="top"
       aria-label="Taizan Capital — introduction"
-      className="relative h-[260vh] bg-ink"
+      className="relative h-[520vh] bg-ink"
     >
       <div className="sticky top-0 h-screen overflow-hidden">
       {/* 2 — Environment, carrying the grade.
@@ -354,7 +371,7 @@ export default function CinematicParallaxHero({
         data-forest-plane
         className="absolute inset-0 opacity-0 will-change-[opacity]"
       >
-        {forest ? (
+        {forestMounted && forest ? (
           <video
             ref={forestRef}
             className="absolute inset-0 h-full w-full object-cover [filter:contrast(1.05)_saturate(0.92)_brightness(0.94)]"
@@ -457,6 +474,33 @@ export default function CinematicParallaxHero({
         }}
       />
 
+      {/* Anchor for "Begin the Descent". Sits at the point on the stage
+          where the forest has resolved, so the button descends into the
+          forest itself — not into fog, and not into another chapter. */}
+      <span
+        id="forest"
+        aria-hidden="true"
+        className="pointer-events-none absolute left-0 w-px"
+        style={{ top: "84%", height: 1 }}
+      />
+
+      {/* Part 1 — Mountain. Same environment as the hero, so it lives on
+          this stage rather than in a separate section that would render
+          blank behind it. */}
+      <div
+        ref={mountainRef}
+        className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center px-6 text-center opacity-0"
+      >
+        <p className="hero-legible overline-label mb-7">01 — The Mountain</p>
+        <h2 className="hero-legible max-w-4xl font-serif text-[clamp(2rem,5.5vw,4.4rem)] font-medium leading-[1.1] text-paper">
+          Building wealth begins with strong foundations.
+        </h2>
+        <p className="hero-legible mt-7 max-w-lg text-sm font-light leading-relaxed text-paper sm:text-base">
+          Permanence is not luck. It is what remains after everything
+          unconsidered has been removed.
+        </p>
+      </div>
+
       {/* 3 — Brand */}
       <div
         ref={brandRef}
@@ -485,11 +529,11 @@ export default function CinematicParallaxHero({
         </div>
 
         <a
-          href="#journey"
+          href="#forest"
           className="hero-legible mt-16 flex flex-col items-center gap-3 text-paper-dim transition-colors duration-500 hover:text-gold"
         >
           <span className="text-[0.62rem] uppercase tracking-[0.34em]">
-            Begin the Ascent
+            Begin the Descent
           </span>
           <span className="block h-10 w-px bg-paper/15" aria-hidden="true" />
         </a>

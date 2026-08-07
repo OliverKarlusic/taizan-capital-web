@@ -4,18 +4,23 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import SplitText from "@/components/animations/SplitText";
+import { SCENE_BY_ID, hasFootage, type SceneId } from "@/lib/media";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const CHAPTERS = [
-  {
-    scene: "fuji",
-    kanji: "山",
-    label: "The Mountain — Foundations",
-    text: "Building wealth begins with strong foundations.",
-    detail:
-      "Above the clouds there is perspective. The mountain does not move for weather.",
-  },
+/**
+ * The Mountain chapter is deliberately absent. Hero and Part 1 are one
+ * environment, so that statement is played on the CinematicParallaxHero
+ * stage over the live Fuji footage. Duplicating it here would show it twice,
+ * the second time over an empty scene.
+ */
+const CHAPTERS: {
+  scene: SceneId;
+  kanji: string;
+  label: string;
+  text: string;
+  detail: string;
+}[] = [
   {
     scene: "forest",
     kanji: "森",
@@ -88,7 +93,11 @@ export default function Journey() {
 
   return (
     <div ref={root} id="journey" aria-label="The Taizan journey">
-      {CHAPTERS.map((c, i) => (
+      {/* Strict rule: a chapter never renders without its footage. A title
+          over an empty environment reads as a broken page, and it puts the
+          wrong environment behind the wrong words. If the asset is not
+          connected, the chapter simply does not exist yet. */}
+      {CHAPTERS.filter((c) => hasFootage(SCENE_BY_ID[c.scene])).map((c, i) => (
         <section
           key={i}
           data-chapter=""

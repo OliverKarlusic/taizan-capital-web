@@ -69,26 +69,14 @@ export interface FilmScene {
 
 export type SceneId = "fuji" | "forest" | "river";
 
+/**
+ * Scenes rendered by FilmStage behind the editorial chapters.
+ *
+ * Fuji is deliberately absent: it belongs to the hero stage via HERO_LAYERS,
+ * and registering it here as well produced a second, empty Fuji scene that
+ * rendered as a blank Mountain section behind chapter text.
+ */
 export const SCENES: FilmScene[] = [
-  {
-    id: "fuji",
-    kanji: "山",
-    title: "Mount Fuji",
-    meaning: "Stability, legacy, perspective",
-    folder: "/media/hero/01-fuji",
-    poster: null,
-    renditions: [],
-    credit: null,
-    requirement: {
-      shot: "Real aerial above an unbroken cloud layer. Mount Fuji distant on the horizon at roughly 12–18% of frame width, base hidden in cloud, horizon in the lower third, sky filling two thirds. Telephoto compression with visible haze between cloud strata.",
-      movement:
-        "Slow lateral drift, a gentle push, or a locked hold. Gimbal-stable.",
-      light: "Sunrise or early morning, low side light.",
-      duration: "12–25s usable; seamless loop preferred.",
-      avoid:
-        "Close-up summit, orbiting the peak, looking down, window frames or reflections, rotor blur, contrails, lens flare, tilted horizon, burnt-in timecode.",
-    },
-  },
   {
     id: "forest",
     kanji: "森",
@@ -117,9 +105,13 @@ export const SCENES: FilmScene[] = [
     kanji: "川",
     title: "River",
     meaning: "Compounding, continuous growth",
-    folder: "/media/hero/03-river",
+    folder: "/media/river",
     poster: null,
-    renditions: [],
+    renditions: [
+      { src: "/media/river/river-854.mp4", type: "video/mp4", width: 854 },
+      { src: "/media/river/river-1280.mp4", type: "video/mp4", width: 1280 },
+      { src: "/media/river/river-1920.mp4", type: "video/mp4", width: 1920 },
+    ],
     credit: null,
     requirement: {
       shot: "Real footage of clear moving water over stone — a mountain stream or river. Mid or close framing where the flow is continuous and unbroken rather than turbulent.",
