@@ -137,6 +137,7 @@ export default function CinematicParallaxHero({
   const riverTextRef = useRef<HTMLDivElement>(null);
   const riverPlaneRef = useRef<HTMLDivElement>(null);
   const riverRef = useRef<HTMLVideoElement>(null);
+  const currentRef = useRef<HTMLDivElement>(null);
   const [riverMounted, setRiverMounted] = useState(false);
   // The forest plate is not rendered until the fog is already dense, so it
   // cannot exist "underneath" the mountain and does not decode during it.
@@ -402,7 +403,36 @@ export default function CinematicParallaxHero({
         tl.to(
           riverTextRef.current,
           { opacity: 0, y: -22, ease: "power2.in", duration: 0.06 },
-          0.94,
+          0.9,
+        );
+      }
+
+      /* THE HAND-OFF.
+
+         The film must not simply stop. The river settles toward ink — the
+         colour the editorial sections are already built on — so the last
+         frame of the film and the first frame of the argument are the same
+         value. Nothing cuts; the environment darkens into the page.
+
+         Then a single bronze hairline draws left to right, in the river's
+         own direction of flow and at its own unhurried easing. It is the
+         current, abstracted. Philosophy opens on the identical rule, so the
+         line the visitor last saw moving is the line the argument begins
+         with. That is the join: not a transition effect, a continuity of
+         one graphic idea across the seam. */
+      if (riverPlaneRef.current) {
+        tl.to(
+          riverPlaneRef.current,
+          { opacity: 0.12, ease: "power2.inOut", duration: 0.1 },
+          0.9,
+        );
+      }
+      if (currentRef.current) {
+        tl.fromTo(
+          currentRef.current,
+          { scaleX: 0, opacity: 0 },
+          { scaleX: 1, opacity: 1, ease: "power2.inOut", duration: 0.08 },
+          0.92,
         );
       }
     }, root);
@@ -575,6 +605,27 @@ export default function CinematicParallaxHero({
             "radial-gradient(ellipse 120% 90% at 50% 45%, transparent 68%, rgba(10,10,10,0.42) 100%)",
         }}
       />
+
+      {/* The current — drawn at the close, mirrored at the top of
+          Philosophy so the graphic idea crosses the seam. */}
+      {/* Centring lives on the wrapper, never on the animated node. GSAP
+          writes the full transform when it animates scaleX, so a Tailwind
+          -translate-x-1/2 on the same element would be silently discarded
+          the moment the tween ran. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-[18vh] z-20 flex justify-center"
+      >
+        <div
+          ref={currentRef}
+          data-current=""
+          className="h-px w-[min(70vw,52rem)] origin-left opacity-0"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, #c6a664 18%, #c6a664 82%, transparent)",
+          }}
+        />
+      </div>
 
       {/* Film grain — static SVG noise, faint. What keeps digital video
           from feeling like a screensaver. */}

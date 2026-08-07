@@ -29,8 +29,21 @@ export default function Philosophy() {
     <section
       id="philosophy"
       aria-labelledby="philosophy-title"
-      className="relative z-10 bg-ink py-28 sm:py-40"
+      className="relative z-10 bg-ink pb-28 pt-24 sm:pb-40 sm:pt-28"
     >
+      {/* The current, received. Identical geometry, colour and width to the
+          hairline drawn at the close of the film — the visitor's eye lands
+          on the same line it last saw being drawn, and the film becomes the
+          argument without a cut. */}
+      <div
+        aria-hidden="true"
+        className="mx-auto mb-24 h-px w-[min(70vw,52rem)] sm:mb-28"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, #c6a664 18%, #c6a664 82%, transparent)",
+        }}
+      />
+
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
         <div className="max-w-3xl">
           <Reveal>
