@@ -4,9 +4,11 @@ import Reveal from "@/components/animations/Reveal";
 import PortfolioGallery from "@/components/ui/portfolio-gallery";
 
 /**
- * Portfolio Management — the holdings gallery is the centrepiece, with the
- * institutional evidence (risk metrics, stress behaviour) beneath it. The
- * order is the argument: what we own, then how it behaves when tested.
+ * Portfolio Management — five investment convictions on a circular gallery.
+ *
+ * Deliberately carries no returns, risk metrics or performance figures. The
+ * section argues approach, not outcome, because no verified client
+ * performance data exists yet to argue outcome with.
  */
 export default function Portfolio() {
   return (
@@ -47,8 +49,6 @@ export default function Portfolio() {
       </Reveal>
 
       <div className="mx-auto mt-24 max-w-7xl px-6 lg:px-10">
-
-
         <Reveal delay={0.15}>
           <p className="mt-14 border-l border-gold/40 pl-6 font-serif text-xl italic leading-relaxed text-stone sm:text-2xl">
             “The first rule of compounding is to never interrupt it
