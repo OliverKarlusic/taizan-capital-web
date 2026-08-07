@@ -226,50 +226,50 @@ export default function CinematicParallaxHero({
          its whitest — the switch is hidden inside the fog, which is the
          only honest bridge between two plates that share no colour. */
 
+      /* Every property below is numeric. The previous version animated
+         `maskImage` alongside opacity, and GSAP cannot interpolate a CSS
+         gradient string — it discarded the whole tween, which is why the
+         mist sat at its base value for the entire scroll.
+
+         The mask is now static. Depth is carried by two numeric channels
+         instead: the mist plate's own opacity, and a pale veil that swells
+         to carry the cut. That veil is what a film optical does — the fog
+         thickens, the frame blooms toward white, and the next environment
+         is already underneath when it clears. */
+
       const mist = "[data-parallax-layer='atmosphere'] video";
 
-      // 1. Fog closes in: opacity up, mask opens to the full frame, and the
-      //    filter releases so the plate reaches its own natural brightness.
+      // 1. Fog thickens.
+      tl.to(mist, { opacity: 0.6, ease: "power2.in", duration: 0.3 }, 0.34);
+
+      // 2. The veil blooms — this is the cut.
       tl.to(
-        mist,
-        {
-          opacity: 0.95,
-          filter: "brightness(1.05) contrast(1.1) saturate(0.8)",
-          maskImage:
-            "linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,1) 40%, rgba(0,0,0,1) 100%)",
-          ease: "power2.inOut",
-          duration: 0.3,
-        },
-        0.34,
+        "[data-fog-veil]",
+        { opacity: 0.94, ease: "power2.inOut", duration: 0.26 },
+        0.4,
       );
 
-      // 2. Fuji dissolves into the fog rather than into the forest.
+      // 3. Fuji dissolves inside the bloom, never against the forest.
       tl.to(
         "[data-parallax-layer='environment']",
-        { opacity: 0, ease: "power1.in", duration: 0.16 },
-        0.5,
-      );
-
-      // 3. Forest emerges from the same fog, at peak whiteout.
-      tl.to(
-        "[data-forest-plane]",
-        { opacity: 1, ease: "power1.out", duration: 0.22 },
+        { opacity: 0, ease: "power1.in", duration: 0.14 },
         0.52,
       );
 
-      // 4. Fog thins back to a low drift among the trunks, where it belongs.
+      // 4. Forest is revealed underneath, at peak veil.
       tl.to(
-        mist,
-        {
-          opacity: 0.3,
-          filter: "brightness(0.72) contrast(1.5) saturate(0.75)",
-          maskImage:
-            "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.5) 45%, rgba(0,0,0,0.85) 100%)",
-          ease: "power2.inOut",
-          duration: 0.28,
-        },
+        "[data-forest-plane]",
+        { opacity: 1, ease: "none", duration: 0.16 },
+        0.54,
+      );
+
+      // 5. The veil clears and the fog settles to a low drift among trunks.
+      tl.to(
+        "[data-fog-veil]",
+        { opacity: 0, ease: "power2.inOut", duration: 0.3 },
         0.66,
       );
+      tl.to(mist, { opacity: 0.3, ease: "power2.out", duration: 0.3 }, 0.66);
     }, root);
 
     return () => ctx.revert();
@@ -335,6 +335,17 @@ export default function CinematicParallaxHero({
       >
         <LayerPlate layer={HERO_LAYERS[0]} targetWidth={targetWidth} />
       </div>
+
+      {/* The bloom that carries the cut. Sits above both environment plates
+          so the swap from Fuji to forest happens behind it and is never
+          seen. Cool near-white rather than pure white — it has to read as
+          the mist reaching full density, not as a flash. */}
+      <div
+        data-fog-veil
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-0 will-change-[opacity]"
+        style={{ backgroundColor: "#dfe4e8" }}
+      />
 
       {/* ── Cinematic treatment stack, bottom to top ──
           Every overlay is transparent across the middle of the frame; the
