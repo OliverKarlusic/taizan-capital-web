@@ -22,6 +22,51 @@ import MagneticButton from "@/components/ui/MagneticButton";
 gsap.registerPlugin(ScrollTrigger);
 
 /**
+ * The grade — one continuous ramp, cold to warm, across the journey.
+ *
+ * Three clips from three sources will always look like three clips unless
+ * a single curve runs through them. The ramp is also the argument: the
+ * palette warms as capital matures, so temperature carries the story
+ * rather than decorating it.
+ *
+ *   Fuji   cold, ivory highlights, blue shadows   — altitude and clarity
+ *   Forest warming, greens pulled to moss         — cultivation
+ *   River  warmest, bronze in the highlights      — compounding
+ *
+ * Saturation falls as the ramp progresses. The forest footage in
+ * particular is a saturated emerald that reads as stock the moment it is
+ * left alone; pulling it toward olive is what makes it look shot rather
+ * than bought. Each plane pairs a filter with a tint at soft-light, which
+ * shifts temperature without flattening the image the way a plain
+ * overlay does.
+ */
+const GRADE = {
+  fuji: {
+    filter: "contrast(1.07) saturate(0.88) brightness(0.96)",
+    tint: "rgba(150,180,205,0.16)",
+  },
+  forest: {
+    filter: "contrast(1.1) saturate(0.7) brightness(0.99)",
+    tint: "rgba(196,178,132,0.2)",
+  },
+  river: {
+    filter: "contrast(1.08) saturate(0.76) brightness(1.02)",
+    tint: "rgba(214,180,124,0.24)",
+  },
+} as const;
+
+/** Temperature wash for an environment plane. */
+function Tint({ colour }: { colour: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 mix-blend-soft-light"
+      style={{ backgroundColor: colour }}
+    />
+  );
+}
+
+/**
  * Cinematic parallax hero.
  *
  * Four depth planes driven off a single scrubbed ScrollTrigger timeline:
@@ -528,9 +573,11 @@ export default function CinematicParallaxHero({
       <div
         ref={envRef}
         data-parallax-layer="environment"
-        className="absolute inset-0 will-change-transform [filter:contrast(1.07)_saturate(0.88)_brightness(0.96)]"
+        className="absolute inset-0 will-change-transform"
+        style={{ filter: GRADE.fuji.filter }}
       >
         <LayerPlate layer={HERO_LAYERS[1]} targetWidth={targetWidth} />
+        <Tint colour={GRADE.fuji.tint} />
       </div>
 
       {/* 2b — Forest. Sits directly above Fuji and is revealed underneath the
@@ -547,7 +594,8 @@ export default function CinematicParallaxHero({
         {forestMounted && forest ? (
           <video
             ref={forestRef}
-            className="absolute inset-0 h-full w-full object-cover [filter:contrast(1.05)_saturate(0.92)_brightness(0.94)]"
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ filter: GRADE.forest.filter }}
             muted
             loop
             playsInline
@@ -558,6 +606,7 @@ export default function CinematicParallaxHero({
             ))}
           </video>
         ) : null}
+        {forestMounted && forest ? <Tint colour={GRADE.forest.tint} /> : null}
       </div>
 
       {/* 2c — River. Same rule as the forest: mounted late, revealed under
@@ -571,7 +620,8 @@ export default function CinematicParallaxHero({
         {riverMounted && river ? (
           <video
             ref={riverRef}
-            className="absolute inset-0 h-full w-full object-cover [filter:contrast(1.04)_saturate(0.95)_brightness(0.97)]"
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ filter: GRADE.river.filter }}
             muted
             loop
             playsInline
@@ -582,6 +632,7 @@ export default function CinematicParallaxHero({
             ))}
           </video>
         ) : null}
+        {riverMounted && river ? <Tint colour={GRADE.river.tint} /> : null}
       </div>
 
       {/* 1 — Atmosphere. Sits above the environment because haze is between
