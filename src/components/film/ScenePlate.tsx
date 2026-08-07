@@ -10,7 +10,6 @@ import {
   selectRenditions,
   type FilmScene,
 } from "@/lib/media";
-import MediaSlate from "./MediaSlate";
 
 interface ScenePlateProps {
   scene: FilmScene;
@@ -80,7 +79,10 @@ const ScenePlate = forwardRef<HTMLDivElement, ScenePlateProps>(
             ) : null}
           </>
         ) : (
-          <MediaSlate scene={scene} index={index} />
+          // No footage yet: render a plain ink field. Never a sourcing card —
+          // production must degrade to something quiet, not to instructions
+          // addressed to the developer.
+          <div className="absolute inset-0 bg-ink" />
         )}
       </div>
     );

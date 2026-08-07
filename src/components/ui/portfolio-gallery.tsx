@@ -67,21 +67,17 @@ function HoldingCard({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0 flex items-end p-3">
-            <div
-              aria-hidden="true"
-              className="absolute inset-0 opacity-[0.05]"
-              style={{
-                backgroundImage:
-                  "repeating-conic-gradient(#f4f3ee 0% 25%, transparent 0% 50%)",
-                backgroundSize: "32px 32px",
-              }}
-            />
-            <p className="relative font-mono text-[0.55rem] leading-relaxed tracking-wide text-stone">
-              <span className="text-gold">Photography required</span>
-              <br />
-              {holding.imageBrief}
-            </p>
+          // Awaiting photography: a quiet charcoal field carrying the
+          // holding's initial. Reads as a deliberate editorial device rather
+          // than a missing asset, and never exposes the sourcing brief —
+          // that lives in src/lib/portfolio.ts, for us, not for visitors.
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 flex items-center justify-center bg-charcoal"
+          >
+            <span className="font-serif text-5xl text-paper/10">
+              {holding.company.charAt(0)}
+            </span>
           </div>
         )}
       </div>

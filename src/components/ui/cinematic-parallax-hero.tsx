@@ -163,8 +163,6 @@ export default function CinematicParallaxHero({
     return () => ctx.revert();
   }, []);
 
-  const unsourced = HERO_LAYERS.filter((l) => !hasLayerAsset(l));
-
   return (
     <section
       ref={rootRef}
@@ -300,23 +298,6 @@ export default function CinematicParallaxHero({
         <LayerPlate layer={HERO_LAYERS[2]} targetWidth={targetWidth} />
       </div>
 
-      {/* Sourcing status — visible only while plates are unconnected */}
-      {unsourced.length > 0 ? (
-        <div className="absolute bottom-6 left-6 z-30 max-w-md border border-stone-dim/50 bg-ink/90 px-4 py-3 lg:left-10">
-          <p className="font-mono text-[0.6rem] uppercase tracking-[0.22em] text-gold">
-            {unsourced.length} parallax plate
-            {unsourced.length > 1 ? "s" : ""} awaiting real assets
-          </p>
-          <p className="mt-1.5 font-mono text-[0.6rem] leading-relaxed text-stone">
-            {unsourced.map((l) => l.label.split("—")[1]?.trim()).join(" · ")}
-            <br />
-            Drop files in{" "}
-            <span className="text-paper-dim">public/media/hero/layers/</span>{" "}
-            and register in{" "}
-            <span className="text-paper-dim">src/lib/media.ts</span>
-          </p>
-        </div>
-      ) : null}
     </section>
   );
 }
