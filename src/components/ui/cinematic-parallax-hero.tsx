@@ -50,9 +50,12 @@ gsap.registerPlugin(ScrollTrigger);
 function LayerPlate({
   layer,
   targetWidth,
+  videoRef,
 }: {
   layer: HeroLayer;
   targetWidth: number;
+  /** Handed to GSAP, so tweens never depend on a selector match. */
+  videoRef?: React.Ref<HTMLVideoElement>;
 }) {
   // An unsourced plane renders nothing at all. The atmosphere and foreground
   // planes composite *over* the environment, so a placeholder pattern here
@@ -76,8 +79,13 @@ function LayerPlate({
     // keeping the identical blend, opacity, filter and mask.
     const sources = pickRenditions(layer.video, targetWidth);
     return (
+      // No `key` here. Keying on the rendition src remounted the element
+      // whenever useAdaptiveMedia resolved its real viewport width, which
+      // left every GSAP tween holding a detached node — the reason the mist
+      // bridge never fired. Re-picking a rendition on resize is not worth
+      // tearing down a playing video mid-film.
       <video
-        key={sources[0]?.src}
+        ref={videoRef}
         className="absolute inset-0 h-full w-full object-cover"
         style={composite}
         muted
@@ -114,7 +122,17 @@ export default function CinematicParallaxHero({
 }) {
   const rootRef = useRef<HTMLElement>(null);
   const forestRef = useRef<HTMLVideoElement>(null);
-  const { targetWidth } = useAdaptiveMedia();
+  // Every GSAP target is a ref. Selector strings were resolved once at
+  // context creation and silently went stale when React remounted a node.
+  const mistRef = useRef<HTMLVideoElement>(null);
+  const envRef = useRef<HTMLDivElement>(null);
+  const forestPlaneRef = useRef<HTMLDivElement>(null);
+  const veilRef = useRef<HTMLDivElement>(null);
+  const brandRef = useRef<HTMLDivElement>(null);
+  const atmosphereRef = useRef<HTMLDivElement>(null);
+  const foregroundRef = useRef<HTMLDivElement>(null);
+
+  const { ready, targetWidth } = useAdaptiveMedia();
 
   const forest = useMemo(() => {
     const scene = SCENE_BY_ID.forest;
@@ -146,9 +164,7 @@ export default function CinematicParallaxHero({
         fv.play().catch(() => undefined);
       }
 
-      const hero = root.querySelector<HTMLVideoElement>(
-        "[data-parallax-layer='environment'] video",
-      );
+      const hero = envRef.current?.querySelector("video") ?? null;
       if (hero) {
         // Past the whiteout Fuji is invisible; stop paying to decode it.
         if (p > 0.62 && !hero.paused) hero.pause();
@@ -163,39 +179,53 @@ export default function CinematicParallaxHero({
 
   useEffect(() => {
     const root = rootRef.current;
-    if (!root) return;
+    // Wait for useAdaptiveMedia to resolve before building the timeline.
+    // Built earlier, it measured a layout whose video sources had not been
+    // chosen yet, and never re-measured.
+    if (!root || !ready) return;
 
     // Documentary pacing. Playing the master slightly under speed makes the
     // cloud movement contemplative rather than brisk — the single cheapest
     // change that separates a luxury edit from stock footage. Applied even
     // under reduced motion, since it removes movement rather than adding it.
-    const video = root.querySelector<HTMLVideoElement>("video");
-    if (video) video.playbackRate = 0.82;
+    const envVideo = envRef.current?.querySelector("video");
+    if (envVideo) envVideo.playbackRate = 0.82;
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const planeRefs: Record<string, React.RefObject<HTMLDivElement | null>> = {
+      atmosphere: atmosphereRef,
+      environment: envRef,
+      foreground: foregroundRef,
+    };
 
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: root,
           start: "top top",
-          end: "bottom top",
+          // "bottom bottom", not "bottom top". The stage inside this section
+          // is sticky, so it stops being pinned once the section's bottom
+          // reaches the viewport's bottom — a scroll distance of
+          // (height - viewport), not the full section height. With "bottom
+          // top" the timeline was mapped over a range 60% longer than the
+          // stage is actually visible for, so the transition was still
+          // mid-dissolve when the stage scrolled away.
+          end: "bottom bottom",
           scrub: 0.6,
         },
       });
 
       HERO_LAYERS.forEach((layer) => {
-        tl.to(
-          `[data-parallax-layer="${layer.id}"]`,
-          { yPercent: layer.travel, ease: "none", duration: 1 },
-          0,
-        );
+        const el = planeRefs[layer.id]?.current;
+        if (!el) return;
+        tl.to(el, { yPercent: layer.travel, ease: "none", duration: 1 }, 0);
       });
 
       // A slow push on the environment plane. This is the "camera" — 6% of
       // scale across the whole hero, which is felt rather than seen.
       tl.fromTo(
-        "[data-parallax-layer='environment']",
+        envRef.current,
         { scale: 1.08 },
         { scale: 1.14, ease: "none", duration: 1 },
         0,
@@ -206,12 +236,12 @@ export default function CinematicParallaxHero({
       // the nav links mid-scroll. Drift is small and the dissolve completes
       // in the first third of the timeline, so the two never share space.
       tl.to(
-        "[data-parallax-layer='brand']",
+        brandRef.current,
         { yPercent: -7, ease: "none", duration: 1 },
         0,
       );
       tl.to(
-        "[data-parallax-layer='brand']",
+        brandRef.current,
         { opacity: 0, ease: "power2.in", duration: 0.34 },
         0,
       );
@@ -237,43 +267,55 @@ export default function CinematicParallaxHero({
          thickens, the frame blooms toward white, and the next environment
          is already underneath when it clears. */
 
-      const mist = "[data-parallax-layer='atmosphere'] video";
+      const mist = mistRef.current;
 
       // 1. Fog thickens.
       tl.to(mist, { opacity: 0.6, ease: "power2.in", duration: 0.3 }, 0.34);
 
       // 2. The veil blooms — this is the cut.
       tl.to(
-        "[data-fog-veil]",
+        veilRef.current,
         { opacity: 0.94, ease: "power2.inOut", duration: 0.26 },
         0.4,
       );
 
       // 3. Fuji dissolves inside the bloom, never against the forest.
       tl.to(
-        "[data-parallax-layer='environment']",
+        envRef.current,
         { opacity: 0, ease: "power1.in", duration: 0.14 },
         0.52,
       );
 
       // 4. Forest is revealed underneath, at peak veil.
       tl.to(
-        "[data-forest-plane]",
+        forestPlaneRef.current,
         { opacity: 1, ease: "none", duration: 0.16 },
         0.54,
       );
 
       // 5. The veil clears and the fog settles to a low drift among trunks.
       tl.to(
-        "[data-fog-veil]",
+        veilRef.current,
         { opacity: 0, ease: "power2.inOut", duration: 0.3 },
         0.66,
       );
       tl.to(mist, { opacity: 0.3, ease: "power2.out", duration: 0.3 }, 0.66);
     }, root);
 
-    return () => ctx.revert();
-  }, []);
+    // The section is 260vh and its plates load asynchronously, so the
+    // scroll distance ScrollTrigger measured at creation is not the final
+    // one. Refresh after layout settles, and again once the mist video
+    // reports real dimensions.
+    ScrollTrigger.refresh();
+    const mist = mistRef.current;
+    const onMeta = () => ScrollTrigger.refresh();
+    mist?.addEventListener("loadedmetadata", onMeta);
+
+    return () => {
+      mist?.removeEventListener("loadedmetadata", onMeta);
+      ctx.revert();
+    };
+  }, [ready, targetWidth, forest]);
 
   return (
     // The section is 2.6 viewports tall with a sticky stage inside it. That
@@ -294,6 +336,7 @@ export default function CinematicParallaxHero({
           back so the snow reads ivory rather than digital blue-white, and
           the natural colour left otherwise alone. */}
       <div
+        ref={envRef}
         data-parallax-layer="environment"
         className="absolute inset-0 will-change-transform [filter:contrast(1.07)_saturate(0.88)_brightness(0.96)]"
       >
@@ -307,6 +350,7 @@ export default function CinematicParallaxHero({
           camera and shallow depth of field, and adding our own would fight
           the optics we paid for. */}
       <div
+        ref={forestPlaneRef}
         data-forest-plane
         className="absolute inset-0 opacity-0 will-change-[opacity]"
       >
@@ -330,10 +374,15 @@ export default function CinematicParallaxHero({
           the viewer and the mountain, not behind it. It travels least of
           any plane, so it reads as distant air rather than passing cloud. */}
       <div
+        ref={atmosphereRef}
         data-parallax-layer="atmosphere"
         className="absolute inset-0 scale-110 will-change-transform"
       >
-        <LayerPlate layer={HERO_LAYERS[0]} targetWidth={targetWidth} />
+        <LayerPlate
+          layer={HERO_LAYERS[0]}
+          targetWidth={targetWidth}
+          videoRef={mistRef}
+        />
       </div>
 
       {/* The bloom that carries the cut. Sits above both environment plates
@@ -341,6 +390,7 @@ export default function CinematicParallaxHero({
           seen. Cool near-white rather than pure white — it has to read as
           the mist reaching full density, not as a flash. */}
       <div
+        ref={veilRef}
         data-fog-veil
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-0 will-change-[opacity]"
@@ -409,6 +459,7 @@ export default function CinematicParallaxHero({
 
       {/* 3 — Brand */}
       <div
+        ref={brandRef}
         data-parallax-layer="brand"
         className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6 text-center will-change-transform"
       >
@@ -446,6 +497,7 @@ export default function CinematicParallaxHero({
 
       {/* 4 — Foreground (nearest, fastest) */}
       <div
+        ref={foregroundRef}
         data-parallax-layer="foreground"
         className="pointer-events-none absolute inset-0 z-20 scale-110 will-change-transform"
       >
