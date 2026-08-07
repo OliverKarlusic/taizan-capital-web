@@ -138,6 +138,7 @@ export default function CinematicParallaxHero({
   const riverPlaneRef = useRef<HTMLDivElement>(null);
   const riverRef = useRef<HTMLVideoElement>(null);
   const currentRef = useRef<HTMLDivElement>(null);
+  const vignetteRef = useRef<HTMLDivElement>(null);
   const [riverMounted, setRiverMounted] = useState(false);
   // The forest plate is not rendered until the fog is already dense, so it
   // cannot exist "underneath" the mountain and does not decode during it.
@@ -172,12 +173,14 @@ export default function CinematicParallaxHero({
       const span = r.height - window.innerHeight;
       const p = span > 0 ? Math.min(Math.max(-r.top / span, 0), 1) : 0;
 
-      // Mount the forest inside the transition, once the veil is dense
-      // enough to hide its arrival. Never before.
-      if (!forestMounted && p > 0.5) setForestMounted(true);
-
-      // River mounts inside the second mist bridge, on the same rule.
-      if (!riverMounted && p > 0.78) setRiverMounted(true);
+      /* Mount each environment INSIDE its bridge, while the fog is dense
+         enough to hide the arrival — but always before the reveal tween
+         starts, or the plate animates its opacity with nothing inside it
+         and the footage pops in late.
+             forest revealed at 0.43  -> mount 0.36
+             river  revealed at 0.745 -> mount 0.68 */
+      if (!forestMounted && p > 0.36) setForestMounted(true);
+      if (!riverMounted && p > 0.68) setRiverMounted(true);
 
       const fv = forestRef.current;
       if (fv && !started) {
@@ -306,11 +309,23 @@ export default function CinematicParallaxHero({
 
       // TRANSITION — fog thickens, then the veil blooms to carry the cut.
       if (mist) {
-        tl.to(mist, { opacity: 0.78, ease: "power2.in", duration: 0.09 }, 0.30);
+        tl.to(mist, { opacity: 1, ease: "power2.in", duration: 0.09 }, 0.30);
+        // Growing the plate reads as moving into the cloud rather than
+        // having a cloud laid over the lens.
+        tl.to(
+          atmosphereRef.current,
+          { scale: 1.34, ease: "power1.inOut", duration: 0.18 },
+          0.30,
+        );
+        tl.to(
+          atmosphereRef.current,
+          { scale: 1.1, ease: "power1.inOut", duration: 0.14 },
+          0.44,
+        );
       }
       tl.to(
         veilRef.current,
-        { opacity: 0.96, ease: "power2.inOut", duration: 0.08 },
+        { opacity: 0.55, ease: "power2.inOut", duration: 0.08 },
         0.31,
       );
 
@@ -341,6 +356,14 @@ export default function CinematicParallaxHero({
         tl.to(mist, { opacity: 0.32, ease: "power2.out", duration: 0.1 }, 0.45);
       }
 
+      // Vignette out through both cloud beats, back for the environments.
+      if (vignetteRef.current) {
+        tl.to(vignetteRef.current, { opacity: 0, ease: "power2.out", duration: 0.06 }, 0.31);
+        tl.to(vignetteRef.current, { opacity: 1, ease: "power2.in", duration: 0.06 }, 0.45);
+        tl.to(vignetteRef.current, { opacity: 0, ease: "power2.out", duration: 0.04 }, 0.67);
+        tl.to(vignetteRef.current, { opacity: 1, ease: "power2.in", duration: 0.05 }, 0.78);
+      }
+
       // FOREST — its statement, over its own environment.
       if (forestTextRef.current) {
         tl.fromTo(
@@ -362,11 +385,21 @@ export default function CinematicParallaxHero({
          makes the three environments read as one continuous piece rather
          than three clips. */
       if (mist) {
-        tl.to(mist, { opacity: 0.72, ease: "power2.in", duration: 0.05 }, 0.66);
+        tl.to(mist, { opacity: 0.95, ease: "power2.in", duration: 0.05 }, 0.66);
+        tl.to(
+          atmosphereRef.current,
+          { scale: 1.3, ease: "power1.inOut", duration: 0.1 },
+          0.66,
+        );
+        tl.to(
+          atmosphereRef.current,
+          { scale: 1.1, ease: "power1.inOut", duration: 0.1 },
+          0.78,
+        );
       }
       tl.to(
         veilRef.current,
-        { opacity: 0.9, ease: "power2.inOut", duration: 0.05 },
+        { opacity: 0.5, ease: "power2.inOut", duration: 0.05 },
         0.67,
       );
       if (forestPlaneRef.current) {
@@ -545,10 +578,16 @@ export default function CinematicParallaxHero({
         />
       </div>
 
-      {/* The bloom that carries the cut. Sits above both environment plates
-          so the swap from Fuji to forest happens behind it and is never
-          seen. Cool near-white rather than pure white — it has to read as
-          the mist reaching full density, not as a flash. */}
+      {/* A lift, not the whiteout.
+
+          This started as the thing that carried the cut, at 0.96 opacity —
+          and a flat colour fill at 0.96 is a painted card. It flattened the
+          mist footage underneath it completely and the vignette drew a ring
+          around the result.
+
+          Its job now is only to raise the black floor so the mist plate has
+          something to screen against. The density comes from the footage,
+          which has texture and movement. */}
       <div
         ref={veilRef}
         data-fog-veil
@@ -596,8 +635,12 @@ export default function CinematicParallaxHero({
         className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-transparent via-ink/40 to-ink"
       />
 
-      {/* Vignette — pulls the corners in half a stop */}
+      {/* Vignette — pulls the corners in half a stop. Stands down inside
+          the cloud beats: a vignette is a lens artefact, and inside fog
+          there is no depth for it to describe. Left in, it draws a hard
+          grey ring around a flat field and reads as a rendering bug. */}
       <div
+        ref={vignetteRef}
         aria-hidden="true"
         className="absolute inset-0"
         style={{
