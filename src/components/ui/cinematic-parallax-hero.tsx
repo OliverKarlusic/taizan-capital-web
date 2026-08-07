@@ -133,6 +133,11 @@ export default function CinematicParallaxHero({
   const foregroundRef = useRef<HTMLDivElement>(null);
 
   const mountainRef = useRef<HTMLDivElement>(null);
+  const forestTextRef = useRef<HTMLDivElement>(null);
+  const riverTextRef = useRef<HTMLDivElement>(null);
+  const riverPlaneRef = useRef<HTMLDivElement>(null);
+  const riverRef = useRef<HTMLVideoElement>(null);
+  const [riverMounted, setRiverMounted] = useState(false);
   // The forest plate is not rendered until the fog is already dense, so it
   // cannot exist "underneath" the mountain and does not decode during it.
   const [forestMounted, setForestMounted] = useState(false);
@@ -141,6 +146,11 @@ export default function CinematicParallaxHero({
 
   const forest = useMemo(() => {
     const scene = SCENE_BY_ID.forest;
+    return hasFootage(scene) ? selectRenditions(scene, targetWidth) : null;
+  }, [targetWidth]);
+
+  const river = useMemo(() => {
+    const scene = SCENE_BY_ID.river;
     return hasFootage(scene) ? selectRenditions(scene, targetWidth) : null;
   }, [targetWidth]);
 
@@ -165,11 +175,24 @@ export default function CinematicParallaxHero({
       // enough to hide its arrival. Never before.
       if (!forestMounted && p > 0.5) setForestMounted(true);
 
+      // River mounts inside the second mist bridge, on the same rule.
+      if (!riverMounted && p > 0.78) setRiverMounted(true);
+
       const fv = forestRef.current;
       if (fv && !started) {
         started = true;
         fv.playbackRate = 0.9;
         fv.play().catch(() => undefined);
+      }
+      const rv = riverRef.current;
+      if (rv && rv.paused && p > 0.8) {
+        rv.playbackRate = 0.9;
+        rv.play().catch(() => undefined);
+      }
+      // Forest is covered from 0.90; stop decoding it.
+      if (fv) {
+        if (p > 0.92 && !fv.paused) fv.pause();
+        else if (p <= 0.9 && fv.paused && started) fv.play().catch(() => undefined);
       }
 
       const hero = envRef.current?.querySelector("video") ?? null;
@@ -184,7 +207,7 @@ export default function CinematicParallaxHero({
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [forest, forestMounted]);
+  }, [forest, forestMounted, riverMounted]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -241,12 +264,13 @@ export default function CinematicParallaxHero({
       );
 
       /* ── The five beats ───────────────────────────────────────────
-         HERO       0.00–0.16  Fuji. Wordmark, tagline, CTAs.
-         MOUNTAIN   0.16–0.44  Fuji alone. "Building wealth begins with
-                               strong foundations."
-         TRANSITION 0.44–0.60  Mist thickens, veil blooms, Fuji -> 0.
-         CLOUD      0.60–0.68  Neither mountain nor forest. Brief.
-         FOREST     0.68–1.00  Forest resolves through clearing fog.
+         HERO       0.00–0.10  Fuji. Wordmark, tagline, CTAs.
+         MOUNTAIN   0.10–0.30  Fuji alone. "01 — The Mountain".
+         TRANSITION 0.30–0.38  Mist thickens, veil blooms, Fuji -> 0.
+         CLOUD      0.38–0.43  Neither mountain nor forest. Brief.
+         FOREST     0.43–0.68  Forest resolves; "02 — The Forest".
+         MIST II    0.68–0.73  Second bridge, same grammar as the first.
+         RIVER      0.73–1.00  River resolves; "03 — The River".
 
          The two environments never coexist: Fuji reaches 0 at 0.60 and the
          forest does not leave 0 until 0.68. The gap is the descent through
@@ -258,8 +282,8 @@ export default function CinematicParallaxHero({
       tl.to(brandRef.current, { yPercent: -7, ease: "none", duration: 1 }, 0);
       tl.to(
         brandRef.current,
-        { opacity: 0, ease: "power2.in", duration: 0.1 },
-        0.1,
+        { opacity: 0, ease: "power2.in", duration: 0.06 },
+        0.06,
       );
 
       // MOUNTAIN — the chapter statement, over Fuji, with room to be read.
@@ -267,13 +291,13 @@ export default function CinematicParallaxHero({
         tl.fromTo(
           mountainRef.current,
           { opacity: 0, y: 26 },
-          { opacity: 1, y: 0, ease: "power2.out", duration: 0.08 },
-          0.2,
+          { opacity: 1, y: 0, ease: "power2.out", duration: 0.05 },
+          0.13,
         );
         tl.to(
           mountainRef.current,
-          { opacity: 0, y: -22, ease: "power2.in", duration: 0.07 },
-          0.4,
+          { opacity: 0, y: -22, ease: "power2.in", duration: 0.05 },
+          0.27,
         );
       }
 
@@ -281,19 +305,19 @@ export default function CinematicParallaxHero({
 
       // TRANSITION — fog thickens, then the veil blooms to carry the cut.
       if (mist) {
-        tl.to(mist, { opacity: 0.78, ease: "power2.in", duration: 0.18 }, 0.44);
+        tl.to(mist, { opacity: 0.78, ease: "power2.in", duration: 0.09 }, 0.30);
       }
       tl.to(
         veilRef.current,
-        { opacity: 0.96, ease: "power2.inOut", duration: 0.16 },
-        0.46,
+        { opacity: 0.96, ease: "power2.inOut", duration: 0.08 },
+        0.31,
       );
 
       // Fuji dissolves inside the bloom and is fully gone by 0.60.
       tl.to(
         envRef.current,
-        { opacity: 0, ease: "power1.in", duration: 0.12 },
-        0.48,
+        { opacity: 0, ease: "power1.in", duration: 0.06 },
+        0.32,
       );
 
       // CLOUD — 0.60 to 0.68 carries no tween on either environment.
@@ -303,19 +327,84 @@ export default function CinematicParallaxHero({
       if (forestPlaneRef.current) {
         tl.to(
           forestPlaneRef.current,
-          { opacity: 1, ease: "power1.out", duration: 0.13 },
-          0.68,
+          { opacity: 1, ease: "power1.out", duration: 0.06 },
+          0.43,
         );
       }
       tl.to(
         veilRef.current,
-        { opacity: 0, ease: "power2.inOut", duration: 0.17 },
-        0.70,
+        { opacity: 0, ease: "power2.inOut", duration: 0.08 },
+        0.44,
       );
       if (mist) {
-        tl.to(mist, { opacity: 0.32, ease: "power2.out", duration: 0.2 }, 0.72);
+        tl.to(mist, { opacity: 0.32, ease: "power2.out", duration: 0.1 }, 0.45);
       }
 
+      // FOREST — its statement, over its own environment.
+      if (forestTextRef.current) {
+        tl.fromTo(
+          forestTextRef.current,
+          { opacity: 0, y: 26 },
+          { opacity: 1, y: 0, ease: "power2.out", duration: 0.05 },
+          0.5,
+        );
+        tl.to(
+          forestTextRef.current,
+          { opacity: 0, y: -22, ease: "power2.in", duration: 0.05 },
+          0.62,
+        );
+      }
+
+      /* MIST II — the Forest to River bridge, deliberately identical in
+         grammar to the first. A film does not change its transition
+         vocabulary halfway through; using the same optical twice is what
+         makes the three environments read as one continuous piece rather
+         than three clips. */
+      if (mist) {
+        tl.to(mist, { opacity: 0.72, ease: "power2.in", duration: 0.05 }, 0.66);
+      }
+      tl.to(
+        veilRef.current,
+        { opacity: 0.9, ease: "power2.inOut", duration: 0.05 },
+        0.67,
+      );
+      if (forestPlaneRef.current) {
+        tl.to(
+          forestPlaneRef.current,
+          { opacity: 0, ease: "power1.in", duration: 0.04 },
+          0.685,
+        );
+      }
+      if (riverPlaneRef.current) {
+        tl.to(
+          riverPlaneRef.current,
+          { opacity: 1, ease: "power1.out", duration: 0.05 },
+          0.745,
+        );
+      }
+      tl.to(
+        veilRef.current,
+        { opacity: 0, ease: "power2.inOut", duration: 0.07 },
+        0.76,
+      );
+      if (mist) {
+        tl.to(mist, { opacity: 0.26, ease: "power2.out", duration: 0.08 }, 0.78);
+      }
+
+      // RIVER — its statement, over its own environment.
+      if (riverTextRef.current) {
+        tl.fromTo(
+          riverTextRef.current,
+          { opacity: 0, y: 26 },
+          { opacity: 1, y: 0, ease: "power2.out", duration: 0.05 },
+          0.83,
+        );
+        tl.to(
+          riverTextRef.current,
+          { opacity: 0, y: -22, ease: "power2.in", duration: 0.06 },
+          0.94,
+        );
+      }
     }, root);
 
     // The section is 260vh and its plates load asynchronously, so the
@@ -343,7 +432,7 @@ export default function CinematicParallaxHero({
       ref={rootRef}
       id="top"
       aria-label="Taizan Capital — introduction"
-      className="relative h-[520vh] bg-ink"
+      className="relative h-[820vh] bg-ink"
     >
       <div className="sticky top-0 h-screen overflow-hidden">
       {/* 2 — Environment, carrying the grade.
@@ -381,6 +470,30 @@ export default function CinematicParallaxHero({
             preload="none"
           >
             {forest.map((r) => (
+              <source key={r.src} src={mediaUrl(r.src)} type={r.type} />
+            ))}
+          </video>
+        ) : null}
+      </div>
+
+      {/* 2c — River. Same rule as the forest: mounted late, revealed under
+          the second mist bridge, no parallax of our own over footage that
+          already moves. */}
+      <div
+        ref={riverPlaneRef}
+        data-river-plane
+        className="absolute inset-0 opacity-0 will-change-[opacity]"
+      >
+        {riverMounted && river ? (
+          <video
+            ref={riverRef}
+            className="absolute inset-0 h-full w-full object-cover [filter:contrast(1.04)_saturate(0.95)_brightness(0.97)]"
+            muted
+            loop
+            playsInline
+            preload="none"
+          >
+            {river.map((r) => (
               <source key={r.src} src={mediaUrl(r.src)} type={r.type} />
             ))}
           </video>
@@ -498,6 +611,37 @@ export default function CinematicParallaxHero({
         <p className="hero-legible mt-7 max-w-lg text-sm font-light leading-relaxed text-paper sm:text-base">
           Permanence is not luck. It is what remains after everything
           unconsidered has been removed.
+        </p>
+      </div>
+
+      {/* Part 2 — Forest. Same stage, same rules: the statement plays over
+          its own environment and nowhere else. */}
+      <div
+        ref={forestTextRef}
+        className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center px-6 text-center opacity-0"
+      >
+        <p className="hero-legible overline-label mb-7">02 — The Forest</p>
+        <h2 className="hero-legible max-w-4xl font-serif text-[clamp(1.8rem,4.6vw,3.6rem)] font-medium leading-[1.12] text-paper">
+          Discipline and patience protect wealth.
+        </h2>
+        <p className="hero-legible mt-7 max-w-lg text-sm font-light leading-relaxed text-paper sm:text-base">
+          A forest is planted in rows by people who will never sit in its
+          shade. We invest the same way.
+        </p>
+      </div>
+
+      {/* Part 3 — River. */}
+      <div
+        ref={riverTextRef}
+        className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center px-6 text-center opacity-0"
+      >
+        <p className="hero-legible overline-label mb-7">03 — The River</p>
+        <h2 className="hero-legible max-w-4xl font-serif text-[clamp(1.8rem,4.6vw,3.6rem)] font-medium leading-[1.12] text-paper">
+          Compounding rewards those who never interrupt it.
+        </h2>
+        <p className="hero-legible mt-7 max-w-lg text-sm font-light leading-relaxed text-paper sm:text-base">
+          Water does not hurry, yet nothing withstands it. Continuous, patient
+          force is how stone is carved.
         </p>
       </div>
 

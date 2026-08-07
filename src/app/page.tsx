@@ -1,9 +1,7 @@
 import SmoothScroll from "@/components/animations/SmoothScroll";
-import FilmStage from "@/components/film/FilmStage";
 import Cursor from "@/components/ui/Cursor";
 import Navbar from "@/components/ui/Navbar";
 import CinematicParallaxHero from "@/components/ui/cinematic-parallax-hero";
-import Journey from "@/components/sections/Journey";
 import Philosophy from "@/components/sections/Philosophy";
 import Approach from "@/components/sections/Approach";
 import Portfolio from "@/components/sections/Portfolio";
@@ -15,15 +13,14 @@ import Footer from "@/components/sections/Footer";
 export default function Home() {
   return (
     <SmoothScroll>
-      {/* Real licensed footage, sequenced by scroll. Sections declare their
-          backing scene with data-scene; the stage cross-dissolves to match. */}
-      <FilmStage />
       <Cursor />
       <Navbar />
       <main id="main" className="relative">
-        {/* Layered parallax opening, then the film stage takes over */}
+        {/* The entire film — Mountain, Forest and River — is one stage on
+            one timeline. There is no second cinematic system behind the
+            editorial sections, and no chapter that can render without its
+            environment. */}
         <CinematicParallaxHero />
-        <Journey />
 
         {/* Editorial chapters over solid ink */}
         <Philosophy />
