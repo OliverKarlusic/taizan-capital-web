@@ -1,29 +1,43 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- conviction plates are sized by
-   CSS inside a transformed carousel; next/image adds nothing here. */
+   CSS inside a 3D transform; next/image adds nothing here. */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CONVICTIONS, type Conviction } from "@/lib/portfolio";
 import { mediaUrl } from "@/lib/media";
 
+gsap.registerPlugin(ScrollTrigger);
+
 /**
- * The five convictions, presented as a slow carousel.
+ * Circular gallery — the five convictions arranged on a ring in 3D.
  *
- * Deliberately not a card deck. Each conviction occupies a single wide
- * plate, one at a time, in the proportion of a frame from the film — the
- * section reads as the journey's index rather than a product grid.
+ * The ring is the interaction framework; everything else is Taizan. Rotation
+ * has three inputs — scroll through the section, pointer drag, and keyboard
+ * — all writing to one angle that GSAP eases, so they never fight.
  *
- * Movement is a long cross-dissolve with a small scale drift, never a
- * slide or a flip. The nav is a row of hairlines, because a luxury
- * presentation does not use dots.
+ * Depth does the art direction. A card's angular distance from the front
+ * sets its opacity, saturation and how far it recedes, so the eye is told
+ * where to look without a glow, a shadow or a border doing the telling.
+ * Cards past the shoulder stop receiving pointer events, so you can never
+ * click something you cannot properly see.
  *
- * Reduced-motion visitors get all five stacked, complete and static.
+ * Reduced motion gets the five stacked and static. A rotating 3D ring is
+ * precisely the motion that setting exists to switch off, and the
+ * information is identical either way.
  */
 
-const DURATION = 1.15;
+/* Radius is derived, not chosen. With N cards of width W sitting on a ring,
+   they only sit shoulder to shoulder when 2*pi*R = N*W. At a larger radius
+   the ring opens 72-degree gaps between five cards and the front of the
+   carousel is literally empty half the time — which is what happens if you
+   pick a radius that merely "looks about right". */
+const CARD_W = 400;
+const GAP = 34;
+const RADIUS = Math.round(((CARD_W + GAP) * 5) / (2 * Math.PI));
 
 function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -37,59 +51,59 @@ function useReducedMotion() {
   return reduced;
 }
 
-function Plate({ c, eager }: { c: Conviction; eager: boolean }) {
+function Card({ c, front }: { c: Conviction; front: boolean }) {
   return (
-    <figure className="relative h-full w-full overflow-hidden bg-charcoal">
-      {c.image ? (
-        <img
-          src={mediaUrl(c.image)}
-          alt=""
-          loading={eager ? "eager" : "lazy"}
-          decoding="async"
-          className="absolute inset-0 h-full w-full object-cover [filter:contrast(1.06)_saturate(0.8)_brightness(0.9)]"
-        />
-      ) : null}
-
-      {/* Warm tint, matching the film's grade so a still never reads as a
-          different production from the footage it came from. */}
+    <figure className="relative h-full w-full overflow-hidden border border-paper/12 bg-charcoal">
+      <img
+        src={mediaUrl(c.image)}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        className="absolute inset-0 h-full w-full object-cover [filter:contrast(1.06)_saturate(0.78)_brightness(0.88)]"
+      />
+      {/* Warm tint matching the film's grade, so a still never reads as a
+          different production from the footage it was cut from. */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 mix-blend-soft-light"
         style={{ backgroundColor: "rgba(198,166,100,0.18)" }}
       />
-      {/* Legibility: weighted to the left, where the type sits. */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "linear-gradient(100deg, rgba(10,10,10,0.9) 0%, rgba(10,10,10,0.72) 38%, rgba(10,10,10,0.3) 68%, rgba(10,10,10,0.15) 100%)",
+            "linear-gradient(180deg, rgba(10,10,10,0.42) 0%, rgba(10,10,10,0.15) 34%, rgba(10,10,10,0.78) 74%, rgba(10,10,10,0.94) 100%)",
         }}
       />
 
-      <figcaption className="relative flex h-full flex-col justify-center px-8 py-12 sm:px-14 lg:px-20">
-        <p className="text-[0.62rem] uppercase tracking-[0.34em] text-gold">
-          {c.index} — {c.name}
+      <figcaption className="relative flex h-full flex-col justify-end p-8 sm:p-9">
+        <p className="text-[0.58rem] uppercase tracking-[0.32em] text-gold">
+          {c.index}
         </p>
-
-        <h3 className="mt-7 max-w-2xl font-serif text-[clamp(1.6rem,3.4vw,2.9rem)] font-medium leading-[1.14] text-paper">
-          {c.message}
+        <h3 className="mt-4 font-serif text-[1.6rem] leading-[1.16] text-paper sm:text-[1.85rem]">
+          {c.name}
         </h3>
-
-        <p className="mt-6 max-w-lg text-sm font-light leading-[1.85] text-paper-dim">
-          {c.purpose}
+        <p className="mt-4 border-t border-paper/15 pt-4 font-serif text-base italic leading-snug text-paper-dim">
+          {c.statement}
         </p>
 
-        <ul className="mt-9 flex flex-wrap gap-x-8 gap-y-3">
-          {c.principles.map((p) => (
-            <li
-              key={p}
-              className="text-[0.6rem] uppercase tracking-[0.26em] text-stone"
-            >
-              {p}
-            </li>
-          ))}
-        </ul>
+        {/* The mandate itself is revealed only on the front card. Reading
+            copy on a plate angled away from you is a strain, and showing it
+            on all five turns a gallery into a wall of text. */}
+        <div
+          className="grid transition-[grid-template-rows,opacity] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{
+            gridTemplateRows: front ? "1fr" : "0fr",
+            opacity: front ? 1 : 0,
+          }}
+        >
+          <div className="overflow-hidden">
+            <p className="mt-4 text-xs font-light leading-[1.8] text-stone">
+              {c.purpose}
+            </p>
+          </div>
+        </div>
       </figcaption>
     </figure>
   );
@@ -97,57 +111,120 @@ function Plate({ c, eager }: { c: Conviction; eager: boolean }) {
 
 export default function PortfolioGallery() {
   const reduced = useReducedMotion();
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const ringRef = useRef<HTMLDivElement>(null);
+  const angle = useRef({ value: 0 });
   const [active, setActive] = useState(0);
-  const plates = useRef<(HTMLDivElement | null)[]>([]);
-  const busy = useRef(false);
 
-  const goTo = useCallback(
-    (next: number) => {
-      if (reduced || busy.current || next === active) return;
-      const from = plates.current[active];
-      const to = plates.current[next];
-      if (!from || !to) return;
+  const step = 360 / CONVICTIONS.length;
 
-      busy.current = true;
-      // Cross-dissolve with a slight counter-drift in scale: the outgoing
-      // plate settles back, the incoming one eases forward. It reads as
-      // depth rather than as a slide.
-      gsap.to(from, {
-        opacity: 0,
-        scale: 1.03,
-        duration: DURATION,
-        ease: "power2.inOut",
+  /** Apply the ring angle, then re-derive each card's depth styling. */
+  const render = useCallback(() => {
+    const ring = ringRef.current;
+    if (!ring) return;
+    ring.style.transform = `translateZ(-${RADIUS}px) rotateY(${angle.current.value}deg)`;
+
+    ring.querySelectorAll<HTMLElement>("[data-card]").forEach((card, i) => {
+      let d = (i * step + angle.current.value) % 360;
+      if (d > 180) d -= 360;
+      if (d < -180) d += 360;
+      const t = Math.abs(d) / 180;
+      card.style.opacity = String(1 - t * 0.82);
+      card.style.filter = `saturate(${1 - t * 0.55}) brightness(${1 - t * 0.3})`;
+      card.style.pointerEvents = t < 0.2 ? "auto" : "none";
+    });
+
+    const nearest =
+      ((Math.round(-angle.current.value / step) % CONVICTIONS.length) +
+        CONVICTIONS.length) %
+      CONVICTIONS.length;
+    setActive(nearest);
+  }, [step]);
+
+  const rotateTo = useCallback(
+    (deg: number) => {
+      gsap.to(angle.current, {
+        value: deg,
+        duration: 1.25,
+        ease: "power3.out",
+        onUpdate: render,
       });
-      gsap.fromTo(
-        to,
-        { opacity: 0, scale: 1.06 },
-        {
-          opacity: 1,
-          scale: 1,
-          duration: DURATION,
-          ease: "power2.inOut",
-          onComplete: () => {
-            busy.current = false;
-          },
-        },
-      );
-      setActive(next);
     },
-    [active, reduced],
+    [render],
   );
 
-  const step = useCallback(
-    (dir: 1 | -1) =>
-      goTo((active + dir + CONVICTIONS.length) % CONVICTIONS.length),
-    [active, goTo],
+  const turn = useCallback(
+    (dir: 1 | -1) => rotateTo(angle.current.value - dir * step),
+    [rotateTo, step],
   );
+
+  // Scroll drives the ring as the section passes — the gallery advances
+  // because the visitor is descending, not because they operated a control.
+  useEffect(() => {
+    if (reduced) return;
+    const el = sectionRef.current;
+    if (!el) return;
+    render();
+
+    const ctx = gsap.context(() => {
+      gsap.to(angle.current, {
+        value: -(360 - step),
+        ease: "none",
+        scrollTrigger: {
+          trigger: el,
+          start: "top 78%",
+          end: "bottom 22%",
+          scrub: 1.1,
+        },
+        onUpdate: render,
+      });
+    }, el);
+
+    ScrollTrigger.refresh();
+    return () => ctx.revert();
+  }, [reduced, render, step]);
+
+  // Pointer drag
+  useEffect(() => {
+    if (reduced) return;
+    const el = sectionRef.current;
+    if (!el) return;
+    let startX = 0;
+    let startAngle = 0;
+    let dragging = false;
+
+    const down = (e: PointerEvent) => {
+      dragging = true;
+      startX = e.clientX;
+      startAngle = angle.current.value;
+    };
+    const move = (e: PointerEvent) => {
+      if (!dragging) return;
+      angle.current.value = startAngle + (e.clientX - startX) * 0.22;
+      render();
+    };
+    const up = () => {
+      if (!dragging) return;
+      dragging = false;
+      rotateTo(Math.round(angle.current.value / step) * step);
+    };
+
+    el.addEventListener("pointerdown", down);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    return () => {
+      el.removeEventListener("pointerdown", down);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+  }, [reduced, render, rotateTo, step]);
 
   if (reduced) {
     return (
-      <ul className="space-y-6">
+      <ul className="mx-auto grid max-w-7xl gap-6 px-6 sm:grid-cols-2 lg:grid-cols-3 lg:px-10">
         {CONVICTIONS.map((c) => (
-          <li key={c.slug} className="h-[26rem] sm:h-[30rem]">
-            <Plate c={c} eager />
+          <li key={c.slug} className="h-[30rem]">
+            <Card c={c} front />
           </li>
         ))}
       </ul>
@@ -155,45 +232,59 @@ export default function PortfolioGallery() {
   }
 
   return (
-    <div
-      role="group"
-      aria-roledescription="carousel"
-      aria-label="Investment convictions"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "ArrowRight") {
-          e.preventDefault();
-          step(1);
-        }
-        if (e.key === "ArrowLeft") {
-          e.preventDefault();
-          step(-1);
-        }
-      }}
-      className="focus:outline-none focus-visible:ring-1 focus-visible:ring-gold focus-visible:ring-offset-4 focus-visible:ring-offset-ink"
-    >
-      <div className="relative h-[28rem] w-full overflow-hidden border border-paper/10 sm:h-[32rem] lg:h-[36rem]">
-        {CONVICTIONS.map((c, i) => (
-          <div
-            key={c.slug}
-            ref={(el) => {
-              plates.current[i] = el;
-            }}
-            aria-hidden={i !== active}
-            className="absolute inset-0"
-            style={{ opacity: i === active ? 1 : 0 }}
-          >
-            <Plate c={c} eager={i === 0} />
-          </div>
-        ))}
+    <div ref={sectionRef} className="select-none">
+      <div
+        className="relative h-[32rem] cursor-grab active:cursor-grabbing sm:h-[34rem]"
+        style={{ perspective: "1150px" }}
+        role="group"
+        aria-roledescription="carousel"
+        aria-label="Investment convictions"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowRight") {
+            e.preventDefault();
+            turn(1);
+          }
+          if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            turn(-1);
+          }
+        }}
+      >
+        <div
+          ref={ringRef}
+          className="absolute left-1/2 top-0 h-full"
+          style={{
+            transformStyle: "preserve-3d",
+            transform: `translateZ(-${RADIUS}px)`,
+            width: CARD_W,
+            marginLeft: -CARD_W / 2,
+          }}
+        >
+          {CONVICTIONS.map((c, i) => (
+            <div
+              key={c.slug}
+              data-card
+              aria-hidden={i !== active}
+              className="absolute inset-0 transition-[opacity,filter] duration-500"
+              style={{
+                transform: `rotateY(${i * step}deg) translateZ(${RADIUS}px)`,
+                // Without this the far side of the ring shows its text
+                // through the near side, mirrored.
+                backfaceVisibility: "hidden",
+                WebkitBackfaceVisibility: "hidden",
+              }}
+            >
+              <Card c={c} front={i === active} />
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Hairline index. Five rules, the active one lit — a presentation
-          does not use dots. */}
-      <div className="mt-8 flex items-center gap-6">
+      <div className="mx-auto mt-10 flex max-w-3xl items-center gap-6 px-6">
         <button
           type="button"
-          onClick={() => step(-1)}
+          onClick={() => turn(-1)}
           aria-label="Previous conviction"
           className="border border-paper/20 p-2.5 text-stone transition-colors duration-500 hover:border-gold hover:text-gold"
         >
@@ -205,7 +296,7 @@ export default function PortfolioGallery() {
             <li key={c.slug} className="flex-1">
               <button
                 type="button"
-                onClick={() => goTo(i)}
+                onClick={() => rotateTo(-i * step)}
                 aria-label={`${c.index} — ${c.name}`}
                 aria-current={i === active}
                 className="group block w-full py-3"
@@ -224,7 +315,7 @@ export default function PortfolioGallery() {
 
         <button
           type="button"
-          onClick={() => step(1)}
+          onClick={() => turn(1)}
           aria-label="Next conviction"
           className="border border-paper/20 p-2.5 text-stone transition-colors duration-500 hover:border-gold hover:text-gold"
         >
