@@ -6,7 +6,14 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { HERO_LAYERS, hasLayerAsset, mediaUrl, type HeroLayer } from "@/lib/media";
+import {
+  HERO_LAYERS,
+  hasLayerAsset,
+  mediaUrl,
+  pickRenditions,
+  type HeroLayer,
+} from "@/lib/media";
+import { useAdaptiveMedia } from "@/hooks/useAdaptiveMedia";
 import MagneticButton from "@/components/ui/MagneticButton";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -37,7 +44,13 @@ gsap.registerPlugin(ScrollTrigger);
  * belonging to the rest of the page.
  */
 
-function LayerPlate({ layer }: { layer: HeroLayer }) {
+function LayerPlate({
+  layer,
+  targetWidth,
+}: {
+  layer: HeroLayer;
+  targetWidth: number;
+}) {
   // An unsourced plane renders nothing at all. The atmosphere and foreground
   // planes composite *over* the environment, so a placeholder pattern here
   // would veil the real footage behind it. The status card below reports
@@ -55,8 +68,13 @@ function LayerPlate({ layer }: { layer: HeroLayer }) {
   };
 
   if (layer.video?.length) {
+    // Same treatment on every device — only the file changes. The tier is
+    // keyed off the rendered width, so a phone pulls the 854px encode while
+    // keeping the identical blend, opacity, filter and mask.
+    const sources = pickRenditions(layer.video, targetWidth);
     return (
       <video
+        key={sources[0]?.src}
         className="absolute inset-0 h-full w-full object-cover"
         style={composite}
         muted
@@ -66,7 +84,7 @@ function LayerPlate({ layer }: { layer: HeroLayer }) {
         preload="metadata"
         poster={layer.poster ? mediaUrl(layer.poster) : undefined}
       >
-        {layer.video.map((s) => (
+        {sources.map((s) => (
           <source key={s.src} src={mediaUrl(s.src)} type={s.type} />
         ))}
       </video>
@@ -92,6 +110,7 @@ export default function CinematicParallaxHero({
   tagline?: string;
 }) {
   const rootRef = useRef<HTMLElement>(null);
+  const { targetWidth } = useAdaptiveMedia();
 
   useEffect(() => {
     const root = rootRef.current;
@@ -163,7 +182,7 @@ export default function CinematicParallaxHero({
         data-parallax-layer="environment"
         className="absolute inset-0 will-change-transform [filter:contrast(1.07)_saturate(0.88)_brightness(0.96)]"
       >
-        <LayerPlate layer={HERO_LAYERS[1]} />
+        <LayerPlate layer={HERO_LAYERS[1]} targetWidth={targetWidth} />
       </div>
 
       {/* 1 — Atmosphere. Sits above the environment because haze is between
@@ -173,7 +192,7 @@ export default function CinematicParallaxHero({
         data-parallax-layer="atmosphere"
         className="absolute inset-0 scale-110 will-change-transform"
       >
-        <LayerPlate layer={HERO_LAYERS[0]} />
+        <LayerPlate layer={HERO_LAYERS[0]} targetWidth={targetWidth} />
       </div>
 
       {/* ── Cinematic treatment stack, bottom to top ──
@@ -278,7 +297,7 @@ export default function CinematicParallaxHero({
         data-parallax-layer="foreground"
         className="pointer-events-none absolute inset-0 z-20 scale-110 will-change-transform"
       >
-        <LayerPlate layer={HERO_LAYERS[2]} />
+        <LayerPlate layer={HERO_LAYERS[2]} targetWidth={targetWidth} />
       </div>
 
       {/* Sourcing status — visible only while plates are unconnected */}

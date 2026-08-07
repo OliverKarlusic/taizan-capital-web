@@ -48,3 +48,8 @@ public/media/hero/*.mp4
 
 # production build output (kept separate from the dev server cache)
 /.next-build/
+
+# encoded renditions are build output, regenerate with scripts/encode-media.mjs
+public/media/hero/*-854.mp4
+public/media/hero/*-1280.mp4
+public/media/hero/*-1920.mp4

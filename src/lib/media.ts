@@ -148,8 +148,12 @@ export interface HeroLayer {
   travel: number;
   /** Still image (webp/avif) under /public, or null while unsourced. */
   src: string | null;
-  /** Optional video for this plane; takes precedence over `src`. */
-  video: { src: string; type: string }[] | null;
+  /**
+   * Rendition ladder for this plane; takes precedence over `src`.
+   * Each entry carries its intrinsic width so the right tier can be chosen
+   * at runtime. Codec pairs share a width and travel together.
+   */
+  video: VideoRendition[] | null;
   /** Poster for the video plane. */
   poster: string | null;
   /** Exactly what real asset belongs here. */
@@ -187,7 +191,14 @@ export const HERO_LAYERS: HeroLayer[] = [
     //   mask    confines it to the lower band where the cloud sea already
     //           sits, so it reads as depth *between viewer and mountain*
     //           and leaves the summit and sky untouched.
-    video: [{ src: "/media/hero/mist-overlay.mp4", type: "video/mp4" }],
+    // Full ladder: mobile pulls 1.6 MB instead of the 62 MB master, and
+    // keeps the identical blend, opacity, filter and mask. The layer is
+    // never dropped on small screens — only the file changes.
+    video: [
+      { src: "/media/hero/mist-overlay-854.mp4", type: "video/mp4", width: 854 },
+      { src: "/media/hero/mist-overlay-1280.mp4", type: "video/mp4", width: 1280 },
+      { src: "/media/hero/mist-overlay-1920.mp4", type: "video/mp4", width: 1920 },
+    ],
     poster: null,
     blend: "screen",
     opacity: 0.22,
@@ -202,10 +213,13 @@ export const HERO_LAYERS: HeroLayer[] = [
     travel: 22,
     // Real licensed hero footage. This is the primary visual — not a
     // placeholder, and never to be swapped for generated imagery.
+    // Ladder is appended by scripts/encode-media.mjs; the 3840 master stays
+    // listed as the top rung so the plane never has zero playable sources.
     video: [
       {
         src: "/media/hero/taizan-hero.mp4",
         type: "video/mp4",
+        width: 3840,
       },
     ],
     src: null,
@@ -246,15 +260,26 @@ export function hasFootage(scene: FilmScene): boolean {
  * does) and returns every rendition at that width — WebM/MP4 codec pairs
  * share a width and must travel together for <source> fallback to work.
  */
-export function selectRenditions(
-  scene: FilmScene,
+export function pickRenditions(
+  renditions: VideoRendition[],
   displayWidth: number,
 ): VideoRendition[] {
-  if (!scene.renditions.length) return [];
-  const widths = [...new Set(scene.renditions.map((r) => r.width))].sort(
+  if (!renditions.length) return [];
+  const widths = [...new Set(renditions.map((r) => r.width))].sort(
     (a, b) => a - b,
   );
   const target =
     widths.find((w) => w >= displayWidth) ?? widths[widths.length - 1];
-  return scene.renditions.filter((r) => r.width === target);
+  // WebM first: browsers take the first <source> they can play, and VP9 is
+  // roughly 30% smaller than the H.264 at the same tier.
+  return renditions
+    .filter((r) => r.width === target)
+    .sort((a) => (a.type.includes("webm") ? -1 : 1));
+}
+
+export function selectRenditions(
+  scene: FilmScene,
+  displayWidth: number,
+): VideoRendition[] {
+  return pickRenditions(scene.renditions, displayWidth);
 }
