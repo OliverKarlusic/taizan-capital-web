@@ -67,7 +67,13 @@ export interface FilmScene {
   requirement: FootageRequirement;
 }
 
-export type SceneId = "fuji" | "forest" | "river";
+/**
+ * Scenes owned by the film stage. Fuji is not one: it belongs to the hero
+ * stage, and having it in this union let sections declare data-scene="fuji"
+ * and type-check against a scene that does not exist — which is how the
+ * blank Mountain section shipped.
+ */
+export type SceneId = "forest" | "river";
 
 /**
  * Scenes rendered by FilmStage behind the editorial chapters.
@@ -209,14 +215,14 @@ export const HERO_LAYERS: HeroLayer[] = [
     travel: 22,
     // Real licensed hero footage. This is the primary visual — not a
     // placeholder, and never to be swapped for generated imagery.
-    // Ladder is appended by scripts/encode-media.mjs; the 3840 master stays
-    // listed as the top rung so the plane never has zero playable sources.
+    // The 4K master is NOT listed. It was being served to every visitor at
+    // 44 MB — the single worst performance decision in the build. The ladder
+    // covers every real display width; the master stays on disk as the
+    // source the pipeline re-encodes from.
     video: [
-      {
-        src: "/media/hero/taizan-hero.mp4",
-        type: "video/mp4",
-        width: 3840,
-      },
+      { src: "/media/hero/taizan-hero-854.mp4", type: "video/mp4", width: 854 },
+      { src: "/media/hero/taizan-hero-1280.mp4", type: "video/mp4", width: 1280 },
+      { src: "/media/hero/taizan-hero-1920.mp4", type: "video/mp4", width: 1920 },
     ],
     src: null,
     poster: "/media/hero/hero-poster.jpg",
