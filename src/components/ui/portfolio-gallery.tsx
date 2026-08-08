@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import { CONVICTIONS, type Conviction } from "@/lib/portfolio";
 import { mediaUrl } from "@/lib/media";
 
@@ -108,6 +109,15 @@ function Card({ c, front }: { c: Conviction; front: boolean }) {
             <p className="mt-3 text-[0.72rem] font-light leading-[1.7] text-stone">
               {c.purpose}
             </p>
+            <Link
+              href={`/portfolios/${c.slug}`}
+              tabIndex={front ? 0 : -1}
+              aria-hidden={!front}
+              className="mt-5 inline-flex items-center gap-2 border-b border-gold/50 pb-1 text-[0.6rem] uppercase tracking-[0.28em] text-gold transition-colors duration-500 hover:border-gold hover:text-gold-bright"
+            >
+              See more
+              <span aria-hidden="true">&rarr;</span>
+            </Link>
           </div>
         </div>
       </figcaption>

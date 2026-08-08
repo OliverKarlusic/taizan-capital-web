@@ -18,7 +18,7 @@ const LEADERSHIP = [
   {
     name: "Oliver Karlusic",
     role: "Managing Director",
-    line: "Leads investment research and portfolio construction at Taizan Capital.",
+    line: "Oliver Karlusic holds a Bachelor of Business, majoring in Finance and Economics, and works in corporate finance. His investment approach is grounded in long-term fundamental analysis, with a focus on understanding businesses through changing economic cycles. He currently manages over $60,000 in AUM.",
     image: "/media/brand/profile-md.webp",
     image2x: "/media/brand/profile-md@2x.webp",
   },
@@ -126,7 +126,7 @@ export default function About() {
                       <p className="mt-2 text-[0.65rem] uppercase tracking-[0.2em] text-gold">
                         {person.role}
                       </p>
-                      <p className="mt-4 max-w-xl text-sm font-light leading-relaxed text-stone">
+                      <p className="mt-4 max-w-[46ch] text-[0.82rem] font-light leading-[1.85] text-stone">
                         {person.line}
                       </p>
                     </figcaption>
