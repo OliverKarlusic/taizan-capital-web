@@ -2,6 +2,7 @@ import SmoothScroll from "@/components/animations/SmoothScroll";
 import Cursor from "@/components/ui/Cursor";
 import Navbar from "@/components/ui/Navbar";
 import CinematicParallaxHero from "@/components/ui/cinematic-parallax-hero";
+import Mandate from "@/components/sections/Mandate";
 import Philosophy from "@/components/sections/Philosophy";
 import Approach from "@/components/sections/Approach";
 import Portfolio from "@/components/sections/Portfolio";
@@ -22,7 +23,10 @@ export default function Home() {
             environment. */}
         <CinematicParallaxHero />
 
-        {/* Editorial chapters over solid ink */}
+        {/* The film ends; the argument begins. Mandate answers "what is
+            this firm" before Philosophy explains how it thinks — the site
+            previously assumed an answer it never gave. */}
+        <Mandate />
         <Philosophy />
         <Approach />
         <Portfolio />
