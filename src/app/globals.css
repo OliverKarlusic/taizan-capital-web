@@ -273,14 +273,20 @@ body {
 /* Opaque enough that editorial text scrolling underneath never reads
    through the bar, with or without backdrop-filter support. */
 .glass {
-  background: rgba(10, 10, 10, 0.82);
+  background: rgba(10, 10, 10, 0.93);
   backdrop-filter: blur(20px) saturate(1.15);
   -webkit-backdrop-filter: blur(20px) saturate(1.15);
   border-bottom: 1px solid rgba(244, 243, 238, 0.07);
 }
+/* The blur is an enhancement, never the thing carrying legibility.
+   @supports reports whether the browser PARSES backdrop-filter, not
+   whether it renders it — measured on this build, the query matched while
+   the computed value was `none`, leaving a 0.7 background with nothing
+   behind it and editorial copy reading straight through the bar. The
+   opaque base now stands alone and the blur only softens it further. */
 @supports (backdrop-filter: blur(1px)) {
   .glass {
-    background: rgba(10, 10, 10, 0.7);
+    background: rgba(10, 10, 10, 0.86);
   }
 }
 

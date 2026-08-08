@@ -70,16 +70,26 @@ function Wordmark({ compact }: { compact: boolean }) {
   );
 }
 
-export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
+/**
+ * `solid` pins the bar to its glass state permanently. The transparent
+ * state exists so the bar can sit over the cinematic hero on the home
+ * page; every other route opens on editorial content, and a transparent
+ * bar there just lets paragraphs scroll through the navigation.
+ */
+export default function Navbar({ solid = false }: { solid?: boolean }) {
+  const [scrolled, setScrolled] = useState(solid);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    if (solid) {
+      setScrolled(true);
+      return;
+    }
     const onScroll = () => setScrolled(window.scrollY > 40);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [solid]);
 
   useEffect(() => {
     document.documentElement.style.overflow = open ? "hidden" : "";
@@ -91,9 +101,11 @@ export default function Navbar() {
   return (
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-700 ${
-        scrolled
-          ? "glass py-4 lg:py-5"
-          : "bg-transparent pb-6 pt-6 lg:pb-8 lg:pt-11"
+        solid
+          ? "border-b border-paper/10 bg-ink py-4 lg:py-5"
+          : scrolled
+            ? "glass py-4 lg:py-5"
+            : "bg-transparent pb-6 pt-6 lg:pb-8 lg:pt-11"
       }`}
     >
       {/* Keeps the mark legible where the hero footage runs bright */}
