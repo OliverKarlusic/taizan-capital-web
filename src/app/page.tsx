@@ -8,6 +8,7 @@ import Approach from "@/components/sections/Approach";
 import Portfolio from "@/components/sections/Portfolio";
 import Insights from "@/components/sections/Insights";
 import About from "@/components/sections/About";
+import ClientJourney from "@/components/sections/ClientJourney";
 import Finale from "@/components/sections/Finale";
 import Footer from "@/components/sections/Footer";
 
@@ -32,6 +33,11 @@ export default function Home() {
         <Portfolio />
         <Insights />
         <About />
+
+        {/* What actually happens if you get in touch. Sits after About so
+            the visitor has read who the firm is before being asked to
+            start a relationship with it. */}
+        <ClientJourney />
 
         {/* Return to the mountain for the close */}
         <Finale />
