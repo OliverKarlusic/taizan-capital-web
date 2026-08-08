@@ -38,10 +38,10 @@ export default function Footer() {
               follow.
             </p>
             <a
-              href="mailto:enquiries@taizan.example"
+              href="mailto:olikarlusic@outlook.com"
               className="group mt-8 inline-flex items-center gap-2 text-sm text-gold transition-colors duration-500 hover:text-gold-bright"
             >
-              enquiries@taizan.example
+              olikarlusic@outlook.com
               <ArrowUpRight
                 size={15}
                 strokeWidth={1.5}
