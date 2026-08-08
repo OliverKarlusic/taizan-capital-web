@@ -42,7 +42,11 @@ const GAP = 34;
  *  push content past the frame on a narrow screen. Radius follows the card:
  *  cards sit shoulder to shoulder only when 2*pi*R = N*(W+gap). */
 function ringMetrics(vw: number) {
-  const w = Math.min(CARD_MAX, Math.max(240, vw - 72));
+  // Below ~640 the front card needs a wider gutter, not just "viewport
+  // minus a bit" — at 390 a 318px card leaves 36px each side and the
+  // neighbours crowd straight into it.
+  const gutter = vw < 640 ? 108 : 72;
+  const w = Math.min(CARD_MAX, Math.max(230, vw - gutter));
   return { w, radius: Math.round(((w + GAP) * 5) / (2 * Math.PI)) };
 }
 
@@ -132,9 +136,13 @@ export default function PortfolioGallery() {
   const angle = useRef({ value: 0 });
   const [active, setActive] = useState(0);
   const [metrics, setMetrics] = useState(() => ringMetrics(1440));
+  const [compact, setCompact] = useState(false);
 
   useEffect(() => {
-    const on = () => setMetrics(ringMetrics(window.innerWidth));
+    const on = () => {
+      setMetrics(ringMetrics(window.innerWidth));
+      setCompact(window.innerWidth < 640);
+    };
     on();
     window.addEventListener("resize", on);
     return () => window.removeEventListener("resize", on);
@@ -243,6 +251,74 @@ export default function PortfolioGallery() {
       window.removeEventListener("pointerup", up);
     };
   }, [reduced, render, rotateTo, step]);
+
+  /* A five-card ring cannot show its neighbours on a 390px screen without
+     cutting them: at that width the off-axis plates land inside the frame
+     mid-word, which reads as a broken layout rather than as depth. Masking
+     the edges does not work either — a mask creates a containing context
+     that breaks preserve-3d, so the fade never renders.
+
+     Below 640 the ring becomes a single plate with the same controls. The
+     visitor still steps through five strategies with the same arrows,
+     hairlines and arrow keys; they simply see one at a time, which is what
+     the width allows. */
+  if (compact && !reduced) {
+    return (
+      <div className="select-none px-6">
+        <div
+          role="group"
+          aria-roledescription="carousel"
+          aria-label="Investment convictions"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowRight") { e.preventDefault(); turn(1); }
+            if (e.key === "ArrowLeft") { e.preventDefault(); turn(-1); }
+          }}
+          className="h-[27rem] focus:outline-none focus-visible:ring-1 focus-visible:ring-gold focus-visible:ring-offset-4 focus-visible:ring-offset-ink"
+        >
+          <Card c={CONVICTIONS[active]} front />
+        </div>
+
+        <div className="mt-8 flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => turn(-1)}
+            aria-label="Previous conviction"
+            className="shrink-0 border border-paper/20 p-2.5 text-stone transition-colors duration-500 hover:border-gold hover:text-gold"
+          >
+            <ChevronLeft size={15} strokeWidth={1.5} />
+          </button>
+          <ul className="flex flex-1 items-center gap-2">
+            {CONVICTIONS.map((c, i) => (
+              <li key={c.slug} className="flex-1">
+                <button
+                  type="button"
+                  onClick={() => rotateTo(-i * step)}
+                  aria-label={`${c.index} — ${c.name}`}
+                  aria-current={i === active}
+                  className="group block w-full py-3"
+                >
+                  <span
+                    className={`block h-px w-full transition-colors duration-700 ${
+                      i === active ? "bg-gold" : "bg-paper/15"
+                    }`}
+                  />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            onClick={() => turn(1)}
+            aria-label="Next conviction"
+            className="shrink-0 border border-paper/20 p-2.5 text-stone transition-colors duration-500 hover:border-gold hover:text-gold"
+          >
+            <ChevronRight size={15} strokeWidth={1.5} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (reduced) {
     return (
