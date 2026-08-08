@@ -73,8 +73,14 @@ export default function Insights() {
 
           {/* The current position, stated as a fact rather than a table of
               dashes. When a quarter closes this becomes the figure. */}
-          <Reveal delay={0.15}>
-            <div className="border-t border-paper/12 pt-8 lg:col-span-5 lg:border-l lg:border-t-0 lg:pl-14 lg:pt-0">
+          {/* The column span belongs on the Reveal, not on the div inside
+              it. Reveal is the grid child; with the span one level too deep
+              this cell fell back to `auto` — 41px wide and 7346px tall,
+              which also put it permanently below Reveal's 0.18 visibility
+              threshold, so it never faded in. A tall invisible column reads
+              as a blank gap rather than as broken text. */}
+          <Reveal delay={0.15} className="lg:col-span-5">
+            <div className="h-full border-t border-paper/12 pt-8 lg:border-l lg:border-t-0 lg:pl-14 lg:pt-0">
               <p className="text-[0.62rem] uppercase tracking-[0.22em] text-stone">
                 {hasPerformance ? "Since inception" : "Track record"}
               </p>
