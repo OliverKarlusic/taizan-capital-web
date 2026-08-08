@@ -4,7 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import MagneticButton from "@/components/ui/MagneticButton";
 
 /**
- * What it is like to become a client.
+ * NOT CURRENTLY MOUNTED. See the note in src/app/page.tsx.
+ *
+ * This component is complete and unmodified. It is off the page because
+ * Taizan Capital holds no AFS licence and therefore cannot accept clients
+ * — and a five-stage funnel ending in "Book a Consultation" is the
+ * clearest possible attempt to induce someone to use a financial service.
+ * Nothing here needs rewriting. It needs a licence.
+ *
+ * ── What it is like to become a client.
  *
  * A prospective investor's real question after reading the strategies is
  * "what actually happens if I get in touch" — and the site previously

@@ -145,9 +145,9 @@ export default async function PortfolioPage({
                   ))}
                 </dl>
                 <p className="mt-6 text-[0.62rem] leading-relaxed text-stone-dim">
-                  Figures marked “coming soon” have not been established.
-                  Taizan Capital does not publish estimated, targeted or
-                  simulated figures.
+                  No figure here has been set or offered. Taizan Capital is
+                  not accepting external capital and does not publish
+                  estimated, targeted or simulated figures.
                 </p>
               </div>
             </aside>
@@ -214,7 +214,7 @@ export default async function PortfolioPage({
             {[
               { h: "Investment horizon", a: c.horizon, b: c.horizonNote },
               { h: "Asset universe", a: c.universeLabel, b: c.universe },
-              { h: "Who it is for", a: "Suitability", b: c.suitability },
+              { h: "Suitability", a: "Not for every investor", b: c.suitability },
             ].map((col) => (
               <div key={col.h} className="border-t border-paper/12 pt-6">
                 <h2 className="text-[0.62rem] uppercase tracking-[0.26em] text-gold">
@@ -258,7 +258,10 @@ export default async function PortfolioPage({
             <p className="mt-16 max-w-[80ch] text-[0.65rem] leading-relaxed tracking-wide text-stone-dim">
               Nothing on this page constitutes financial product advice, an
               offer, or a solicitation, and it does not take account of your
-              objectives, financial situation or needs. Taizan Capital&apos;s
+              objectives, financial situation or needs. Taizan Capital does
+              not hold an Australian Financial Services Licence and is not
+              accepting external clients or capital; this page describes an
+              investment approach and is not an offer of it. The firm&apos;s
               equity strategies are long-only and use no derivatives or
               leverage; its options strategy uses exchange-traded options
               and carries materially higher risk, including total loss of

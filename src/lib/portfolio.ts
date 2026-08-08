@@ -5,11 +5,11 @@
  * so a strategy cannot say one thing on its card and another on its page.
  *
  * ── On the numbers ──────────────────────────────────────────────────
- * The minimum investment is real and set by the firm. Every other figure
- * in `keyInfo` is a placeholder — no return, fee or yield here is one
- * anyone has agreed to. They are typed as strings precisely so "Coming
- * soon" and "2.4%" are the same shape: when real, verified figures exist
- * they replace the placeholder and nothing else changes.
+ * Every figure in `keyInfo` is a placeholder. Nothing here is a return, a
+ * fee, a yield or a minimum that anyone has agreed to. They are typed as
+ * strings precisely so "Coming soon" and "2.4%" are the same shape — when
+ * real, verified figures exist, they replace the placeholder and nothing
+ * else changes.
  *
  * Do not populate these from estimates, targets, or backtests. A number on
  * an asset manager's site is read as a commitment.
@@ -83,16 +83,17 @@ const PENDING = (label: string): KeyInfoRow => ({
 });
 
 /**
- * Minimum investment. Uniform across every strategy, so it lives here once
- * rather than being typed out six times — a minimum that varies by
- * portfolio should be a deliberate decision, not the result of six copies
- * drifting apart. Written in AUD explicitly because the strategies trade
- * US markets and a bare dollar sign would be ambiguous.
+ * The A$1,000 minimum was published here briefly and has been withdrawn.
+ *
+ * A stated minimum is what turns a description of a strategy into an offer
+ * available at a price, and A$1,000 in particular is an offer aimed
+ * squarely at retail clients — the most heavily regulated category under
+ * the Corporations Act. Taizan Capital is not licensed to make it.
+ *
+ * The figure itself is not the problem and can be restored the moment the
+ * firm is authorised to accept external capital. Until then this row stays
+ * pending, like every other figure here.
  */
-const MINIMUM: KeyInfoRow = {
-  label: "Minimum investment",
-  value: "A$1,000",
-};
 
 export const CONVICTIONS: Conviction[] = [
   /* ─────────────────────────────────────────────────────────────── 01 */
@@ -135,7 +136,7 @@ export const CONVICTIONS: Conviction[] = [
     keyInfo: [
       PENDING("Performance"),
       PENDING("Management fee"),
-      MINIMUM,
+      PENDING("Minimum investment"),
       { label: "Risk level", value: "Moderate to high" },
       { label: "Investment horizon", value: "7+ years" },
       { label: "Distributions", value: "Not an income strategy" },
@@ -187,7 +188,7 @@ export const CONVICTIONS: Conviction[] = [
       PENDING("Performance"),
       PENDING("Distribution yield"),
       PENDING("Management fee"),
-      MINIMUM,
+      PENDING("Minimum investment"),
       { label: "Risk level", value: "Moderate" },
       { label: "Investment horizon", value: "5+ years" },
     ],
@@ -214,7 +215,7 @@ export const CONVICTIONS: Conviction[] = [
     ],
     riskLevel: "High",
     riskNarrative:
-      "This is the highest-risk strategy Taizan Capital offers and it is not suitable for every investor. Higher-growth equities fall further and faster than the broad market in a downturn, and declines of a third or more from peak are a normal feature of this kind of portfolio rather than a failure of it. An investor who would sell during such a decline should not be in this strategy.",
+      "This is the highest-risk of the equity strategies and it is not suitable for every investor. Higher-growth equities fall further and faster than the broad market in a downturn, and declines of a third or more from peak are a normal feature of this kind of portfolio rather than a failure of it. An investor who would sell during such a decline should not be in this strategy.",
     riskFactors: [
       ...EQUITY_RISK,
       {
@@ -241,7 +242,7 @@ export const CONVICTIONS: Conviction[] = [
     keyInfo: [
       PENDING("Performance"),
       PENDING("Management fee"),
-      MINIMUM,
+      PENDING("Minimum investment"),
       { label: "Risk level", value: "High" },
       { label: "Investment horizon", value: "10+ years" },
       { label: "Distributions", value: "Not an income strategy" },
@@ -296,7 +297,7 @@ export const CONVICTIONS: Conviction[] = [
     keyInfo: [
       PENDING("Performance"),
       PENDING("Management fee"),
-      MINIMUM,
+      PENDING("Minimum investment"),
       { label: "Risk level", value: "Moderate to high" },
       { label: "Investment horizon", value: "3–7 years" },
       { label: "Intended use", value: "Complement to a core holding" },
@@ -351,7 +352,7 @@ export const CONVICTIONS: Conviction[] = [
     keyInfo: [
       PENDING("Performance"),
       PENDING("Management fee"),
-      MINIMUM,
+      PENDING("Minimum investment"),
       { label: "Risk level", value: "Moderate to high" },
       { label: "Investment horizon", value: "7+ years" },
       { label: "Screening", value: "Financial quality and activity" },
@@ -379,7 +380,7 @@ export const CONVICTIONS: Conviction[] = [
     ],
     riskLevel: "Very high",
     riskNarrative:
-      "This is by a substantial margin the highest-risk strategy Taizan Capital offers, and it carries risks the equity strategies do not. An option is a wasting asset: it can lose its entire value while the underlying business is unharmed, simply because time ran out. Total loss of the amount committed to a position is a normal outcome here rather than a tail event, and any investor who could not absorb that repeatedly should not be in this strategy. It is not suitable for most investors, and it is not suitable for capital that has any other purpose.",
+      "This is by a substantial margin the highest-risk strategy Taizan Capital runs, and it carries risks the equity strategies do not. An option is a wasting asset: it can lose its entire value while the underlying business is unharmed, simply because time ran out. Total loss of the amount committed to a position is a normal outcome here rather than a tail event, and any investor who could not absorb that repeatedly should not be in this strategy. It is not suitable for most investors, and it is not suitable for capital that has any other purpose.",
     riskFactors: [
       {
         name: "Total loss of premium",
@@ -417,7 +418,7 @@ export const CONVICTIONS: Conviction[] = [
     keyInfo: [
       PENDING("Performance"),
       PENDING("Management fee"),
-      MINIMUM,
+      PENDING("Minimum investment"),
       { label: "Risk level", value: "Very high" },
       { label: "Investment horizon", value: "Position-specific" },
       { label: "Suitability", value: "Experienced investors only" },

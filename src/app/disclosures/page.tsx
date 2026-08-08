@@ -6,6 +6,7 @@ import {
   DOCUMENTS,
   IS_LICENSED,
   REGISTRY,
+  STATUS_LONG,
   type RegistryField,
 } from "@/lib/compliance";
 
@@ -63,11 +64,7 @@ export default function DisclosuresPage() {
           {!IS_LICENSED ? (
             <div className="mt-12 border-l-2 border-gold/50 py-2 pl-7">
               <p className="max-w-[64ch] text-[0.95rem] font-light leading-[1.95] text-paper-dim">
-                Taizan Capital does not currently hold an Australian
-                Financial Services Licence and is not yet authorised to
-                provide financial services. Nothing on this website is an
-                offer of a financial product, a recommendation, or financial
-                product advice.
+                {STATUS_LONG}
               </p>
               <p className="mt-5 max-w-[64ch] text-[0.85rem] font-light leading-[1.9] text-stone">
                 The register below sets out the details that will be

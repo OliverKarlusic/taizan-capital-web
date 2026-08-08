@@ -32,6 +32,31 @@
  * wrote it, can answer.
  */
 
+/**
+ * The firm's trading status, in the one place it is written.
+ *
+ * Taizan Capital holds no AFS licence, so it cannot accept external
+ * clients or capital. Under s911A of the Corporations Act, carrying on a
+ * financial services business without one is an offence, and s911D treats
+ * inducing — or attempting to induce — people in Australia to use those
+ * services as carrying on that business here. A website that named a
+ * minimum investment and ran visitors toward a consultation booking was
+ * an attempt to induce, however carefully the surrounding copy was worded.
+ *
+ * So the site states the position rather than implying it. This is not a
+ * disclaimer bolted onto a sales page: the sales page is gone, and these
+ * sentences describe what is actually true.
+ */
+export const IS_OPEN_FOR_BUSINESS = false;
+
+/** One sentence. Used where space is tight. */
+export const STATUS_SHORT =
+  "Taizan Capital is not currently accepting external clients or capital.";
+
+/** The full position. Used wherever the visitor has room to read it. */
+export const STATUS_LONG =
+  "Taizan Capital does not hold an Australian Financial Services Licence and is not currently accepting external clients or capital. This website sets out the investment philosophy and strategies of its principal and is published for information only. Nothing on it is an offer, a recommendation, an invitation to invest, or financial product advice.";
+
 export interface RegistryField {
   label: string;
   /** Real, verifiable value only. Null until one exists. */

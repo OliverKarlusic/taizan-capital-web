@@ -8,7 +8,6 @@ import Approach from "@/components/sections/Approach";
 import Portfolio from "@/components/sections/Portfolio";
 import Insights from "@/components/sections/Insights";
 import About from "@/components/sections/About";
-import ClientJourney from "@/components/sections/ClientJourney";
 import Finale from "@/components/sections/Finale";
 import Footer from "@/components/sections/Footer";
 
@@ -34,10 +33,16 @@ export default function Home() {
         <Insights />
         <About />
 
-        {/* What actually happens if you get in touch. Sits after About so
-            the visitor has read who the firm is before being asked to
-            start a relationship with it. */}
-        <ClientJourney />
+        {/* ClientJourney is deliberately not mounted.
+            src/components/sections/ClientJourney.tsx is intact and unchanged.
+
+            It is a five-stage onboarding funnel opening on a free
+            consultation and closing on "Book a Consultation" — the most
+            offer-shaped thing on the site, and the part that most clearly
+            attempts to induce someone to use a financial service the firm
+            is not licensed to provide. Restoring it is one import and one
+            line, and that is the right moment: once Taizan Capital holds a
+            licence, or is authorised under someone else's. Not before. */}
 
         {/* Return to the mountain for the close */}
         <Finale />

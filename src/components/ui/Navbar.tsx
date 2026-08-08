@@ -122,7 +122,7 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
       >
         <Wordmark compact={scrolled} />
 
-        {/* Six links plus the contact button need 673px, which does not
+        {/* Six links plus the disclosures button need 673px, which does not
             clear the wordmark until ~1080px — so the bar switches to the
             overlay menu below that rather than at Tailwind's lg (1024px).
             The affected band is narrow, and iPad landscape lands in it and
@@ -141,10 +141,10 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
           ))}
           <li>
             <a
-              href="#contact"
+              href="/disclosures"
               className="border border-gold/50 px-4 py-3 text-[0.68rem] font-medium uppercase tracking-[0.24em] text-gold transition-all duration-500 hover:bg-gold hover:text-ink xl:px-7"
             >
-              Contact
+              Disclosures
             </a>
           </li>
         </ul>
@@ -190,11 +190,11 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
             }`}
           >
             <a
-              href="#contact"
+              href="/disclosures"
               onClick={() => setOpen(false)}
               className="inline-block border border-gold/50 px-8 py-3 text-[0.72rem] uppercase tracking-[0.24em] text-gold"
             >
-              Contact
+              Disclosures
             </a>
           </li>
         </ul>

@@ -1,4 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
+import { STATUS_LONG } from "@/lib/compliance";
 
 export default function Footer() {
   return (
@@ -86,8 +87,7 @@ export default function Footer() {
 
         <div className="mt-20 border-t border-paper/10 pt-10">
           <p className="mb-6 text-[0.65rem] leading-[1.9] tracking-wide text-stone-dim">
-            Taizan Capital does not currently hold an Australian Financial
-            Services Licence.{" "}
+            {STATUS_LONG}{" "}
             <a
               href="/disclosures"
               className="text-gold underline-offset-4 hover:underline"
@@ -96,12 +96,11 @@ export default function Footer() {
             </a>
           </p>
           <p className="text-[0.65rem] leading-[1.9] tracking-wide text-stone-dim">
-            Nothing on this page constitutes financial product advice, an
-            offer, or a solicitation of any kind, and it does not take account
-            of your objectives, financial situation or needs. Taizan Capital
-            does not currently publish performance data; portfolio mandates
-            describe investment approach only. Investing carries risk,
-            including loss of capital.
+            Taizan Capital does not publish performance data; the strategy
+            pages describe investment approach only, and no minimum, fee or
+            return has been set or offered. Nothing here takes account of
+            your objectives, financial situation or needs. Investing carries
+            risk, including loss of capital.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
             <p className="text-[0.65rem] tracking-[0.2em] text-stone-dim">

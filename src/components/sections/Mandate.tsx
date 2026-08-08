@@ -1,4 +1,5 @@
 import Reveal from "@/components/animations/Reveal";
+import { STATUS_LONG } from "@/lib/compliance";
 
 /**
  * What Taizan Capital actually is.
@@ -17,6 +18,12 @@ import Reveal from "@/components/animations/Reveal";
  *
  * Nothing here is a claim about outcomes. It describes what the firm does,
  * not what it achieves.
+ *
+ * The status notice leads the section rather than sitting in the footer.
+ * A visitor should learn the firm is not open for business before reading
+ * six strategies, not after — buried disclosure that contradicts the
+ * impression the page has already created is the pattern regulators treat
+ * as misleading regardless of what the small print says.
  */
 
 const PROCESS = [
@@ -46,6 +53,12 @@ export default function Mandate() {
       className="relative z-10 scroll-mt-28 bg-ink pb-24 pt-24 sm:pb-32 sm:pt-28"
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
+        <Reveal>
+          <p className="mx-auto mb-20 max-w-[74ch] border-l-2 border-gold/40 py-1 pl-6 text-left text-[0.78rem] font-light leading-[1.9] text-stone">
+            {STATUS_LONG}
+          </p>
+        </Reveal>
+
         <div className="mx-auto max-w-3xl text-center">
           <Reveal>
             {/* Unnumbered on purpose. The film already owns 01-03 for its
@@ -77,8 +90,7 @@ export default function Mandate() {
               Five of our six strategies are long-only equity mandates that
               use no derivatives and no leverage. The sixth expresses
               directional views through exchange-traded options, carries
-              materially higher risk, and is offered separately for
-              experienced investors.
+              materially higher risk, and is run as a separate mandate.
             </p>
           </Reveal>
         </div>

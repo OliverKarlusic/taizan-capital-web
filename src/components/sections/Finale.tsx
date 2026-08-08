@@ -2,11 +2,15 @@
 
 import SplitText from "@/components/animations/SplitText";
 import Reveal from "@/components/animations/Reveal";
-import MagneticButton from "@/components/ui/MagneticButton";
 
 /**
  * The closing scene — the page returns to the 3D environment as the sun
  * rises over the mountain horizon.
+ *
+ * It used to close on "Begin the Conversation". The scene survives; the
+ * call to action does not. The site now ends by saying what it is — a
+ * philosophy written down while the firm is being built — rather than
+ * asking the visitor to act on it.
  */
 export default function Finale() {
   return (
@@ -39,16 +43,10 @@ export default function Finale() {
         </h2>
         <Reveal delay={0.3}>
           <p className="mx-auto mt-8 max-w-xl text-sm font-light leading-[1.9] text-paper-dim sm:text-base">
-            When you are ready to think in generations, we are ready to
-            listen. Conversations begin quietly, and without obligation.
+            Taizan Capital is being built the same way it intends to invest
+            — slowly, and without shortcuts. What is written here is the
+            thinking it is being built on.
           </p>
-        </Reveal>
-        <Reveal delay={0.5}>
-          <div className="mt-12">
-            <MagneticButton href="#contact">
-              Begin the Conversation
-            </MagneticButton>
-          </div>
         </Reveal>
       </div>
     </section>
