@@ -1,7 +1,6 @@
 "use client";
 
 import Reveal from "@/components/animations/Reveal";
-import { CycleChart } from "@/components/charts/lazy";
 import { ArrowUpRight } from "lucide-react";
 
 const ARTICLES = [
@@ -65,9 +64,47 @@ export default function Insights() {
         </div>
 
         <div className="mt-16 grid grid-cols-1 gap-10 lg:grid-cols-12">
-          {/* Featured research panel */}
+          {/* This panel held a "composite market-sentiment oscillator
+              across three full cycles" — 48 synthetic quarters labelled
+              from Q1'14, invented market history presented as observed
+              data. Removed. What stands here instead is the reporting
+              architecture, stated honestly: the shape of what will be
+              published, with nothing published yet. */}
           <Reveal className="lg:col-span-7" delay={0.1}>
-            <CycleChart />
+            <div className="h-full border border-paper/10 bg-ink-soft p-8 sm:p-10">
+              <h3 className="text-[0.65rem] uppercase tracking-[0.28em] text-gold">
+                Reporting
+              </h3>
+              <p className="mt-6 max-w-[52ch] text-[0.95rem] font-light leading-[1.95] text-paper-dim">
+                Taizan Capital intends to report quarterly. Each report will
+                cover portfolio positioning, the reasoning behind material
+                changes, and performance measured against a stated
+                benchmark.
+              </p>
+              <ul className="mt-10 space-y-0">
+                {[
+                  ["Quarterly report", "Positioning, changes and commentary"],
+                  ["Performance", "Measured, disclosed and benchmarked"],
+                  ["Portfolio commentary", "What changed, and why"],
+                  ["Market observations", "Written when there is something to say"],
+                ].map(([t, d]) => (
+                  <li
+                    key={t}
+                    className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1 border-t border-paper/10 py-4"
+                  >
+                    <span className="text-[0.88rem] text-paper">{t}</span>
+                    <span className="text-[0.75rem] font-light text-stone">
+                      {d}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-8 border-t border-paper/10 pt-6 max-w-[52ch] text-[0.65rem] leading-relaxed text-stone-dim">
+                No reports have been published. The first will follow the
+                fund&apos;s first full quarter. Taizan Capital does not
+                publish estimated, targeted or simulated figures.
+              </p>
+            </div>
           </Reveal>
 
           <div className="flex flex-col lg:col-span-5">

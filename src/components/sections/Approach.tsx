@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Reveal from "@/components/animations/Reveal";
-import { AllocationChart, GrowthChart } from "@/components/charts/lazy";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -130,12 +129,65 @@ export default function Approach() {
             </div>
           </div>
 
-          <div className="space-y-10 lg:col-span-7">
+          {/* This column held two charts: a 20-year "growth of 100"
+              comparison showing Taizan outperforming the market, and an
+              allocation breakdown across bonds, real assets, private
+              markets and commodities.
+
+              Both were removed. The first depicted a track record for a
+              firm founded in 2026 — an "illustrative" label underneath does
+              not undo the shape of a rising line, and a reader takes the
+              line first. The second contradicted the mandate three sections
+              above it: Taizan is a long-only equity manager and holds none
+              of those asset classes.
+
+              What replaces them is the universe itself, stated plainly.
+              Nothing here is a number the firm cannot stand behind. */}
+          <div className="lg:col-span-7">
             <Reveal delay={0.15}>
-              <AllocationChart />
+              <div className="border border-paper/10 bg-ink-soft p-8 sm:p-10">
+                <h3 className="text-[0.65rem] uppercase tracking-[0.28em] text-gold">
+                  Investment universe
+                </h3>
+                <p className="mt-6 max-w-[54ch] text-[0.95rem] font-light leading-[1.95] text-paper-dim">
+                  Long-only listed equities. No short selling, no
+                  derivatives, no leverage, and no asset classes outside
+                  listed equity.
+                </p>
+
+                <dl className="mt-10 space-y-0">
+                  {[
+                    ["ASX", "Australian listed equities"],
+                    ["NYSE", "United States listed equities"],
+                    ["Nasdaq", "United States listed equities"],
+                  ].map(([mkt, desc]) => (
+                    <div
+                      key={mkt}
+                      className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1 border-t border-paper/10 py-5"
+                    >
+                      <dt className="font-serif text-2xl text-paper">{mkt}</dt>
+                      <dd className="text-[0.8rem] font-light text-stone">
+                        {desc}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+
+                <p className="mt-10 border-t border-paper/10 pt-8 max-w-[54ch] font-serif text-lg italic leading-relaxed text-stone">
+                  Preserve capital first. Compound it second. Never confuse
+                  the order.
+                </p>
+              </div>
             </Reveal>
+
             <Reveal delay={0.25}>
-              <GrowthChart />
+              <p className="mt-8 max-w-[62ch] text-[0.65rem] leading-relaxed tracking-wide text-stone-dim">
+                Taizan Capital does not publish performance data. No returns,
+                benchmarks or track record are shown anywhere on this site,
+                and none should be inferred. Verified figures will be
+                reported once a record exists, with the disclosures that must
+                accompany them.
+              </p>
             </Reveal>
           </div>
         </div>
