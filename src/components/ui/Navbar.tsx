@@ -42,7 +42,7 @@ function Wordmark({ compact }: { compact: boolean }) {
           decoding="async"
           fetchPriority="high"
           className={`w-auto transition-[height] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-            compact ? "h-11 lg:h-14" : "h-14 lg:h-16 xl:h-20"
+            compact ? "h-11 lg:h-14" : "h-14 xl:h-20"
           }`}
         />
       </picture>
@@ -51,7 +51,7 @@ function Wordmark({ compact }: { compact: boolean }) {
         className={`font-serif text-paper transition-[font-size,letter-spacing] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           compact
             ? "text-[1.4rem] tracking-[0.2em] lg:text-[1.9rem]"
-            : "text-[1.65rem] tracking-[0.22em] lg:text-[2.1rem] xl:text-[2.6rem]"
+            : "text-[1.65rem] tracking-[0.22em] lg:text-[1.9rem] xl:text-[2.6rem]"
         }`}
       >
         TAIZAN
@@ -60,7 +60,7 @@ function Wordmark({ compact }: { compact: boolean }) {
         className={`mt-2 text-gold transition-[font-size,opacity] duration-700 ${
           compact
             ? "text-[0.48rem] tracking-[0.36em] lg:text-[0.58rem]"
-            : "text-[0.52rem] tracking-[0.4em] lg:text-[0.6rem] xl:text-[0.68rem]"
+            : "text-[0.52rem] tracking-[0.4em] lg:text-[0.56rem] lg:tracking-[0.32em] xl:text-[0.68rem] xl:tracking-[0.4em]"
         }`}
       >
         泰山資本 · CAPITAL
@@ -110,12 +110,13 @@ export default function Navbar() {
       >
         <Wordmark compact={scrolled} />
 
-        {/* Six links plus the contact button is the most this bar can carry.
-            At exactly 1024px the set clears the wordmark by ~40px; the gap
-            and the button's padding both open back up at xl, where there is
-            room. Adding a seventh link would require dropping to the mobile
-            menu at a wider breakpoint. */}
-        <ul className="hidden items-center gap-5 lg:flex xl:gap-10">
+        {/* Six links plus the contact button need 673px, which does not
+            clear the wordmark until ~1080px — so the bar switches to the
+            overlay menu below that rather than at Tailwind's lg (1024px).
+            The affected band is narrow, and iPad landscape lands in it and
+            gets the overlay, which is the better presentation there anyway.
+            Gap and button padding open back up at xl. */}
+        <ul className="hidden items-center gap-4 min-[1080px]:flex xl:gap-10">
           {LINKS.map((l) => (
             <li key={l.href}>
               <a
@@ -129,7 +130,7 @@ export default function Navbar() {
           <li>
             <a
               href="#contact"
-              className="border border-gold/50 px-5 py-3 text-[0.68rem] font-medium uppercase tracking-[0.24em] text-gold transition-all duration-500 hover:bg-gold hover:text-ink xl:px-7"
+              className="border border-gold/50 px-4 py-3 text-[0.68rem] font-medium uppercase tracking-[0.24em] text-gold transition-all duration-500 hover:bg-gold hover:text-ink xl:px-7"
             >
               Contact
             </a>
@@ -138,7 +139,7 @@ export default function Navbar() {
 
         <button
           type="button"
-          className="text-paper lg:hidden"
+          className="text-paper min-[1080px]:hidden"
           aria-expanded={open}
           aria-label={open ? "Close menu" : "Open menu"}
           onClick={() => setOpen((v) => !v)}
@@ -149,7 +150,7 @@ export default function Navbar() {
 
       {/* Mobile overlay */}
       <div
-        className={`fixed inset-0 top-0 -z-10 flex flex-col justify-center bg-ink/[0.97] px-8 backdrop-blur-xl transition-opacity duration-500 lg:hidden ${
+        className={`fixed inset-0 top-0 -z-10 flex flex-col justify-center bg-ink/[0.97] px-8 backdrop-blur-xl transition-opacity duration-500 min-[1080px]:hidden ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
