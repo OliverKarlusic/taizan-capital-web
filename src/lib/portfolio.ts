@@ -1,15 +1,15 @@
 /**
- * The five investment strategies — card copy and full detail content.
+ * The six investment strategies — card copy and full detail content.
  *
  * One source of truth for both the circular gallery and the detail pages,
  * so a strategy cannot say one thing on its card and another on its page.
  *
  * ── On the numbers ──────────────────────────────────────────────────
- * Every figure in `keyInfo` is a placeholder. Nothing here is a return, a
- * fee, a yield or a minimum that anyone has agreed to. They are typed as
- * strings precisely so "Coming soon" and "2.4%" are the same shape — when
- * real, verified figures exist, they replace the placeholder and nothing
- * else changes.
+ * The minimum investment is real and set by the firm. Every other figure
+ * in `keyInfo` is a placeholder — no return, fee or yield here is one
+ * anyone has agreed to. They are typed as strings precisely so "Coming
+ * soon" and "2.4%" are the same shape: when real, verified figures exist
+ * they replace the placeholder and nothing else changes.
  *
  * Do not populate these from estimates, targets, or backtests. A number on
  * an asset manager's site is read as a commitment.
@@ -49,6 +49,8 @@ export interface Conviction {
   riskFactors: { name: string; body: string }[];
   horizon: string;
   horizonNote: string;
+  /** Short display label for the universe, e.g. "Long-only listed equities". */
+  universeLabel: string;
   universe: string;
   suitability: string;
   keyInfo: KeyInfoRow[];
@@ -79,6 +81,18 @@ const PENDING = (label: string): KeyInfoRow => ({
   value: "Coming soon",
   pending: true,
 });
+
+/**
+ * Minimum investment. Uniform across every strategy, so it lives here once
+ * rather than being typed out six times — a minimum that varies by
+ * portfolio should be a deliberate decision, not the result of six copies
+ * drifting apart. Written in AUD explicitly because the strategies trade
+ * US markets and a bare dollar sign would be ambiguous.
+ */
+const MINIMUM: KeyInfoRow = {
+  label: "Minimum investment",
+  value: "A$1,000",
+};
 
 export const CONVICTIONS: Conviction[] = [
   /* ─────────────────────────────────────────────────────────────── 01 */
@@ -113,6 +127,7 @@ export const CONVICTIONS: Conviction[] = [
     horizon: "Seven years or longer",
     horizonNote:
       "The strategy assumes an investor who will not need the capital during a market decline. Shorter horizons expose the investor to the market's timing rather than the businesses' progress.",
+    universeLabel: "Long-only listed equities",
     universe:
       "Long-only listed equities across the ASX, NYSE and Nasdaq. This strategy uses no derivatives and no leverage.",
     suitability:
@@ -120,7 +135,7 @@ export const CONVICTIONS: Conviction[] = [
     keyInfo: [
       PENDING("Performance"),
       PENDING("Management fee"),
-      PENDING("Minimum investment"),
+      MINIMUM,
       { label: "Risk level", value: "Moderate to high" },
       { label: "Investment horizon", value: "7+ years" },
       { label: "Distributions", value: "Not an income strategy" },
@@ -163,6 +178,7 @@ export const CONVICTIONS: Conviction[] = [
     horizon: "Five years or longer",
     horizonNote:
       "Income can be drawn earlier, but the capital producing it still requires time to withstand equity market cycles.",
+    universeLabel: "Long-only listed equities",
     universe:
       "Long-only listed equities across the ASX, NYSE and Nasdaq, weighted toward established dividend-paying businesses.",
     suitability:
@@ -171,7 +187,7 @@ export const CONVICTIONS: Conviction[] = [
       PENDING("Performance"),
       PENDING("Distribution yield"),
       PENDING("Management fee"),
-      PENDING("Minimum investment"),
+      MINIMUM,
       { label: "Risk level", value: "Moderate" },
       { label: "Investment horizon", value: "5+ years" },
     ],
@@ -217,6 +233,7 @@ export const CONVICTIONS: Conviction[] = [
     horizon: "Ten years or longer",
     horizonNote:
       "The longest horizon of any Taizan strategy. Volatility of this magnitude requires time to be a rational thing to accept.",
+    universeLabel: "Long-only listed equities",
     universe:
       "Long-only listed equities across the ASX, NYSE and Nasdaq, weighted toward higher-growth businesses. This strategy uses no derivatives and no leverage.",
     suitability:
@@ -224,7 +241,7 @@ export const CONVICTIONS: Conviction[] = [
     keyInfo: [
       PENDING("Performance"),
       PENDING("Management fee"),
-      PENDING("Minimum investment"),
+      MINIMUM,
       { label: "Risk level", value: "High" },
       { label: "Investment horizon", value: "10+ years" },
       { label: "Distributions", value: "Not an income strategy" },
@@ -271,6 +288,7 @@ export const CONVICTIONS: Conviction[] = [
     horizon: "Three to seven years",
     horizonNote:
       "Shorter than the core strategies, because satellite positions are held against a thesis with a resolution rather than indefinitely.",
+    universeLabel: "Long-only listed equities",
     universe:
       "Long-only listed equities across the ASX, NYSE and Nasdaq. Intended to sit alongside a core holding rather than replace one.",
     suitability:
@@ -278,7 +296,7 @@ export const CONVICTIONS: Conviction[] = [
     keyInfo: [
       PENDING("Performance"),
       PENDING("Management fee"),
-      PENDING("Minimum investment"),
+      MINIMUM,
       { label: "Risk level", value: "Moderate to high" },
       { label: "Investment horizon", value: "3–7 years" },
       { label: "Intended use", value: "Complement to a core holding" },
@@ -325,6 +343,7 @@ export const CONVICTIONS: Conviction[] = [
     horizon: "Seven years or longer",
     horizonNote:
       "Structural change is slow, and the businesses that benefit from it compound over similar periods rather than in a single cycle.",
+    universeLabel: "Long-only listed equities",
     universe:
       "Long-only listed equities across the ASX, NYSE and Nasdaq, screened on both financial quality and the nature of the underlying activity.",
     suitability:
@@ -332,7 +351,7 @@ export const CONVICTIONS: Conviction[] = [
     keyInfo: [
       PENDING("Performance"),
       PENDING("Management fee"),
-      PENDING("Minimum investment"),
+      MINIMUM,
       { label: "Risk level", value: "Moderate to high" },
       { label: "Investment horizon", value: "7+ years" },
       { label: "Screening", value: "Financial quality and activity" },
@@ -390,6 +409,7 @@ export const CONVICTIONS: Conviction[] = [
     horizon: "Position-specific, typically under two years",
     horizonNote:
       "The only Taizan strategy with a defined end date on each position. Options expire, so the horizon is set by the contract rather than by the investor.",
+    universeLabel: "Exchange-traded options",
     universe:
       "Exchange-traded options over listed equities on the ASX and US markets. Liquid series on established underlyings only; no over-the-counter contracts.",
     suitability:
@@ -397,7 +417,7 @@ export const CONVICTIONS: Conviction[] = [
     keyInfo: [
       PENDING("Performance"),
       PENDING("Management fee"),
-      PENDING("Minimum investment"),
+      MINIMUM,
       { label: "Risk level", value: "Very high" },
       { label: "Investment horizon", value: "Position-specific" },
       { label: "Suitability", value: "Experienced investors only" },

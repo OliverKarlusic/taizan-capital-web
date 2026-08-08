@@ -213,7 +213,7 @@ export default async function PortfolioPage({
           <div className="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-6 py-20 sm:py-24 md:grid-cols-3 lg:px-10">
             {[
               { h: "Investment horizon", a: c.horizon, b: c.horizonNote },
-              { h: "Asset universe", a: "Long-only listed equities", b: c.universe },
+              { h: "Asset universe", a: c.universeLabel, b: c.universe },
               { h: "Who it is for", a: "Suitability", b: c.suitability },
             ].map((col) => (
               <div key={col.h} className="border-t border-paper/12 pt-6">

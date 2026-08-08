@@ -138,8 +138,8 @@ export default function Approach() {
               firm founded in 2026 — an "illustrative" label underneath does
               not undo the shape of a rising line, and a reader takes the
               line first. The second contradicted the mandate three sections
-              above it: Taizan is a long-only equity manager and holds none
-              of those asset classes.
+              above it: Taizan invests in listed equities and options over
+              them, and holds none of those asset classes.
 
               What replaces them is the universe itself, stated plainly.
               Nothing here is a number the firm cannot stand behind. */}

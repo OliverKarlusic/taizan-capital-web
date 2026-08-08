@@ -61,7 +61,7 @@ const STAGES: Stage[] = [
     title: "Portfolio Construction",
     lead: "Developing the appropriate strategy.",
     timing: "Once objectives are established",
-    body: "The strategy is built around your objectives and risk parameters rather than issued from a template. Taizan Capital is a long-only equity manager investing across the ASX, NYSE and Nasdaq, and the construction reflects both the businesses we judge worth owning and the constraints you have set.",
+    body: "The strategy is built around your objectives and risk parameters rather than issued from a template. Taizan Capital invests across the ASX, NYSE and Nasdaq, and the construction reflects both the businesses we judge worth owning and the constraints you have set.",
     detail: [
       "Business quality, financial metrics and valuation",
       "Macroeconomic and industry conditions",
