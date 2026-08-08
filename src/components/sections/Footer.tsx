@@ -32,9 +32,9 @@ export default function Footer() {
               </p>
             </div>
             <p className="mt-6 max-w-sm text-sm font-light leading-[1.9] text-stone">
-              Long-only investment management in the tradition of the
-              mountain — patient, disciplined, and built for the generations
-              that follow.
+              Investment management in the tradition of the mountain —
+              patient, disciplined, and built for the generations that
+              follow.
             </p>
             <a
               href="mailto:enquiries@taizan.example"

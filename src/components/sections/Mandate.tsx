@@ -58,7 +58,7 @@ export default function Mandate() {
               id="mandate-title"
               className="font-serif text-[clamp(1.9rem,4vw,3.1rem)] font-medium leading-[1.16] text-paper"
             >
-              Taizan Capital is a long-only investment manager.
+              Taizan Capital invests in businesses.
             </h2>
           </Reveal>
           <Reveal delay={0.2}>
@@ -74,9 +74,11 @@ export default function Mandate() {
           </Reveal>
           <Reveal delay={0.28}>
             <p className="mx-auto mt-6 max-w-2xl text-[0.95rem] font-light leading-[1.95] text-stone">
-              We do not short sell, trade derivatives, or take positions on
-              short-term price movement. There is one way we make money for
-              clients: owning good businesses bought at sensible prices.
+              Five of our six strategies are long-only equity mandates that
+              use no derivatives and no leverage. The sixth expresses
+              directional views through exchange-traded options, carries
+              materially higher risk, and is offered separately for
+              experienced investors.
             </p>
           </Reveal>
         </div>

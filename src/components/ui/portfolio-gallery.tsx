@@ -47,7 +47,12 @@ function ringMetrics(vw: number) {
   // neighbours crowd straight into it.
   const gutter = vw < 640 ? 108 : 72;
   const w = Math.min(CARD_MAX, Math.max(230, vw - gutter));
-  return { w, radius: Math.round(((w + GAP) * 5) / (2 * Math.PI)) };
+  // Derived from the actual count — a hardcoded 5 opened gaps the
+  // moment a sixth strategy was added.
+  return {
+    w,
+    radius: Math.round(((w + GAP) * CONVICTIONS.length) / (2 * Math.PI)),
+  };
 }
 
 function useReducedMotion() {

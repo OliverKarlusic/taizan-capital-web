@@ -258,10 +258,12 @@ export default async function PortfolioPage({
             <p className="mt-16 max-w-[80ch] text-[0.65rem] leading-relaxed tracking-wide text-stone-dim">
               Nothing on this page constitutes financial product advice, an
               offer, or a solicitation, and it does not take account of your
-              objectives, financial situation or needs. Taizan Capital is a
-              long-only manager and does not short sell, use derivatives or
-              employ leverage. Investing carries risk, including loss of
-              capital.
+              objectives, financial situation or needs. Taizan Capital&apos;s
+              equity strategies are long-only and use no derivatives or
+              leverage; its options strategy uses exchange-traded options
+              and carries materially higher risk, including total loss of
+              amounts committed to individual positions. Investing carries
+              risk, including loss of capital.
             </p>
           </div>
         </section>

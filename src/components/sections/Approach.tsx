@@ -150,9 +150,10 @@ export default function Approach() {
                   Investment universe
                 </h3>
                 <p className="mt-6 max-w-[54ch] text-[0.95rem] font-light leading-[1.95] text-paper-dim">
-                  Long-only listed equities. No short selling, no
-                  derivatives, no leverage, and no asset classes outside
-                  listed equity.
+                  Listed equities, and exchange-traded options over them.
+                  No short selling of stock, no over-the-counter contracts,
+                  and no asset classes outside listed equity and its
+                  options.
                 </p>
 
                 <dl className="mt-10 space-y-0">

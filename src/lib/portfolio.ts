@@ -15,7 +15,11 @@
  * an asset manager's site is read as a commitment.
  */
 
-export type RiskLevel = "Moderate" | "Moderate to high" | "High";
+export type RiskLevel =
+  | "Moderate"
+  | "Moderate to high"
+  | "High"
+  | "Very high";
 
 export interface KeyInfoRow {
   label: string;
@@ -110,7 +114,7 @@ export const CONVICTIONS: Conviction[] = [
     horizonNote:
       "The strategy assumes an investor who will not need the capital during a market decline. Shorter horizons expose the investor to the market's timing rather than the businesses' progress.",
     universe:
-      "Long-only listed equities across the ASX, NYSE and Nasdaq. No short selling, no derivatives, no leverage.",
+      "Long-only listed equities across the ASX, NYSE and Nasdaq. This strategy uses no derivatives and no leverage.",
     suitability:
       "Investors seeking long-term capital growth who accept equity volatility and do not require access to the capital in the near term.",
     keyInfo: [
@@ -214,7 +218,7 @@ export const CONVICTIONS: Conviction[] = [
     horizonNote:
       "The longest horizon of any Taizan strategy. Volatility of this magnitude requires time to be a rational thing to accept.",
     universe:
-      "Long-only listed equities across the ASX, NYSE and Nasdaq, weighted toward higher-growth businesses. Still no short selling, derivatives or leverage.",
+      "Long-only listed equities across the ASX, NYSE and Nasdaq, weighted toward higher-growth businesses. This strategy uses no derivatives and no leverage.",
     suitability:
       "Investors with a high tolerance for volatility, a long horizon, and no foreseeable need to draw on the capital. Not suitable for investors seeking income, stability, or protection of capital over short periods.",
     keyInfo: [
@@ -332,6 +336,71 @@ export const CONVICTIONS: Conviction[] = [
       { label: "Risk level", value: "Moderate to high" },
       { label: "Investment horizon", value: "7+ years" },
       { label: "Screening", value: "Financial quality and activity" },
+    ],
+  },
+
+  /* ─────────────────────────────────────────────────────────────── 06 */
+  {
+    slug: "options",
+    index: "06",
+    name: "Options",
+    statement: "A view, expressed with a defined cost.",
+    purpose:
+      "A directional options strategy for investors who accept that individual positions can expire worthless.",
+    image: "/media/portfolio/06-options.jpg",
+    objective:
+      "To express directional views on listed equities through exchange-traded options, where the option offers a better expression of the view than owning the shares outright.",
+    philosophy:
+      "The analytical work is identical to every other Taizan strategy — understand the business, estimate its value, form a view on the gap between value and price. What differs is the instrument. An option converts a view into a position with a known maximum cost and a deadline, and that deadline is the difference: a business can be undervalued for three years without harming a shareholder, and can bankrupt an option that expires in three months. Being right about the business is not sufficient here. The timing has to be right too.",
+    approach: [
+      "The same fundamental work first. An option is never bought on price action alone — there must be a view on the underlying business behind it.",
+      "Position sizing on the assumption of total loss. Each position is sized so that its complete expiry to zero is survivable and unremarkable.",
+      "Cost and time explicitly priced. Premium paid, implied volatility relative to realised, and how much time the thesis actually needs.",
+      "Liquid, exchange-traded options on established underlyings only. No over-the-counter positions and no illiquid series.",
+    ],
+    riskLevel: "Very high",
+    riskNarrative:
+      "This is by a substantial margin the highest-risk strategy Taizan Capital offers, and it carries risks the equity strategies do not. An option is a wasting asset: it can lose its entire value while the underlying business is unharmed, simply because time ran out. Total loss of the amount committed to a position is a normal outcome here rather than a tail event, and any investor who could not absorb that repeatedly should not be in this strategy. It is not suitable for most investors, and it is not suitable for capital that has any other purpose.",
+    riskFactors: [
+      {
+        name: "Total loss of premium",
+        body: "An option that expires out of the money is worth nothing. The full amount committed to that position is lost, and this is an ordinary outcome rather than a failure of the strategy.",
+      },
+      {
+        name: "Time decay",
+        body: "Options lose value as expiry approaches, all else equal. A correct view on a business that arrives late is indistinguishable in outcome from a wrong one.",
+      },
+      {
+        name: "Leverage",
+        body: "Options provide exposure larger than the amount committed. Gains and losses are both magnified relative to holding the shares, and the loss arrives faster.",
+      },
+      {
+        name: "Volatility risk",
+        body: "Option prices depend on implied volatility as well as on the underlying. A position can lose value on a fall in implied volatility even where the underlying moves as expected.",
+      },
+      {
+        name: "Liquidity",
+        body: "Option series can trade thinly, with wide spreads. Exiting a position in stressed conditions can be costly or, in some series, impractical.",
+      },
+      {
+        name: "Assignment and obligation",
+        body: "Written options carry an obligation that can be exercised against the holder, and the loss on a written position can substantially exceed the premium received.",
+      },
+    ],
+    horizon: "Position-specific, typically under two years",
+    horizonNote:
+      "The only Taizan strategy with a defined end date on each position. Options expire, so the horizon is set by the contract rather than by the investor.",
+    universe:
+      "Exchange-traded options over listed equities on the ASX and US markets. Liquid series on established underlyings only; no over-the-counter contracts.",
+    suitability:
+      "Experienced investors who understand options, can absorb the total loss of amounts committed to individual positions, and hold this alongside other assets rather than as a core allocation. Not suitable for investors seeking income, capital preservation, or a core holding.",
+    keyInfo: [
+      PENDING("Performance"),
+      PENDING("Management fee"),
+      PENDING("Minimum investment"),
+      { label: "Risk level", value: "Very high" },
+      { label: "Investment horizon", value: "Position-specific" },
+      { label: "Suitability", value: "Experienced investors only" },
     ],
   },
 ];
