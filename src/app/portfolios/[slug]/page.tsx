@@ -52,7 +52,7 @@ export default async function PortfolioPage({
   return (
     <>
       <Navbar solid />
-      <main className="relative bg-ink">
+      <main id="main" className="relative bg-ink">
         {/* ── Masthead. The strategy's own plate, graded to the film. ── */}
         <header className="relative isolate flex min-h-[70vh] items-end overflow-hidden pb-16 pt-40 sm:min-h-[76vh] sm:pb-24">
           <img

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 
 const LINKS = [
@@ -8,7 +9,7 @@ const LINKS = [
   { href: "#philosophy", label: "Philosophy" },
   { href: "#approach", label: "Approach" },
   { href: "#portfolio", label: "Portfolio" },
-  { href: "#insights", label: "Insights" },
+  { href: "/performance", label: "Performance" },
   { href: "#about", label: "About" },
 ];
 
@@ -21,10 +22,10 @@ const LINKS = [
  * malformed in the source file and would be unreadable at navbar size, and
  * type also scales losslessly, weighs nothing, and stays selectable.
  */
-function Wordmark({ compact }: { compact: boolean }) {
+function Wordmark({ compact, home }: { compact: boolean; home: boolean }) {
   return (
     <a
-      href="#top"
+      href={home ? "#top" : "/"}
       aria-label="Taizan Capital — home"
       className="group inline-flex items-center gap-4 lg:gap-6"
     >
@@ -77,6 +78,13 @@ function Wordmark({ compact }: { compact: boolean }) {
  * bar there just lets paragraphs scroll through the navigation.
  */
 export default function Navbar({ solid = false }: { solid?: boolean }) {
+  // Section links are fragments, which resolve only on the homepage. From
+  // /performance or a strategy page they pointed at nothing at all — seven
+  // dead links per route. Off the homepage they become root-relative.
+  const home = usePathname() === "/";
+  const link = (href: string) =>
+    home || !href.startsWith("#") ? href : `/${href}`;
+
   const [scrolled, setScrolled] = useState(solid);
   const [open, setOpen] = useState(false);
 
@@ -120,7 +128,7 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
         aria-label="Primary"
         className="mx-auto flex w-full max-w-[110rem] items-center justify-between px-6 lg:px-14"
       >
-        <Wordmark compact={scrolled} />
+        <Wordmark compact={scrolled} home={home} />
 
         {/* Six links plus the disclosures button need 673px, which does not
             clear the wordmark until ~1080px — so the bar switches to the
@@ -132,7 +140,7 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
           {LINKS.map((l) => (
             <li key={l.href}>
               <a
-                href={l.href}
+                href={link(l.href)}
                 className="link-underline text-[0.7rem] font-medium uppercase tracking-[0.24em] text-paper-dim transition-colors duration-300 hover:text-paper"
               >
                 {l.label}
@@ -176,7 +184,7 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
               }`}
             >
               <a
-                href={l.href}
+                href={link(l.href)}
                 onClick={() => setOpen(false)}
                 className="font-serif text-4xl text-paper"
               >

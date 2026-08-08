@@ -52,7 +52,7 @@ export default function DisclosuresPage() {
   return (
     <>
       <Navbar solid />
-      <main className="relative bg-ink">
+      <main id="main" className="relative bg-ink">
         <section className="mx-auto max-w-5xl px-6 pb-16 pt-40 lg:px-10">
           <p className="overline-label">Regulatory</p>
           <h1 className="mt-5 max-w-[20ch] font-serif text-[clamp(2rem,5vw,3.6rem)] font-medium leading-[1.1] text-paper">
