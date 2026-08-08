@@ -3,21 +3,24 @@
 import Reveal from "@/components/animations/Reveal";
 import SplitText from "@/components/animations/SplitText";
 
+/**
+ * Leadership.
+ *
+ * This previously listed three invented people with invented careers. They
+ * were placeholder copy from the design phase, and fabricated personnel on
+ * a real firm's site is not a stylistic problem — it is a claim about who
+ * manages the money. Removed.
+ *
+ * NAME UNCONFIRMED: inferred from the account email, never stated. Verify
+ * before this goes anywhere public.
+ */
 const LEADERSHIP = [
   {
-    name: "Kenji Takahara",
-    role: "Managing Partner & Chief Investment Officer",
-    line: "Two decades allocating institutional capital across Asia and the Americas.",
-  },
-  {
-    name: "Elena Marchetti",
-    role: "Partner, Head of Risk",
-    line: "Former sovereign-fund risk architect. Believes risk is a budget, not a feeling.",
-  },
-  {
-    name: "Daisuke Mori",
-    role: "Partner, Head of Research",
-    line: "Leads a deliberately small research bench covering fewer names, deeper.",
+    name: "Oliver Karlusic",
+    role: "Managing Director",
+    line: "Leads investment research and portfolio construction at Taizan Capital.",
+    image: "/media/brand/profile-md.webp",
+    image2x: "/media/brand/profile-md@2x.webp",
   },
 ];
 
@@ -94,26 +97,46 @@ export default function About() {
             <div>
               {LEADERSHIP.map((person, i) => (
                 <Reveal key={person.name} delay={0.15 + i * 0.08}>
-                  <div className="group border-b border-paper/10 py-9 first:mt-4">
-                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <figure className="group mt-6 flex flex-col gap-7 border-b border-paper/10 pb-10 sm:flex-row sm:items-end">
+                    <div className="relative w-40 shrink-0 overflow-hidden border border-paper/12 sm:w-44">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={person.image}
+                        srcSet={`${person.image} 1x, ${person.image2x} 2x`}
+                        alt={`${person.name}, ${person.role}`}
+                        width={620}
+                        height={775}
+                        loading="lazy"
+                        decoding="async"
+                        className="block h-auto w-full [filter:contrast(1.04)_saturate(0.88)]"
+                      />
+                      {/* Same bronze wash the film and the conviction plates
+                          carry, so the portrait sits in the same production. */}
+                      <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 mix-blend-soft-light"
+                        style={{ backgroundColor: "rgba(198,166,100,0.14)" }}
+                      />
+                    </div>
+                    <figcaption className="min-w-0">
                       <h4 className="font-serif text-2xl text-paper transition-colors duration-500 group-hover:text-gold-bright">
                         {person.name}
                       </h4>
-                      <p className="text-[0.65rem] uppercase tracking-[0.2em] text-gold">
+                      <p className="mt-2 text-[0.65rem] uppercase tracking-[0.2em] text-gold">
                         {person.role}
                       </p>
-                    </div>
-                    <p className="mt-3 max-w-xl text-sm font-light leading-relaxed text-stone">
-                      {person.line}
-                    </p>
-                  </div>
+                      <p className="mt-4 max-w-xl text-sm font-light leading-relaxed text-stone">
+                        {person.line}
+                      </p>
+                    </figcaption>
+                  </figure>
                 </Reveal>
               ))}
             </div>
             <Reveal delay={0.35}>
               <p className="mt-10 text-[0.65rem] leading-relaxed tracking-wide text-stone-dim">
-                Taizan Capital is a fictional firm created for this design
-                concept. All names, figures and mandates are illustrative.
+                Taizan Capital does not currently publish performance data.
+                Portfolio mandates describe investment approach only.
               </p>
             </Reveal>
           </div>
