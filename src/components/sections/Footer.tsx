@@ -32,8 +32,9 @@ export default function Footer() {
               </p>
             </div>
             <p className="mt-6 max-w-sm text-sm font-light leading-[1.9] text-stone">
-              Asset management in the tradition of the mountain — patient,
-              disciplined, and built for the generations that follow.
+              Long-only investment management in the tradition of the
+              mountain — patient, disciplined, and built for the generations
+              that follow.
             </p>
             <a
               href="mailto:enquiries@taizan.example"
@@ -74,28 +75,27 @@ export default function Footer() {
 
           <div className="md:col-span-4">
             <h3 className="text-[0.65rem] uppercase tracking-[0.28em] text-stone-dim">
-              Offices
+              Office
             </h3>
             <ul className="mt-6 space-y-3.5 text-sm font-light text-paper-dim">
-              <li>Marunouchi, Tokyo</li>
-              <li>St James&apos;s, London</li>
-              <li>Raffles Place, Singapore</li>
+              <li>Melbourne, Victoria 3000</li>
+              <li>Australia</li>
             </ul>
           </div>
         </div>
 
         <div className="mt-20 border-t border-paper/10 pt-10">
           <p className="text-[0.65rem] leading-[1.9] tracking-wide text-stone-dim">
-            Taizan Capital is a fictional brand created as a design concept.
-            Nothing on this page constitutes investment advice, an offer, or a
-            solicitation of any kind. All performance figures, allocations and
-            client statistics are illustrative inventions for the purpose of
-            demonstrating design. Capital is at risk; past performance — even
-            fictional past performance — is not indicative of future results.
+            Nothing on this page constitutes financial product advice, an
+            offer, or a solicitation of any kind, and it does not take account
+            of your objectives, financial situation or needs. Taizan Capital
+            does not currently publish performance data; portfolio mandates
+            describe investment approach only. Investing carries risk,
+            including loss of capital.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
             <p className="text-[0.65rem] tracking-[0.2em] text-stone-dim">
-              © 2026 TAIZAN CAPITAL — A DESIGN CONCEPT
+              © 2026 TAIZAN CAPITAL
             </p>
             <p className="font-serif text-sm italic text-stone-dim">
               静水深流 — still waters run deep

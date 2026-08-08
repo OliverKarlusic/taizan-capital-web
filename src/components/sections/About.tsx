@@ -25,10 +25,11 @@ const LEADERSHIP = [
 ];
 
 const FACTS = [
-  { value: "2009", label: "Founded, Tokyo" },
-  { value: "3", label: "Offices — Tokyo · London · Singapore" },
-  { value: "40+", label: "Institutional & family mandates" },
-  { value: "17yr", label: "Average client relationship" },
+  // Only facts that are true. Mandate counts and average client tenure were
+  // invented, and a firm founded in 2026 cannot have a seventeen-year
+  // client relationship — the claim contradicted its own founding date.
+  { value: "2026", label: "Founded, Melbourne" },
+  { value: "3000", label: "Melbourne, Victoria — Australia" },
 ];
 
 export default function About() {
