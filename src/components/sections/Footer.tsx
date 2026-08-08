@@ -85,6 +85,16 @@ export default function Footer() {
         </div>
 
         <div className="mt-20 border-t border-paper/10 pt-10">
+          <p className="mb-6 text-[0.65rem] leading-[1.9] tracking-wide text-stone-dim">
+            Taizan Capital does not currently hold an Australian Financial
+            Services Licence.{" "}
+            <a
+              href="/disclosures"
+              className="text-gold underline-offset-4 hover:underline"
+            >
+              Regulatory disclosures
+            </a>
+          </p>
           <p className="text-[0.65rem] leading-[1.9] tracking-wide text-stone-dim">
             Nothing on this page constitutes financial product advice, an
             offer, or a solicitation of any kind, and it does not take account
