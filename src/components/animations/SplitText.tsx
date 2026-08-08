@@ -2,6 +2,7 @@
 
 import {
   createElement,
+  Fragment,
   useEffect,
   useMemo,
   useRef,
@@ -87,16 +88,27 @@ export default function SplitText({
     Tag,
     { ref, className, "aria-label": text },
     words.map((word, wi) => (
-      <span key={wi} aria-hidden="true" className="whitespace-nowrap">
-        <span className="split-line-mask">
-          {Array.from(word).map((ch, ci) => (
-            <span key={ci} className="split-char">
-              {ch}
-            </span>
-          ))}
+      // The separating space MUST sit outside the nowrap wrapper. A space
+      // inside a `white-space: nowrap` element is not a line-break
+      // opportunity, and since adjacent word spans have no whitespace
+      // between them either, the whole string becomes one unbreakable line
+      // that runs past narrow viewports. Emitting the space as a sibling in
+      // the parent — whose white-space is normal — restores wrapping.
+      //
+      // The wrapper still needs nowrap: each character is its own
+      // inline-block, and without it a word would break mid-word.
+      <Fragment key={wi}>
+        <span aria-hidden="true" className="whitespace-nowrap">
+          <span className="split-line-mask">
+            {Array.from(word).map((ch, ci) => (
+              <span key={ci} className="split-char">
+                {ch}
+              </span>
+            ))}
+          </span>
         </span>
         {wi < words.length - 1 ? " " : null}
-      </span>
+      </Fragment>
     )),
   );
 }

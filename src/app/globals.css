@@ -30,18 +30,23 @@
 /**
  * Global text containment.
  *
- * No text may leave the visible frame. These rules fix the two causes we
- * actually measured rather than hiding the result:
+ * No text may leave the visible frame. These are defensive rules, not the
+ * fix for any bug we currently have:
  *
  * 1. A flex or grid child defaults to min-width:auto, which refuses to
  *    shrink below its content and so stops long headings from wrapping.
- *    Measured on the Philosophy and About headings: scrollWidth 918 inside
- *    a 464px box. min-width:0 lets them wrap as intended.
  * 2. A single long word or unbroken string can still exceed a narrow
  *    column. overflow-wrap breaks it rather than pushing the layout wide.
  *
  * There is deliberately no overflow:hidden here — that would conceal
  * overflow instead of preventing it.
+ *
+ * Historical note, because it cost two failed attempts: the 918px overflow
+ * once blamed on these headings was never a heading-box problem. SplitText
+ * emitted its inter-word spaces INSIDE `white-space: nowrap` wrappers, so
+ * the text had no line-break opportunity anywhere and ran out as a single
+ * line. Neither rule below can help under nowrap — overflow-wrap does not
+ * apply, and the box was never the constraint. It is fixed in SplitText.
  */
 h1, h2, h3, h4, p, li, blockquote, figcaption, a {
   overflow-wrap: break-word;
