@@ -1,5 +1,5 @@
 /**
- * The six investment strategies — card copy and full detail content.
+ * The five investment strategies — card copy and full detail content.
  *
  * One source of truth for both the circular gallery and the detail pages,
  * so a strategy cannot say one thing on its card and another on its page.
@@ -69,6 +69,22 @@ const EQUITY_RISK = [
   {
     name: "Valuation risk",
     body: "We estimate what a business is worth. That estimate carries error. Paying a price that assumes too much leaves no margin for the estimate being optimistic.",
+  },
+  {
+    name: "Currency risk",
+    body: "Holdings on the NYSE and Nasdaq are denominated in US dollars while the capital is Australian. A business can perform well and still return less in Australian dollars if the exchange rate moves against the position. This exposure is accepted rather than hedged — hedging costs money every year to remove a risk that has historically washed out over the horizons we invest across — but it is real, and in any single year it can be the largest single contributor to a return.",
+  },
+  {
+    name: "Liquidity risk",
+    body: "Not every listed business trades in size every day. A smaller position can take time to build or exit without moving the price against us, and in a disorderly market the spread widens precisely when selling is most tempting. We size positions against the volume that actually trades, not against the volume available on a good day.",
+  },
+  {
+    name: "Macroeconomic risk",
+    body: "Interest rates, inflation, credit conditions and currency movements reprice every equity at once, regardless of how the underlying businesses are performing. A rate cycle can compress valuations across an entire market for years. No amount of company-level work insulates a portfolio from this, and we do not claim to forecast it.",
+  },
+  {
+    name: "Sector risk",
+    body: "Businesses that look independent often share an exposure — the same input cost, the same regulator, the same end customer, the same cycle. Concentration can therefore exist in a portfolio that appears diversified by name. We look for the shared exposure rather than counting holdings.",
   },
   {
     name: "Capital loss",
@@ -251,63 +267,8 @@ export const CONVICTIONS: Conviction[] = [
 
   /* ─────────────────────────────────────────────────────────────── 04 */
   {
-    slug: "satellite",
-    index: "04",
-    name: "Satellite Portfolio",
-    statement: "A strong foundation allows room for exploration.",
-    purpose:
-      "A flexible allocation focused on targeted opportunities and specialised ideas outside the core portfolio.",
-    image: "/media/portfolio/04-satellite.jpg",
-    objective:
-      "To hold a small number of selective positions that complement a core holding — specific situations or themes that do not fit the core mandate but are worth owning on their own merits.",
-    philosophy:
-      "A satellite allocation is a discipline, not a licence. It exists so that a good idea outside the core mandate has somewhere to go, rather than distorting the core to accommodate it. Every position is assessed on the same basis as any other: what the business is worth, and what is being asked for it. The flexibility is in the mandate, not in the standard.",
-    approach: [
-      "Situations the core mandate would exclude for reasons of size, sector or timing — but which meet the same test of business quality and price.",
-      "Deliberate position limits, so a satellite holding cannot come to dominate the outcome of an overall allocation.",
-      "Held as a complement to a core strategy rather than on its own. The satellite is sized against the core, not against enthusiasm.",
-      "Sold when the reason for owning it resolves. These are positions with a stated thesis, not permanent holdings.",
-    ],
-    riskLevel: "Moderate to high",
-    riskNarrative:
-      "Positions here are less conventional than the core and are often smaller businesses or more specific situations, which raises both business risk and liquidity risk. This is not a speculative allocation and it is not run as one — but it is a concentrated set of individual judgements, and individual judgements are the thing most likely to be wrong.",
-    riskFactors: [
-      ...EQUITY_RISK,
-      {
-        name: "Concentration risk",
-        body: "A small number of positions, each with a specific thesis. An error is not diluted by breadth.",
-      },
-      {
-        name: "Liquidity",
-        body: "Smaller or more specialised holdings can be slower and more costly to exit, particularly in stressed markets when exiting is most likely to be desired.",
-      },
-      {
-        name: "Thesis risk",
-        body: "Each position depends on a specific expectation. Where that expectation does not eventuate, the reason for holding disappears even if the business itself is unharmed.",
-      },
-    ],
-    horizon: "Three to seven years",
-    horizonNote:
-      "Shorter than the core strategies, because satellite positions are held against a thesis with a resolution rather than indefinitely.",
-    universeLabel: "Long-only listed equities",
-    universe:
-      "Long-only listed equities across the ASX, NYSE and Nasdaq. Intended to sit alongside a core holding rather than replace one.",
-    suitability:
-      "Investors who already hold a core allocation and want measured exposure to selective opportunities beyond it.",
-    keyInfo: [
-      PENDING("Performance"),
-      PENDING("Management fee"),
-      PENDING("Minimum investment"),
-      { label: "Risk level", value: "Moderate to high" },
-      { label: "Investment horizon", value: "3–7 years" },
-      { label: "Intended use", value: "Complement to a core holding" },
-    ],
-  },
-
-  /* ─────────────────────────────────────────────────────────────── 05 */
-  {
     slug: "impact-investing",
-    index: "05",
+    index: "04",
     name: "Impact Investing",
     statement: "Capital can build a better future.",
     purpose:
@@ -359,10 +320,10 @@ export const CONVICTIONS: Conviction[] = [
     ],
   },
 
-  /* ─────────────────────────────────────────────────────────────── 06 */
+  /* ─────────────────────────────────────────────────────────────── 05 */
   {
     slug: "options",
-    index: "06",
+    index: "05",
     name: "Options",
     statement: "A view, expressed with a defined cost.",
     purpose:

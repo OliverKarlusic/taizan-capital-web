@@ -249,10 +249,12 @@ export default function CinematicParallaxHero({
 
       const hero = envRef.current?.querySelector("video") ?? null;
       if (hero) {
-        // Past the whiteout Fuji is invisible; stop paying to decode it.
-        // Fuji is at opacity 0 from 0.60; stop paying to decode it.
-        if (p > 0.64 && !hero.paused) hero.pause();
-        else if (p <= 0.62 && hero.paused) hero.play().catch(() => undefined);
+        // Fuji is at opacity 0 from 0.365, so decoding it past there is
+        // paid for and never seen. The old threshold of 0.64 was left over
+        // from an earlier timeline and kept a 1280p video decoding through
+        // a quarter of the scroll for nothing.
+        if (p > 0.42 && !hero.paused) hero.pause();
+        else if (p <= 0.40 && hero.paused) hero.play().catch(() => undefined);
       }
     };
 
@@ -315,20 +317,27 @@ export default function CinematicParallaxHero({
         0,
       );
 
-      /* ── The five beats ───────────────────────────────────────────
+      /* ── The seven beats ──────────────────────────────────────────
          HERO       0.00–0.10  Fuji. Wordmark, tagline, CTAs.
          MOUNTAIN   0.10–0.30  Fuji alone. "01 — The Mountain".
-         TRANSITION 0.30–0.38  Mist thickens, veil blooms, Fuji -> 0.
-         CLOUD      0.38–0.43  Neither mountain nor forest. Brief.
-         FOREST     0.43–0.68  Forest resolves; "02 — The Forest".
-         MIST II    0.68–0.73  Second bridge, same grammar as the first.
-         RIVER      0.73–1.00  River resolves; "03 — The River".
+         MIST I     0.30–0.44  Fuji dissolves, forest resolves.
+         FOREST     0.44–0.66  Forest holds; "02 — The Forest".
+         MIST II    0.66–0.80  Forest dissolves, river resolves.
+         RIVER      0.80–1.00  River holds; "03 — The River".
+         (HERO and MOUNTAIN share one environment; the film reads as three
+         chapters, the timeline runs as seven beats.)
 
-         The two environments never coexist: Fuji reaches 0 at 0.60 and the
-         forest does not leave 0 until 0.68. The gap is the descent through
-         cloud — long enough to register as a passage, short enough that it
-         never becomes a chapter of its own. Fog is punctuation, not a
-         paragraph. */
+         Both bridges are now cut to the same measure — the environment
+         leaves over 0.04, roughly 0.02 passes with neither on screen, and
+         the next arrives over 0.05. Mist I used to run 0.17 against Mist
+         II's 0.11, which is why the descent stalled on the way to the
+         forest and not on the way to the river. A film does not change its
+         cutting rhythm halfway through.
+
+         The two environments never coexist. The gap between them is the
+         descent through cloud: long enough to register as a passage,
+         short enough that it never becomes a chapter of its own. Fog is
+         punctuation, not a paragraph. */
 
       // HERO — brand type clears early, well before the fixed navigation.
       tl.to(brandRef.current, { yPercent: -7, ease: "none", duration: 1 }, 0);
@@ -357,51 +366,51 @@ export default function CinematicParallaxHero({
 
       // TRANSITION — fog thickens, then the veil blooms to carry the cut.
       if (mist) {
-        tl.to(mist, { opacity: 1, ease: "power2.in", duration: 0.09 }, 0.30);
+        tl.to(mist, { opacity: 0.95, ease: "power2.in", duration: 0.05 }, 0.30);
         // Growing the plate reads as moving into the cloud rather than
         // having a cloud laid over the lens.
         tl.to(
           atmosphereRef.current,
-          { scale: 1.34, ease: "power1.inOut", duration: 0.18 },
+          { scale: 1.3, ease: "power1.inOut", duration: 0.1 },
           0.30,
         );
         tl.to(
           atmosphereRef.current,
-          { scale: 1.1, ease: "power1.inOut", duration: 0.14 },
-          0.44,
+          { scale: 1.1, ease: "power1.inOut", duration: 0.1 },
+          0.42,
         );
       }
       tl.to(
         veilRef.current,
-        { opacity: 0.72, ease: "power2.inOut", duration: 0.08 },
+        { opacity: 0.68, ease: "power2.inOut", duration: 0.05 },
         0.31,
       );
 
-      // Fuji dissolves inside the bloom and is fully gone by 0.60.
+      // Fuji dissolves inside the bloom and is fully gone by 0.365.
       tl.to(
         envRef.current,
-        { opacity: 0, ease: "power1.in", duration: 0.06 },
-        0.32,
+        { opacity: 0, ease: "power1.in", duration: 0.04 },
+        0.325,
       );
 
-      // CLOUD — 0.60 to 0.68 carries no tween on either environment.
-      // Atmosphere only, and briefly.
+      // 0.365 to 0.385 carries no tween on either environment. Atmosphere
+      // only, and only for that fifth of a beat.
 
       // FOREST — emerges from the same fog that swallowed the mountain.
       if (forestPlaneRef.current) {
         tl.to(
           forestPlaneRef.current,
-          { opacity: 1, ease: "power1.out", duration: 0.06 },
-          0.43,
+          { opacity: 1, ease: "power1.out", duration: 0.05 },
+          0.385,
         );
       }
       tl.to(
         veilRef.current,
-        { opacity: 0, ease: "power2.inOut", duration: 0.08 },
-        0.44,
+        { opacity: 0, ease: "power2.inOut", duration: 0.07 },
+        0.40,
       );
       if (mist) {
-        tl.to(mist, { opacity: 0.32, ease: "power2.out", duration: 0.1 }, 0.45);
+        tl.to(mist, { opacity: 0.26, ease: "power2.out", duration: 0.08 }, 0.42);
       }
 
       /* The whole darkening stack stands down inside fog.

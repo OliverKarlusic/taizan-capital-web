@@ -18,7 +18,7 @@ const LEADERSHIP = [
   {
     name: "Oliver Karlusic",
     role: "Managing Director",
-    line: "Oliver Karlusic holds a Bachelor of Business, majoring in Finance and Economics, and works in corporate finance. His investment approach is grounded in long-term fundamental analysis, with a focus on understanding businesses through changing economic cycles. He currently manages over $60,000 in AUM.",
+    line: "Oliver Karlusic holds a Bachelor of Business, majoring in Finance and Economics, and works in corporate finance. His investment approach is grounded in long-term fundamental analysis, with a focus on understanding businesses through changing economic cycles. He currently manages a personal portfolio of over $60,000, invested on the same basis described here.",
     image: "/media/brand/profile-md.webp",
     image2x: "/media/brand/profile-md@2x.webp",
   },
@@ -61,14 +61,18 @@ export default function About() {
                 Taizan Capital was founded on a single conviction: that the
                 principles which built Japan&apos;s enduring institutions —
                 patience, craftsmanship, restraint — are precisely the
-                principles absent from modern markets. We manage capital for
-                institutions and families who measure success in generations,
-                and who expect their manager to do the same.
+                principles absent from modern markets. The firm is being
+                built to manage capital for people who measure success in
+                generations, and who expect their manager to do the same.
+                That work is deliberately slow: the philosophy, the research
+                framework and the risk discipline come first, and the
+                licensing and structure that would allow Taizan to accept
+                external capital come only once they are sound.
               </p>
             </Reveal>
             <Reveal delay={0.25}>
               <p className="mt-6 text-sm font-light leading-[2] text-stone">
-                Our mission is unchanged since the first mandate: preserve
+                The intention is fixed and predates any mandate: preserve
                 capital first, compound it second, and never confuse the order.
               </p>
             </Reveal>
