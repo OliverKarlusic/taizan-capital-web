@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { CONVICTIONS, CONVICTION_BY_SLUG } from "@/lib/portfolio";
 import Footer from "@/components/sections/Footer";
+import AllocationBreakdown from "@/components/sections/AllocationBreakdown";
 import Navbar from "@/components/ui/Navbar";
 
 /**
@@ -207,6 +208,11 @@ export default async function PortfolioPage({
             </div>
           </div>
         </section>
+
+        {/* Allocation is real, dated, broker-reported data and exists for
+            exactly one strategy. It renders only there — a shared template
+            must not imply the other four have a disclosed allocation. */}
+        {c.slug === "growth-maximisation" ? <AllocationBreakdown /> : null}
 
         {/* ── Horizon, universe, suitability ── */}
         <section className="border-t border-paper/10 bg-ink-soft">
