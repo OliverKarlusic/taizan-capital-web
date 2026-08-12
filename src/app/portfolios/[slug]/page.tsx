@@ -10,6 +10,7 @@ import Footer from "@/components/sections/Footer";
 import AllocationBreakdown from "@/components/sections/AllocationBreakdown";
 import OptionsResults from "@/components/sections/OptionsResults";
 import LongTermGrowthPerformance from "@/components/sections/LongTermGrowthPerformance";
+import GrowthMaximisationPerformance from "@/components/sections/GrowthMaximisationPerformance";
 import Navbar from "@/components/ui/Navbar";
 
 /**
@@ -78,9 +79,10 @@ export default async function PortfolioPage({
           />
 
           <div className="mx-auto w-full max-w-7xl px-6 lg:px-10">
+            {/* 44px touch target without shifting the masthead. */}
             <Link
               href="/#portfolio"
-              className="group inline-flex items-center gap-2.5 text-[0.62rem] uppercase tracking-[0.26em] text-stone transition-colors duration-500 hover:text-gold"
+              className="group -my-3 inline-flex min-h-11 items-center gap-2.5 text-[0.62rem] uppercase tracking-[0.26em] text-stone transition-colors duration-500 hover:text-gold"
             >
               <ArrowLeft
                 size={13}
@@ -211,11 +213,15 @@ export default async function PortfolioPage({
           </div>
         </section>
 
-        {/* Allocation is real, dated, broker-reported data and exists for
-            exactly one strategy. It renders only there — a shared template
-            must not imply the other four have a disclosed allocation. */}
+        {/* Results are real, dated and strategy-specific. Each renders only
+            on the strategy it belongs to — a shared template must not imply
+            the others have a disclosed record. The two equity strategies
+            below are presented differently on purpose: Long Term Growth is
+            drawn from a reconciled ledger, Growth Maximisation is a supplied
+            chart with no ledger behind it, and the sections say so. */}
         {c.slug === "long-term-growth" ? <LongTermGrowthPerformance /> : null}
         {c.slug === "long-term-growth" ? <AllocationBreakdown /> : null}
+        {c.slug === "growth-maximisation" ? <GrowthMaximisationPerformance /> : null}
         {c.slug === "options" ? <OptionsResults /> : null}
 
         {/* ── Horizon, universe, suitability ── */}

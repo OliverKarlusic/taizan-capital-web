@@ -5,15 +5,24 @@
  * so a strategy cannot say one thing on its card and another on its page.
  *
  * ── On the numbers ──────────────────────────────────────────────────
- * Every figure in `keyInfo` is a placeholder. Nothing here is a return, a
- * fee, a yield or a minimum that anyone has agreed to. They are typed as
- * strings precisely so "Coming soon" and "2.4%" are the same shape — when
- * real, verified figures exist, they replace the placeholder and nothing
- * else changes.
+ * `keyInfo` was entirely placeholders. Three strategies now have a
+ * published, sourced result, so their Performance row carries it —
+ * imported from the strategy's own data module, never retyped. Fees and
+ * minimums remain pending everywhere, and the two unfunded strategies
+ * remain pending on performance too, because for them it is still true.
  *
  * Do not populate these from estimates, targets, or backtests. A number on
  * an asset manager's site is read as a commitment.
  */
+
+import {
+  LTG_RESULT,
+  OPTIONS_RESULT,
+} from "@/data/byStrategy";
+import {
+  BENCHMARK as GM_BENCHMARK,
+  HEADLINE as GM_HEADLINE,
+} from "@/data/growthMaximisationPerformance";
 
 export type RiskLevel =
   | "Moderate"
@@ -99,6 +108,23 @@ const PENDING = (label: string): KeyInfoRow => ({
 });
 
 /**
+ * Performance rows for the three strategies that have one.
+ *
+ * These were PENDING("Performance") — "Coming soon" — on every strategy,
+ * including the three that publish a chart and a headline figure further
+ * down the same page. Key Information contradicted the section beneath it,
+ * and Key Information is the panel a reader scans first.
+ *
+ * The values are imported, not retyped, so this panel cannot drift from
+ * the record it is summarising. The two strategies with no allocated
+ * capital keep the placeholder, because for them it is still true.
+ */
+const PERFORMANCE = (value: string): KeyInfoRow => ({
+  label: "Performance",
+  value,
+});
+
+/**
  * The A$1,000 minimum was published here briefly and has been withdrawn.
  *
  * A stated minimum is what turns a description of a strategy into an offer
@@ -150,7 +176,7 @@ export const CONVICTIONS: Conviction[] = [
     suitability:
       "Investors seeking long-term capital growth who accept equity volatility and do not require access to the capital in the near term.",
     keyInfo: [
-      PENDING("Performance"),
+      PERFORMANCE(`${LTG_RESULT} since inception`),
       PENDING("Management fee"),
       PENDING("Minimum investment"),
       { label: "Risk level", value: "Moderate to high" },
@@ -256,9 +282,10 @@ export const CONVICTIONS: Conviction[] = [
     suitability:
       "Investors with a high tolerance for volatility, a long horizon, and no foreseeable need to draw on the capital. Not suitable for investors seeking income, stability, or protection of capital over short periods.",
     keyInfo: [
-      PENDING("Performance"),
+      PERFORMANCE(`${GM_HEADLINE} since inception`),
       PENDING("Management fee"),
       PENDING("Minimum investment"),
+      { label: "Benchmark", value: GM_BENCHMARK },
       { label: "Risk level", value: "High" },
       { label: "Investment horizon", value: "10+ years" },
       { label: "Distributions", value: "Not an income strategy" },
@@ -377,7 +404,7 @@ export const CONVICTIONS: Conviction[] = [
     suitability:
       "Experienced investors who understand options, can absorb the total loss of amounts committed to individual positions, and hold this alongside other assets rather than as a core allocation. Not suitable for investors seeking income, capital preservation, or a core holding.",
     keyInfo: [
-      PENDING("Performance"),
+      PERFORMANCE(`${OPTIONS_RESULT} realised`),
       PENDING("Management fee"),
       PENDING("Minimum investment"),
       { label: "Risk level", value: "Very high" },

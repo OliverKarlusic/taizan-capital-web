@@ -30,7 +30,18 @@ export interface Point {
   capital: number;
 }
 
-/** AUD. Straight segments between these and nothing between them. */
+/**
+ * AUD. The observed record, and the reconciliation target.
+ *
+ * These are no longer plotted. A line through them is a picture of the
+ * account balance, and the balance is dominated by contributions —
+ * capital went from $1,120 to $30,559 over the period, so the line rises
+ * steeply whether or not a single dollar was earned. It answers "how big
+ * is the account", which is not the question the page is asking. The
+ * chart now plots CUMULATIVE below. These values remain because they are
+ * the underlying statement figures and everything else is checked
+ * against them.
+ */
 export const SERIES: Point[] = [
   { label: "Feb 23", portfolio: 1120, benchmark: 1120, capital: 1120 },
   { label: "Jun 23", portfolio: 1109.0, benchmark: 1194.0, capital: 1082.5 },
@@ -45,6 +56,51 @@ export const ANNUAL = [
   { period: "FY25", portfolio: 11.46, benchmark: 15.27 },
   { period: "FY26", portfolio: 11.51, benchmark: 15.61 },
 ];
+
+/**
+ * Cumulative time-weighted return at each observed mark, per cent.
+ *
+ * ── HOW THESE WERE OBTAINED ─────────────────────────────────────────
+ * By chain-linking ANNUAL above — the measured financial-year returns
+ * from the source summary — and nothing else. No dollar figure was
+ * divided by an assumed base, and no value was read off a chart.
+ *
+ *   portfolio  1.0243 × 1.1375 × 1.1146 × 1.1151 = 1.44814  → +44.81%
+ *   benchmark  1.1012 × 1.2648 × 1.1527 × 1.1561 = 1.85609  → +85.61%
+ *
+ * The source's own published cumulative figures are +44.82% and +85.62%.
+ * The 0.01-point difference is rounding: the source chain-links at full
+ * precision, this reproduces it from figures already rounded to two
+ * decimals. The terminal marks below therefore carry the source's
+ * published values rather than the recomputation, and the intermediate
+ * marks carry the chain — they agree to well inside the one decimal
+ * place anything here is displayed at.
+ *
+ * This series is the same one the source renders in
+ * charts/actual-returns-since-inception.png, and matches it mark for
+ * mark including the 40.8-point terminal gap.
+ *
+ * Contribution timing is removed by construction: time-weighted return
+ * is what the strategy did, independent of how much money happened to be
+ * in it at the time. That is precisely why it can be charted when the
+ * balance cannot.
+ */
+export interface CumulativePoint {
+  label: string;
+  portfolio: number;
+  benchmark: number;
+}
+
+export const CUMULATIVE: CumulativePoint[] = [
+  { label: "Feb 23", portfolio: 0, benchmark: 0 },
+  { label: "Jun 23", portfolio: 2.43, benchmark: 10.12 },
+  { label: "Jun 24", portfolio: 16.51, benchmark: 39.28 },
+  { label: "Jun 25", portfolio: 29.87, benchmark: 60.55 },
+  { label: "Jun 26", portfolio: 44.82, benchmark: 85.62 },
+];
+
+/** Terminal shortfall in percentage points: 85.62 − 44.82. */
+export const GAP_PP = 40.8;
 
 export const STATS = [
   { label: "XIRR", portfolio: "11.63%", benchmark: "17.36%", note: "per annum, money-weighted" },
@@ -78,6 +134,7 @@ export const CAPITAL = {
  * earned.
  */
 export const METHOD_NOTES = [
+  "The chart plots cumulative time-weighted return, not account balance. Balance is dominated by contributions — $30,559 of the $35,512 closing value was money paid in — so a balance line would rise steeply whether or not anything was earned. Each mark is chain-linked from the measured financial-year returns below; no balance has been divided by an assumed base.",
   "Returns are time-weighted using chain-linked Modified Dietz; XIRR is money-weighted. Both are shown because they answer different questions — one measures the strategy, the other measures what the timing of contributions actually produced.",
   "Cumulative return is 44.82% chain-linked annually and 40.37% chain-linked monthly. The figure is shown to one decimal place because a 4.4-point spread does not support two.",
   "The benchmark is a counterfactual, not an index return: identical cash flows on identical dates into IVV.AX with distributions reinvested. Its prices before July 2024 are reconstructed from financial-year closes and reported calendar-year returns.",
