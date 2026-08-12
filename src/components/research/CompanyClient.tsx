@@ -670,7 +670,12 @@ function DetailPanel({
               </tr>
             </thead>
             <tbody>
-              {INCOME_ROWS.map(([label, key]) => (
+              {/* Only lines the provider actually reports. Twelve rows of
+                  em dashes with two figures buried in them is not a
+                  statement, it is a list of things that are missing. */}
+              {INCOME_ROWS.filter(([, key]) =>
+                d.income.some((p) => p[key] !== null),
+              ).map(([label, key]) => (
                 <tr key={label} className="border-b border-paper/[0.07]">
                   <th scope="row" className="py-3 pr-6 text-left text-[0.8rem] font-normal text-paper-dim">
                     {label}
@@ -689,10 +694,14 @@ function DetailPanel({
             another tab, because a reader looking at "Financials" reasonably
             expects three statements and is getting one. */}
         <p className="mt-6 max-w-[86ch] text-[0.68rem] leading-[1.85] text-stone-dim">
-          Only the income statement is shown. The provider still returns
-          balance-sheet and cash-flow periods for this company but strips
-          their line items, so each arrives carrying nothing but an end date.
-          Neither is reconstructed from the other figures on this page.
+          Only the lines the provider reports are listed. Most of the
+          statement is returned emptied — cost of revenue, gross profit,
+          operating income and EBIT arrive as a zero with no formatted
+          value, which is the provider&apos;s marker for a stripped field
+          rather than a figure the company reported. Those lines are omitted
+          rather than shown as zero. Balance-sheet and cash-flow periods
+          come back the same way, which is why neither has a tab, and
+          nothing here is reconstructed from the figures that did arrive.
         </p>
       </div>
     );

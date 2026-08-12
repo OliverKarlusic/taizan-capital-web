@@ -513,6 +513,31 @@ export interface CompanyDetail {
 const fmtDate = (v: unknown): string | null =>
   (v as { fmt?: string } | undefined)?.fmt ?? null;
 
+/**
+ * A statement line, distinguishing "reported as zero" from "stripped".
+ *
+ * ── THE BUG THIS EXISTS TO KILL ─────────────────────────────────────
+ * Yahoo hollows out most statement lines but does not omit them. A real
+ * figure arrives as {raw: 215938000000, fmt: "215.94B"}. A stripped one
+ * arrives as {raw: 0, fmt: null, longFmt: "0"} — a zero that is not a
+ * measurement. Read naively, the income statement said NVIDIA's cost of
+ * revenue, gross profit and EBIT were all exactly $0 against $215.9bn of
+ * revenue, and the page rendered those zeros as fact. The same is true of
+ * Microsoft and, as far as could be tested, every company.
+ *
+ * The discriminator is `fmt`, not the magnitude: the provider formats
+ * every genuine figure and leaves fmt null on the ones it has emptied. A
+ * company that genuinely reported zero would still carry a formatted
+ * string. Anything stripped becomes null here and renders as an em dash,
+ * which is the one thing this codebase never lets a missing number be.
+ */
+const reported = (v: unknown): number | null => {
+  const o = v as { raw?: unknown; fmt?: unknown } | undefined;
+  if (!o || typeof o.raw !== "number" || !Number.isFinite(o.raw)) return null;
+  if (o.raw === 0 && o.fmt === null) return null;
+  return o.raw;
+};
+
 const DETAIL_MODULES = [
   "incomeStatementHistory",
   "balanceSheetHistory",
@@ -595,18 +620,18 @@ export async function getCompanyDetail(
     return {
       income: inc.map((p) => ({
         endDate: fmtDate(p.endDate),
-        totalRevenue: raw(p.totalRevenue),
-        costOfRevenue: raw(p.costOfRevenue),
-        grossProfit: raw(p.grossProfit),
-        researchDevelopment: raw(p.researchDevelopment),
-        sellingGeneralAdministrative: raw(p.sellingGeneralAdministrative),
-        totalOperatingExpenses: raw(p.totalOperatingExpenses),
-        operatingIncome: raw(p.operatingIncome),
-        ebit: raw(p.ebit),
-        interestExpense: raw(p.interestExpense),
-        incomeBeforeTax: raw(p.incomeBeforeTax),
-        incomeTaxExpense: raw(p.incomeTaxExpense),
-        netIncome: raw(p.netIncome),
+        totalRevenue: reported(p.totalRevenue),
+        costOfRevenue: reported(p.costOfRevenue),
+        grossProfit: reported(p.grossProfit),
+        researchDevelopment: reported(p.researchDevelopment),
+        sellingGeneralAdministrative: reported(p.sellingGeneralAdministrative),
+        totalOperatingExpenses: reported(p.totalOperatingExpenses),
+        operatingIncome: reported(p.operatingIncome),
+        ebit: reported(p.ebit),
+        interestExpense: reported(p.interestExpense),
+        incomeBeforeTax: reported(p.incomeBeforeTax),
+        incomeTaxExpense: reported(p.incomeTaxExpense),
+        netIncome: reported(p.netIncome),
       })),
       ownership: {
         insidersPercentHeld: raw(major.insidersPercentHeld),
