@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { CompanyPayload } from "@/app/api/research/company/[ticker]/route";
@@ -39,47 +39,31 @@ const TABS = [
   { id: "valuation", label: "Valuation", live: true },
   { id: "growth", label: "Growth & Profitability", live: true },
   { id: "risk", label: "Risk", live: true },
-  { id: "financials", label: "Financials", live: false },
+  { id: "financials", label: "Financials", live: true },
+  { id: "peers", label: "Peers", live: true },
+  { id: "ownership", label: "Ownership", live: true },
+  { id: "filings", label: "News & Filings", live: true },
+  { id: "calendar", label: "Calendar", live: true },
   { id: "cashflow", label: "Cash Flow", live: false },
-  { id: "peers", label: "Peers", live: false },
-  { id: "ownership", label: "Ownership", live: false },
-  { id: "filings", label: "News & Filings", live: false },
-  { id: "calendar", label: "Calendar", live: false },
   { id: "thesis", label: "Thesis", live: false },
 ] as const;
+
+/** Tabs whose data comes from the second, lazily-fetched request. */
+const DETAIL_TABS = new Set([
+  "financials",
+  "peers",
+  "ownership",
+  "filings",
+  "calendar",
+]);
 
 type TabId = (typeof TABS)[number]["id"];
 
 const UNAVAILABLE: Record<string, { title: string; reason: string }> = {
-  financials: {
-    title: "Full financial statements",
-    reason:
-      "Income statement, balance sheet and segment detail need a statements feed. The free tier behind this terminal returns summary ratios only, and reconstructing statements from ratios would produce figures that look sourced and are not.",
-  },
   cashflow: {
     title: "Cash flow statement",
     reason:
-      "Operating, investing and financing cash flows are not carried by the current feed. Free cash flow is the figure most worth having here, which is exactly why it will not be inferred from earnings and an assumed capital-expenditure rate.",
-  },
-  peers: {
-    title: "Comparable company analysis",
-    reason:
-      "A true peer set needs a classification source and a defensible basis for choosing which companies belong in it. The Valuation tab shows a median across this terminal's own covered universe in the same sector, which is a narrower and clearly-labelled thing — not a comparables analysis.",
-  },
-  ownership: {
-    title: "Ownership and substantial holders",
-    reason:
-      "Institutional and substantial-holder registers require a paid provider. SEC EDGAR covers US filers only and would leave every ASX company on this list blank, which is a worse outcome than showing nothing consistently.",
-  },
-  filings: {
-    title: "News and regulatory filings",
-    reason:
-      "Announcements need a licensed news feed, and ASX company announcements are not freely redistributable. A partial feed covering only US filers would imply the ASX companies had made no announcements.",
-  },
-  calendar: {
-    title: "Earnings calendar",
-    reason:
-      "Confirmed reporting dates require a corporate-actions provider. The current feed carries estimated dates for some companies, and an estimated earnings date presented as confirmed is the kind of small false precision that erodes trust in everything beside it.",
+      "The feed still returns cash-flow periods for this company, but with every line item stripped out — each statement arrives carrying nothing but its end date. There is no operating, investing or financing figure to publish. Free cash flow is the number most worth having here, which is exactly why it will not be inferred from earnings and an assumed capital-expenditure rate. The same is true of the balance sheet, which is why the Financials tab shows the income statement alone.",
   },
   thesis: {
     title: "Investment thesis",
@@ -95,6 +79,54 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
   const [tab, setTab] = useState<TabId>("overview");
   /** When this page's figures were retrieved, for the as-of stamp. */
   const [fetchedAt, setFetchedAt] = useState<string>(() => new Date().toISOString());
+
+  /* The second request, made only once one of its tabs is opened. */
+  const [detail, setDetail] = useState<DetailPayload | null>(null);
+  const [detailState, setDetailState] = useState<"idle" | "loading" | "error">("idle");
+
+  /**
+   * Which symbol's detail has been requested.
+   *
+   * A ref rather than state, and there is deliberately no cleanup
+   * function here. The first version guarded on `detailState` and listed
+   * it as a dependency: setting it to "loading" re-ran the effect, whose
+   * cleanup set `alive = false`, so the response that arrived 400ms later
+   * was discarded and the panel loaded forever. Staleness is checked
+   * against the symbol at resolve time instead, which is the thing that
+   * actually makes a response stale.
+   */
+  const requestedRef = useRef<string | null>(null);
+  const needsDetail = DETAIL_TABS.has(tab);
+
+  useEffect(() => {
+    if (!needsDetail || requestedRef.current === symbol) return;
+    requestedRef.current = symbol;
+    setDetailState("loading");
+    (async () => {
+      try {
+        const r = await fetch(
+          `/api/research/company/${encodeURIComponent(symbol)}/detail`,
+        );
+        const j = await r.json();
+        if (requestedRef.current !== symbol) return; // a different company now
+        if (!r.ok) setDetailState("error");
+        else {
+          setDetail(j);
+          setDetailState("idle");
+        }
+      } catch {
+        if (requestedRef.current === symbol) setDetailState("error");
+      }
+    })();
+  }, [needsDetail, symbol]);
+
+  // A new company means the previous company's statements must go.
+  useEffect(() => {
+    requestedRef.current = null;
+    setDetail(null);
+    setDetailState("idle");
+    setTab("overview");
+  }, [symbol]);
 
   useEffect(() => {
     let alive = true;
@@ -476,12 +508,486 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
           </div>
         ) : null}
 
+        {DETAIL_TABS.has(tab) ? (
+          detailState === "loading" ? (
+            <p className="py-12 text-[0.85rem] text-stone">
+              Fetching delayed market data…
+            </p>
+          ) : detailState === "error" || !detail ? (
+            <div className="border border-dashed border-paper/15 px-6 py-12">
+              <p className="max-w-[62ch] text-[0.9rem] font-light leading-[1.9] text-paper-dim">
+                This section&apos;s data could not be retrieved. Nothing is
+                estimated in its place — reload to try the feed again.
+              </p>
+            </div>
+          ) : (
+            <DetailPanel
+              tab={tab}
+              d={detail}
+              currency={detail.currency ?? quote.currency}
+              symbol={data.symbol}
+            />
+          )
+        ) : null}
+
         {!TABS.find((t) => t.id === tab)?.live ? (
           <Unavailable {...UNAVAILABLE[tab]} />
         ) : null}
       </div>
     </div>
   );
+}
+
+/* ── detail panels ────────────────────────────────────────────────── */
+
+interface DetailPayload {
+  income: {
+    endDate: string | null;
+    totalRevenue: number | null;
+    costOfRevenue: number | null;
+    grossProfit: number | null;
+    researchDevelopment: number | null;
+    sellingGeneralAdministrative: number | null;
+    totalOperatingExpenses: number | null;
+    operatingIncome: number | null;
+    ebit: number | null;
+    interestExpense: number | null;
+    incomeBeforeTax: number | null;
+    incomeTaxExpense: number | null;
+    netIncome: number | null;
+  }[];
+  ownership: {
+    insidersPercentHeld: number | null;
+    institutionsPercentHeld: number | null;
+    institutionsCount: number | null;
+    topHolders: {
+      organization: string;
+      reportDate: string | null;
+      pctHeld: number | null;
+      position: number | null;
+      value: number | null;
+    }[];
+    insiders: { name: string; relation: string | null; transaction: string | null; date: string | null }[];
+  };
+  calendar: {
+    earningsDate: string | null;
+    earningsDateIsEstimate: boolean;
+    exDividendDate: string | null;
+    dividendDate: string | null;
+  };
+  filings: { date: string; type: string; title: string; url: string | null }[];
+  filingsUnsupported: boolean;
+  news: { title: string; publisher: string | null; link: string; published: string | null }[];
+  peers: {
+    symbol: string;
+    name: string | null;
+    marketCap: number | null;
+    trailingPE: number | null;
+    priceToBook: number | null;
+    dividendYield: number | null;
+  }[];
+  peerBasis: { sector: string | null; index: string | null };
+  currency: string | null;
+  balanceSheetEmpty: boolean;
+  cashFlowEmpty: boolean;
+}
+
+/** Large money, compactly — statements run to twelve digits. */
+function big(v: number | null, currency: string | null): string {
+  if (v === null) return DASH;
+  const sign = v < 0 ? "−" : "";
+  const a = Math.abs(v);
+  const c = currency ? `${currency} ` : "";
+  for (const [size, suffix] of [
+    [1e12, "T"],
+    [1e9, "B"],
+    [1e6, "M"],
+    [1e3, "K"],
+  ] as [number, string][]) {
+    if (a >= size) return `${sign}${c}${(a / size).toFixed(2)}${suffix}`;
+  }
+  return `${sign}${c}${a.toFixed(0)}`;
+}
+
+const INCOME_ROWS: [string, keyof DetailPayload["income"][number]][] = [
+  ["Revenue", "totalRevenue"],
+  ["Cost of revenue", "costOfRevenue"],
+  ["Gross profit", "grossProfit"],
+  ["Research & development", "researchDevelopment"],
+  ["Selling, general & admin", "sellingGeneralAdministrative"],
+  ["Total operating expenses", "totalOperatingExpenses"],
+  ["Operating income", "operatingIncome"],
+  ["EBIT", "ebit"],
+  ["Interest expense", "interestExpense"],
+  ["Pre-tax income", "incomeBeforeTax"],
+  ["Income tax", "incomeTaxExpense"],
+  ["Net income", "netIncome"],
+];
+
+function DetailPanel({
+  tab,
+  d,
+  currency,
+  symbol,
+}: {
+  tab: TabId;
+  d: DetailPayload;
+  currency: string | null;
+  symbol: string;
+}) {
+  if (tab === "financials") {
+    if (!d.income.length) {
+      return (
+        <Unavailable
+          title="Income statement"
+          reason="The feed returned no income-statement periods for this listing."
+        />
+      );
+    }
+    return (
+      <div>
+        <H>Income statement</H>
+        <p className="mt-4 max-w-[80ch] text-[0.82rem] font-light leading-[1.9] text-stone">
+          Annual periods as reported by the data provider, most recent first.
+          Figures are as filed and have not been restated or adjusted here.
+        </p>
+        <div className="mt-8 overflow-x-auto">
+          <table className="w-full min-w-[40rem] border-collapse text-left">
+            <thead>
+              <tr className="border-b border-paper/15">
+                <th scope="col" className="py-3 text-[0.58rem] font-medium uppercase tracking-[0.2em] text-stone">
+                  Period ending
+                </th>
+                {d.income.map((p) => (
+                  <th
+                    key={p.endDate ?? Math.random()}
+                    scope="col"
+                    className="tabular py-3 pl-6 text-right text-[0.58rem] font-medium uppercase tracking-[0.2em] text-stone"
+                  >
+                    {p.endDate ?? DASH}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {INCOME_ROWS.map(([label, key]) => (
+                <tr key={label} className="border-b border-paper/[0.07]">
+                  <th scope="row" className="py-3 pr-6 text-left text-[0.8rem] font-normal text-paper-dim">
+                    {label}
+                  </th>
+                  {d.income.map((p, i) => (
+                    <td key={i} className="tabular py-3 pl-6 text-right text-[0.85rem] text-paper">
+                      {big(p[key] as number | null, currency)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {/* The absence is stated here rather than left to be discovered on
+            another tab, because a reader looking at "Financials" reasonably
+            expects three statements and is getting one. */}
+        <p className="mt-6 max-w-[86ch] text-[0.68rem] leading-[1.85] text-stone-dim">
+          Only the income statement is shown. The provider still returns
+          balance-sheet and cash-flow periods for this company but strips
+          their line items, so each arrives carrying nothing but an end date.
+          Neither is reconstructed from the other figures on this page.
+        </p>
+      </div>
+    );
+  }
+
+  if (tab === "peers") {
+    if (!d.peers.length) {
+      return (
+        <Unavailable
+          title="Sector cohort"
+          reason="No other covered constituent shares this company's sector, so there is no cohort to show."
+        />
+      );
+    }
+    return (
+      <div>
+        <H>Sector cohort</H>
+        <p className="mt-4 max-w-[80ch] text-[0.82rem] font-light leading-[1.9] text-stone">
+          The covered constituents closest to {symbol} by market
+          capitalisation that share its{" "}
+          {d.peerBasis.sector ? `${d.peerBasis.sector} ` : ""}sector, as
+          classified by the index that lists them. This is a sector-and-size
+          cohort drawn from this terminal&apos;s coverage — not a judgement
+          that these businesses are comparable, and not a ranking.
+        </p>
+        <div className="mt-8 overflow-x-auto">
+          <table className="w-full min-w-[40rem] border-collapse text-left">
+            <thead>
+              <tr className="border-b border-paper/15">
+                {["Company", "Market cap", "P/E", "P/B", "Yield"].map((h, i) => (
+                  <th
+                    key={h}
+                    scope="col"
+                    className={`py-3 text-[0.58rem] font-medium uppercase tracking-[0.2em] text-stone ${
+                      i === 0 ? "" : "pl-6 text-right"
+                    }`}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {d.peers.map((p) => (
+                <tr key={p.symbol} className="border-b border-paper/[0.07]">
+                  <td className="py-3 pr-6">
+                    <Link href={`/research/${encodeURIComponent(p.symbol)}`} className="group block">
+                      <span className="tabular text-[0.8rem] text-gold group-hover:text-gold-bright">
+                        {p.symbol}
+                      </span>
+                      <span className="mt-0.5 block max-w-[30ch] text-[0.8rem] font-light leading-snug text-paper-dim">
+                        {p.name ?? DASH}
+                      </span>
+                    </Link>
+                  </td>
+                  <td className="tabular py-3 pl-6 text-right text-[0.85rem] text-paper-dim">
+                    {big(p.marketCap, null)}
+                  </td>
+                  <td className="tabular py-3 pl-6 text-right text-[0.85rem] text-paper-dim">
+                    {p.trailingPE === null ? DASH : decimal(p.trailingPE, 1)}
+                  </td>
+                  <td className="tabular py-3 pl-6 text-right text-[0.85rem] text-paper-dim">
+                    {p.priceToBook === null ? DASH : decimal(p.priceToBook, 1)}
+                  </td>
+                  <td className="tabular py-3 pl-6 text-right text-[0.85rem] text-paper-dim">
+                    {percent(p.dividendYield, 2)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  if (tab === "ownership") {
+    const o = d.ownership;
+    const hasAny =
+      o.insidersPercentHeld !== null ||
+      o.institutionsPercentHeld !== null ||
+      o.topHolders.length > 0;
+    if (!hasAny) {
+      return (
+        <Unavailable
+          title="Ownership"
+          reason="The provider publishes no ownership breakdown for this listing."
+        />
+      );
+    }
+    return (
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-14">
+        <div className="lg:col-span-5">
+          <H>Ownership breakdown</H>
+          <MetricsGrid
+            items={[
+              ["Held by institutions", fraction(o.institutionsPercentHeld)],
+              ["Held by insiders", fraction(o.insidersPercentHeld)],
+              [
+                "Institutions on register",
+                o.institutionsCount === null
+                  ? DASH
+                  : Math.round(o.institutionsCount).toLocaleString("en-AU"),
+              ],
+            ]}
+          />
+          {o.insiders.length ? (
+            <>
+              <h3 className="mt-10 text-[0.62rem] uppercase tracking-[0.22em] text-stone">
+                Recent insider transactions
+              </h3>
+              <ul className="mt-4">
+                {o.insiders.slice(0, 6).map((h, i) => (
+                  <li key={i} className="border-t border-paper/10 py-3">
+                    <p className="text-[0.82rem] text-paper-dim">{h.name}</p>
+                    <p className="mt-1 text-[0.68rem] text-stone">
+                      {[h.relation, h.transaction, h.date].filter(Boolean).join(" · ") || DASH}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+        </div>
+
+        <div className="lg:col-span-7">
+          <H>Largest institutional holders</H>
+          {o.topHolders.length ? (
+            <div className="mt-6 overflow-x-auto">
+              <table className="w-full min-w-[34rem] border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-paper/15">
+                    {["Holder", "Held", "Position", "Value", "As at"].map((h, i) => (
+                      <th
+                        key={h}
+                        scope="col"
+                        className={`py-3 text-[0.58rem] font-medium uppercase tracking-[0.2em] text-stone ${
+                          i === 0 ? "" : "pl-5 text-right"
+                        }`}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {o.topHolders.map((h, i) => (
+                    <tr key={i} className="border-b border-paper/[0.07]">
+                      <td className="py-3 pr-5 text-[0.82rem] text-paper-dim">{h.organization}</td>
+                      <td className="tabular py-3 pl-5 text-right text-[0.82rem] text-paper">{fraction(h.pctHeld, 2)}</td>
+                      <td className="tabular py-3 pl-5 text-right text-[0.82rem] text-paper-dim">{big(h.position, null)}</td>
+                      <td className="tabular py-3 pl-5 text-right text-[0.82rem] text-paper-dim">{big(h.value, d.currency)}</td>
+                      <td className="tabular py-3 pl-5 text-right text-[0.75rem] text-stone">{h.reportDate ?? DASH}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="mt-6 text-[0.85rem] text-stone">
+              No institutional register is published for this listing.
+            </p>
+          )}
+          <p className="mt-6 max-w-[80ch] text-[0.68rem] leading-[1.85] text-stone-dim">
+            Holder positions are reported on a lag and are as at the date
+            shown against each line, not as at today.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (tab === "calendar") {
+    const c = d.calendar;
+    if (!c.earningsDate && !c.exDividendDate && !c.dividendDate) {
+      return (
+        <Unavailable
+          title="Calendar"
+          reason="No reporting or dividend dates are published for this listing."
+        />
+      );
+    }
+    return (
+      <div className="max-w-3xl">
+        <H>Upcoming dates</H>
+        <MetricsGrid
+          items={[
+            [
+              c.earningsDateIsEstimate
+                ? "Next results (provider estimate)"
+                : "Next results (confirmed)",
+              c.earningsDate ?? DASH,
+            ],
+            ["Ex-dividend date", c.exDividendDate ?? DASH],
+            ["Dividend payable", c.dividendDate ?? DASH],
+          ]}
+        />
+        {/* An estimated date presented as confirmed is exactly the kind of
+            small false precision that costs a reader trust in everything
+            beside it, so the distinction is on the label itself. */}
+        <p className="mt-6 max-w-[80ch] text-[0.68rem] leading-[1.85] text-stone-dim">
+          {c.earningsDateIsEstimate
+            ? "The results date is the provider's estimate, not a date confirmed by the company, and is labelled as such above."
+            : "The results date is reported by the provider as confirmed."}{" "}
+          No analyst revenue or earnings expectations are published here.
+          Dates should be checked against the company&apos;s own announcements
+          before being relied on.
+        </p>
+      </div>
+    );
+  }
+
+  if (tab === "filings") {
+    return (
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-14">
+        <div className="lg:col-span-7">
+          <H>Recent coverage</H>
+          {d.news.length ? (
+            <ul className="mt-6">
+              {d.news.map((n, i) => (
+                <li key={i} className="border-t border-paper/10 py-4">
+                  <a
+                    href={n.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group block"
+                  >
+                    <p className="max-w-[62ch] text-[0.88rem] font-light leading-snug text-paper-dim transition-colors duration-300 group-hover:text-paper">
+                      {n.title}
+                    </p>
+                    <p className="mt-1.5 text-[0.65rem] uppercase tracking-[0.14em] text-stone-dim">
+                      {[n.publisher, n.published ? new Date(n.published).toLocaleDateString("en-AU") : null]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-6 text-[0.85rem] text-stone">
+              No recent items are returned for this listing.
+            </p>
+          )}
+          <p className="mt-6 max-w-[70ch] text-[0.68rem] leading-[1.85] text-stone-dim">
+            Headlines are listed with their publisher and link out to the
+            source. Taizan Capital does not author, endorse or verify them,
+            and their presence here is not a view on the company. Items
+            whose headline is phrased as a recommendation — &ldquo;stocks to
+            buy&rdquo;, price targets, upgrades and downgrades — are
+            excluded, because this terminal does not publish
+            recommendations and surfacing someone else&apos;s would not
+            change that.
+          </p>
+        </div>
+
+        <div className="lg:col-span-5">
+          <H>Regulatory filings</H>
+          {d.filings.length ? (
+            <ul className="mt-6">
+              {d.filings.map((f, i) => (
+                <li key={i} className="border-t border-paper/10 py-3">
+                  <a
+                    href={f.url ?? "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group block"
+                  >
+                    <p className="tabular text-[0.7rem] uppercase tracking-[0.14em] text-gold">
+                      {f.type} · {f.date}
+                    </p>
+                    <p className="mt-1 max-w-[42ch] text-[0.8rem] font-light leading-snug text-paper-dim group-hover:text-paper">
+                      {f.title}
+                    </p>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            /* The filings endpoint is SEC-backed and 404s for ASX lines.
+               Saying so is more useful than an empty list, which would
+               read as "this company has filed nothing". */
+            <p className="mt-6 max-w-[46ch] text-[0.82rem] font-light leading-[1.9] text-stone">
+              The filings feed behind this terminal covers SEC filers only,
+              so nothing is listed for this company. That is a limit of the
+              source, not a statement that no filings exist — ASX
+              announcements are published on the ASX platform.
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 /* ── small pieces ─────────────────────────────────────────────────── */

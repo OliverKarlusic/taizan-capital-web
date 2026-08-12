@@ -434,6 +434,325 @@ export async function getProfiles(
   return out;
 }
 
+/* ── company detail: statements, ownership, calendar, filings ─────── */
+
+export interface IncomePeriod {
+  endDate: string | null;
+  totalRevenue: number | null;
+  costOfRevenue: number | null;
+  grossProfit: number | null;
+  researchDevelopment: number | null;
+  sellingGeneralAdministrative: number | null;
+  totalOperatingExpenses: number | null;
+  operatingIncome: number | null;
+  ebit: number | null;
+  interestExpense: number | null;
+  incomeBeforeTax: number | null;
+  incomeTaxExpense: number | null;
+  netIncome: number | null;
+}
+
+export interface Holder {
+  organization: string;
+  reportDate: string | null;
+  pctHeld: number | null;
+  position: number | null;
+  value: number | null;
+}
+
+export interface Insider {
+  name: string;
+  relation: string | null;
+  transaction: string | null;
+  date: string | null;
+}
+
+export interface Filing {
+  date: string;
+  type: string;
+  title: string;
+  url: string | null;
+}
+
+export interface NewsItem {
+  title: string;
+  publisher: string | null;
+  link: string;
+  published: string | null;
+}
+
+export interface CompanyDetail {
+  income: IncomePeriod[];
+  ownership: {
+    insidersPercentHeld: number | null;
+    institutionsPercentHeld: number | null;
+    institutionsCount: number | null;
+    topHolders: Holder[];
+    insiders: Insider[];
+  };
+  calendar: {
+    earningsDate: string | null;
+    earningsDateIsEstimate: boolean;
+    exDividendDate: string | null;
+    dividendDate: string | null;
+  };
+  filings: Filing[];
+  /** True when the filings endpoint has no coverage for this listing. */
+  filingsUnsupported: boolean;
+  news: NewsItem[];
+  /**
+   * Yahoo still returns balance-sheet and cash-flow periods, but with the
+   * line items stripped — every statement comes back carrying only its
+   * end date. Recorded here so the page can say precisely that, rather
+   * than implying the work simply has not been done.
+   */
+  balanceSheetEmpty: boolean;
+  cashFlowEmpty: boolean;
+}
+
+const fmtDate = (v: unknown): string | null =>
+  (v as { fmt?: string } | undefined)?.fmt ?? null;
+
+const DETAIL_MODULES = [
+  "incomeStatementHistory",
+  "balanceSheetHistory",
+  "cashflowStatementHistory",
+  "calendarEvents",
+  "majorHoldersBreakdown",
+  "institutionOwnership",
+  "insiderHolders",
+  "secFilings",
+].join(",");
+
+export async function getCompanyDetail(
+  symbol: string,
+): Promise<CompanyDetail | null> {
+  return cached(`d:${symbol}`, TTL.summary, async () => {
+    let j: { quoteSummary?: { result?: Record<string, unknown>[] } };
+    try {
+      j = (await authed(
+        `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(
+          symbol,
+        )}?modules=${DETAIL_MODULES}`,
+      )) as { quoteSummary?: { result?: Record<string, unknown>[] } };
+    } catch (e) {
+      // secFilings 404s for non-US listings and takes the whole request
+      // with it, so retry without it before giving up.
+      if (e instanceof UpstreamError && e.status === 404) {
+        try {
+          j = (await authed(
+            `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(
+              symbol,
+            )}?modules=${DETAIL_MODULES.replace(",secFilings", "")}`,
+          )) as { quoteSummary?: { result?: Record<string, unknown>[] } };
+        } catch {
+          return null;
+        }
+      } else throw e;
+    }
+
+    const r = j?.quoteSummary?.result?.[0];
+    if (!r) return null;
+
+    const inc =
+      ((r.incomeStatementHistory as { incomeStatementHistory?: Record<string, unknown>[] })
+        ?.incomeStatementHistory ?? []);
+    const bal =
+      ((r.balanceSheetHistory as { balanceSheetStatements?: Record<string, unknown>[] })
+        ?.balanceSheetStatements ?? []);
+    const cf =
+      ((r.cashflowStatementHistory as { cashflowStatements?: Record<string, unknown>[] })
+        ?.cashflowStatements ?? []);
+    const cal = (r.calendarEvents ?? {}) as Record<string, unknown>;
+    const calEarnings = (cal.earnings ?? {}) as Record<string, unknown>;
+    const major = (r.majorHoldersBreakdown ?? {}) as Record<string, unknown>;
+    const inst =
+      ((r.institutionOwnership as { ownershipList?: Record<string, unknown>[] })
+        ?.ownershipList ?? []);
+    const insid =
+      ((r.insiderHolders as { holders?: Record<string, unknown>[] })?.holders ?? []);
+    const filings =
+      ((r.secFilings as { filings?: Record<string, unknown>[] })?.filings ?? []);
+
+    /**
+     * A statement is empty when its periods carry no line items.
+     *
+     * `netIncome` is excluded from the count for the cash-flow statement:
+     * it is the opening line carried across from the income statement, not
+     * a cash-flow measure, and treating it as content would report a
+     * statement as present when every operating, investing and financing
+     * figure is absent.
+     */
+    const hollow = (rows: Record<string, unknown>[], ignore: string[] = []) =>
+      rows.length === 0 ||
+      rows.every(
+        (row) =>
+          Object.keys(row).filter(
+            (k) => k !== "maxAge" && k !== "endDate" && !ignore.includes(k),
+          ).length === 0,
+      );
+
+    return {
+      income: inc.map((p) => ({
+        endDate: fmtDate(p.endDate),
+        totalRevenue: raw(p.totalRevenue),
+        costOfRevenue: raw(p.costOfRevenue),
+        grossProfit: raw(p.grossProfit),
+        researchDevelopment: raw(p.researchDevelopment),
+        sellingGeneralAdministrative: raw(p.sellingGeneralAdministrative),
+        totalOperatingExpenses: raw(p.totalOperatingExpenses),
+        operatingIncome: raw(p.operatingIncome),
+        ebit: raw(p.ebit),
+        interestExpense: raw(p.interestExpense),
+        incomeBeforeTax: raw(p.incomeBeforeTax),
+        incomeTaxExpense: raw(p.incomeTaxExpense),
+        netIncome: raw(p.netIncome),
+      })),
+      ownership: {
+        insidersPercentHeld: raw(major.insidersPercentHeld),
+        institutionsPercentHeld: raw(major.institutionsPercentHeld),
+        institutionsCount: raw(major.institutionsCount),
+        topHolders: inst.map((h) => ({
+          organization: String(h.organization ?? "—"),
+          reportDate: fmtDate(h.reportDate),
+          pctHeld: raw(h.pctHeld),
+          position: raw(h.position),
+          value: raw(h.value),
+        })),
+        insiders: insid.map((h) => ({
+          name: String(h.name ?? "—"),
+          relation: str(h.relation),
+          transaction: str(h.transactionDescription),
+          date: fmtDate(h.latestTransDate),
+        })),
+      },
+      calendar: {
+        earningsDate: Array.isArray(calEarnings.earningsDate)
+          ? fmtDate((calEarnings.earningsDate as unknown[])[0])
+          : null,
+        earningsDateIsEstimate: Boolean(calEarnings.isEarningsDateEstimate),
+        exDividendDate: fmtDate(cal.exDividendDate),
+        dividendDate: fmtDate(cal.dividendDate),
+      },
+      filings: filings.slice(0, 12).map((f) => ({
+        date: String(f.date ?? ""),
+        type: String(f.type ?? ""),
+        title: String(f.title ?? ""),
+        url: str(f.edgarUrl),
+      })),
+      filingsUnsupported: !r.secFilings,
+      news: [],
+      balanceSheetEmpty: hollow(bal),
+      cashFlowEmpty: hollow(cf, ["netIncome"]),
+    };
+  });
+}
+
+/**
+ * Headlines whose wording reads as a recommendation.
+ *
+ * ── WHY A SYNDICATED FEED HAS TO BE FILTERED ────────────────────────
+ * The feed returns items like "3 Stocks to Buy Now" and "Analyst Predicts
+ * …". Those are the publisher's words, not Taizan's, and each is
+ * attributed and linked. But they would be rendering inside the firm's own
+ * research terminal, on a site whose entire position is that the firm
+ * publishes no recommendations and is not licensed to. A reader — or a
+ * regulator — is entitled to read a headline the firm chose to surface as
+ * something the firm is comfortable surfacing.
+ *
+ * Nothing here judges the article. The test is only whether its headline
+ * is phrased as advice, and excluded items are declared on the page rather
+ * than quietly dropped.
+ */
+const RECOMMENDATION_WORDING =
+  /\b(buy|sell|hold|short)\s+(now|these|this|the|before|stock|stocks)\b|\bstocks?\s+to\s+(buy|sell|watch|own|avoid|hold|consider)\b|\b(top|best|worst)\s+\d*\s*(stock|pick|buy)s?\b|\bprice\s+target\b|\b(upgrade|downgrade)[ds]?\b|\b(overweight|underweight|outperform|underperform)\b|\bstrong\s+buy\b|\bmust[- ]own\b|\bshould\s+(you|investors)\s+(buy|sell|avoid|own)\b|\bavoid\s+the\s+stock\b/i;
+
+export const readsAsRecommendation = (title: string) =>
+  RECOMMENDATION_WORDING.test(title);
+
+/**
+ * Headlines about this company, each linking out to its publisher.
+ *
+ * ── WHY RELEVANCE IS ENFORCED HERE ──────────────────────────────────
+ * The search endpoint pads its news array with general market items. A
+ * query for BHP.AX came back with stories about Air Canada, Meta and
+ * E.ON — none of which mention BHP. Rendered under a heading reading
+ * "Recent coverage" on BHP's own page, that tells the reader those
+ * stories are about the company they are researching, which is false.
+ *
+ * An item is kept only when the feed's own relatedTickers names this
+ * symbol, or the headline mentions the ticker or the company name. When
+ * nothing survives, the page says there are no recent items — which is a
+ * true statement about this company's coverage, and better than a list of
+ * someone else's news.
+ */
+export async function getNews(
+  symbol: string,
+  companyName?: string | null,
+): Promise<NewsItem[]> {
+  return cached(`n:${symbol}:${companyName ?? ""}`, TTL.summary, async () => {
+    try {
+      const r = await fetch(
+        `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(
+          symbol,
+        )}&newsCount=16&quotesCount=0`,
+        { headers: { "User-Agent": UA } },
+      );
+      if (!r.ok) return [];
+      const j = (await r.json()) as { news?: Record<string, unknown>[] };
+
+      const bare = symbol.replace(/\..*$/, "").toUpperCase();
+      // "BHP Group Limited" → "bhp group": drop the corporate suffix so a
+      // headline saying "BHP Group" still matches.
+      const nameStem = (companyName ?? "")
+        .toLowerCase()
+        .replace(
+          /\b(inc|corp|corporation|company|co|ltd|limited|plc|group|holdings|nv|sa|se|ag)\b\.?/g,
+          "",
+        )
+        .replace(/[^a-z ]/g, "")
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .join(" ");
+
+      /**
+       * The headline must name the company. relatedTickers is deliberately
+       * not trusted: the feed tags articles very broadly, and using it let
+       * stories about PepsiCo, SpaceX and Bechtle through onto NVIDIA's
+       * page. A tag is the publisher's idea of loosely relevant; a mention
+       * in the headline is evidence the piece is about this company.
+       *
+       * This is strict, and for most listings it returns nothing. That is
+       * the honest state of a free feed, and an empty section that says so
+       * beats a full one that misleads.
+       */
+      const mentions = (n: Record<string, unknown>) => {
+        const title = String(n.title ?? "");
+        if (new RegExp(`\\b${bare}\\b`).test(title.toUpperCase())) return true;
+        return nameStem.length > 3 && title.toLowerCase().includes(nameStem);
+      };
+
+      return (j.news ?? [])
+        .filter((n) => n.title && n.link)
+        .filter(mentions)
+        .filter((n) => !readsAsRecommendation(String(n.title)))
+        .slice(0, 8)
+        .map((n) => ({
+          title: String(n.title),
+          publisher: str(n.publisher),
+          link: String(n.link),
+          published:
+            typeof n.providerPublishTime === "number"
+              ? new Date(n.providerPublishTime * 1000).toISOString()
+              : null,
+        }));
+    } catch {
+      return [];
+    }
+  });
+}
+
 export interface History {
   /** Unix seconds. */
   timestamps: number[];
