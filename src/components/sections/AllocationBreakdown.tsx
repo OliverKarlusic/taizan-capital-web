@@ -5,10 +5,10 @@ import {
   HOLDINGS,
   REPORTED_SECTORS,
   TOTAL_WEIGHT,
-} from "@/data/growthMaximisationAllocation";
+} from "@/data/longTermGrowthAllocation";
 
 /**
- * Growth Maximisation — allocation as reported.
+ * Long Term Growth — allocation as reported.
  *
  * Drawn as rules, not pies. A pie chart of five slices tells a reader less
  * than five numbers in a column does, and the colour wheel it needs is the

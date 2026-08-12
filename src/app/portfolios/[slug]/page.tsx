@@ -213,7 +213,7 @@ export default async function PortfolioPage({
         {/* Allocation is real, dated, broker-reported data and exists for
             exactly one strategy. It renders only there — a shared template
             must not imply the other four have a disclosed allocation. */}
-        {c.slug === "growth-maximisation" ? <AllocationBreakdown /> : null}
+        {c.slug === "long-term-growth" ? <AllocationBreakdown /> : null}
         {c.slug === "options" ? <OptionsResults /> : null}
 
         {/* ── Horizon, universe, suitability ── */}

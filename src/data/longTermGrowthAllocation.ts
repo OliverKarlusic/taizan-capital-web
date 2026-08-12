@@ -1,5 +1,12 @@
 /**
- * Growth Maximisation — portfolio allocation.
+ * Long Term Growth — portfolio allocation.
+ *
+ * Corrected attribution. This snapshot was first published against Growth
+ * Maximisation, which was wrong: that strategy holds MSFT, VUG and SMH.
+ * The holdings below — three index funds and two direct positions, just
+ * over half of it Australian — are the Long Term Growth portfolio, and the
+ * composition is the tell. Growth Maximisation is a concentrated US growth
+ * mandate; this is not that.
  *
  * ── PROVENANCE ──────────────────────────────────────────────────────
  * Source: public/media/Charts and Graphs/30-June-2026 chart.png, a broker
