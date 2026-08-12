@@ -4,6 +4,7 @@ import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/sections/Footer";
 import { STATUS_LONG } from "@/lib/compliance";
 import { readReportFiles } from "@/lib/report-files";
+import { BY_STRATEGY } from "@/data/byStrategy";
 import {
   BENCHMARK_CUMULATIVE,
   FUND_ANNUALISED,
@@ -11,7 +12,6 @@ import {
   METHODOLOGY,
   QUARTERS,
   REPORTING_CALENDAR,
-  STRATEGY_SERIES,
   formatReturn,
   hasPerformance,
 } from "@/lib/reports";
@@ -209,90 +209,75 @@ export default function PerformancePage() {
           </section>
         ) : null}
 
-        {/* ── By strategy ── */}
-        <section
-          className={`${quarterCount > 0 ? "border-t border-paper/10" : ""} mx-auto max-w-6xl px-6 py-16 lg:px-10`}
-        >
-          <div className="flex flex-wrap items-baseline justify-between gap-4">
-            <h2 className="text-[0.65rem] uppercase tracking-[0.28em] text-gold">
-              By strategy
-            </h2>
-            {quarterCount === 0 ? (
-              <span className="text-[0.62rem] uppercase tracking-[0.2em] text-stone-dim">
-                No reporting periods closed
-              </span>
-            ) : null}
-          </div>
+        {/* ── By strategy ──
+            Driven by what each strategy has actually produced, not by the
+            quarterly reporting cycle. Every result on this site lived on a
+            strategy detail page behind the portfolio ring, so a visitor
+            following the Performance link in the navigation arrived at an
+            empty table and concluded nothing had been published. The
+            results were real; the route to them was not. */}
+        <section className="mx-auto max-w-6xl px-6 py-16 lg:px-10">
+          <h2 className="text-[0.65rem] uppercase tracking-[0.28em] text-gold">
+            By strategy
+          </h2>
+          <p className="mt-8 max-w-[68ch] text-[0.95rem] font-light leading-[1.95] text-paper-dim">
+            Results exist for two strategies and a set of closed options
+            positions. They are measured on different bases against
+            different benchmarks and are not combined into a firm-level
+            figure, because they are not one portfolio.
+          </p>
 
-          <div className="mt-8 overflow-x-auto">
-            <table className="w-full min-w-[34rem] border-collapse text-left">
-              <caption className="sr-only">
-                Return by strategy for each closed quarter. No figures are
-                currently published.
-              </caption>
-              <thead>
-                <tr className="border-b border-paper/15">
-                  <th
-                    scope="col"
-                    className="py-4 pr-6 text-[0.62rem] font-medium uppercase tracking-[0.2em] text-stone"
-                  >
-                    Strategy
-                  </th>
-                  {QUARTERS.map((q) => (
-                    <th
-                      key={q.quarter.id}
-                      scope="col"
-                      className="py-4 pl-6 text-right text-[0.62rem] font-medium uppercase tracking-[0.2em] text-stone"
-                    >
-                      {q.quarter.label}
-                    </th>
-                  ))}
-                  <th
-                    scope="col"
-                    className="py-4 pl-6 text-right text-[0.62rem] font-medium uppercase tracking-[0.2em] text-gold"
-                  >
-                    Since inception
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {STRATEGY_SERIES.map((s) => (
-                  <tr key={s.slug} className="border-b border-paper/10">
-                    <th
-                      scope="row"
-                      className="py-5 pr-6 font-serif text-[1.05rem] font-normal text-paper"
+          <div className="mt-10">
+            {BY_STRATEGY.map((s) => (
+              <div
+                key={s.name}
+                className="grid grid-cols-1 items-baseline gap-x-8 gap-y-3 border-t border-paper/10 py-7 sm:grid-cols-12"
+              >
+                <div className="sm:col-span-4">
+                  {s.href ? (
+                    <a
+                      href={s.href}
+                      className="link-underline font-serif text-[1.15rem] text-paper"
                     >
                       {s.name}
-                    </th>
-                    {s.byQuarter.map((r, i) => (
-                      <td key={i} className="py-5 pl-6 text-right text-[0.9rem]">
-                        {r === null ? <Empty /> : <Figure value={formatReturn(r)} />}
-                      </td>
-                    ))}
-                    <td className="py-5 pl-6 text-right text-[0.9rem]">
-                      {s.cumulative === null ? (
-                        <span
-                          className="text-[0.75rem] italic text-stone-dim"
-                          title="This strategy has not held capital"
-                        >
-                          {quarterCount === 0 ? "—" : "Not funded"}
-                        </span>
-                      ) : (
-                        <Figure value={formatReturn(s.cumulative)} />
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </a>
+                  ) : (
+                    <span className="font-serif text-[1.15rem] text-stone">
+                      {s.name}
+                    </span>
+                  )}
+                  <span className="mt-1 block text-[0.7rem] uppercase tracking-[0.16em] text-stone-dim">
+                    {s.since}
+                  </span>
+                </div>
+
+                <div className="sm:col-span-3">
+                  {s.result ? (
+                    <span className="tabular font-serif text-[1.5rem] text-paper">
+                      {s.result}
+                    </span>
+                  ) : (
+                    <span className="text-[0.85rem] italic text-stone-dim">
+                      No capital allocated
+                    </span>
+                  )}
+                </div>
+
+                <div className="sm:col-span-5">
+                  <p className="max-w-[46ch] text-[0.78rem] font-light leading-[1.8] text-stone">
+                    {s.note}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
 
-          <p className="mt-6 max-w-[78ch] text-[0.65rem] leading-relaxed tracking-wide text-stone-dim">
-            A dash indicates no measurement for that period, not a zero
-            return. &ldquo;Not funded&rdquo; means the strategy held no
-            capital and therefore produced no result — it is not a
-            performance figure of any kind. Strategy returns are chain-linked
-            across the quarters each strategy actually ran.
+          <p className="mt-8 max-w-[78ch] text-[0.65rem] leading-relaxed tracking-wide text-stone-dim">
+            No combined figure is shown. The strategies run different
+            mandates against different benchmarks over different periods,
+            and one of them reports realised trades rather than a portfolio
+            return; adding them would produce a number that describes
+            nothing. Each result is stated in full on its own page.
           </p>
         </section>
 
