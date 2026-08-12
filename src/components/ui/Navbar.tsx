@@ -10,6 +10,7 @@ const LINKS = [
   { href: "#approach", label: "Approach" },
   { href: "#portfolio", label: "Portfolio" },
   { href: "/performance", label: "Performance" },
+  { href: "/research", label: "Research" },
   { href: "#about", label: "About" },
 ];
 
@@ -34,7 +35,9 @@ function Wordmark({ compact, home }: { compact: boolean; home: boolean }) {
           srcSet="/media/brand/taizan-mark.webp 1x, /media/brand/taizan-mark@2x.webp 2x"
           type="image/webp"
         />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {/* No eslint-disable here: no-img-element does not fire on an
+            <img> inside a <picture>, and the redundant directive was the
+            only lint warning left in the project. */}
         <img
           src="/media/brand/taizan-mark.webp"
           alt=""
@@ -130,13 +133,23 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
       >
         <Wordmark compact={scrolled} home={home} />
 
-        {/* Six links plus the disclosures button need 673px, which does not
-            clear the wordmark until ~1080px — so the bar switches to the
-            overlay menu below that rather than at Tailwind's lg (1024px).
-            The affected band is narrow, and iPad landscape lands in it and
-            gets the overlay, which is the better presentation there anyway.
-            Gap and button padding open back up at xl. */}
-        <ul className="hidden items-center gap-4 min-[1080px]:flex xl:gap-10">
+        {/* Seven links plus the disclosures button measure 868px at the
+            tight gap. With the 241px wordmark and the container's 112px of
+            padding they need ~1261px of viewport before anything separates
+            them, so the row appears at xl (1280px) and the overlay menu
+            covers everything below.
+
+            This was min-[1080px] when the row held six links. Adding
+            Research pushed the requirement out by roughly 180px, and both
+            1080 and 1220 were measured putting the first link flush
+            against the wordmark with zero pixels between. iPad landscape
+            lands in the overlay band, which is the better presentation
+            there anyway. */}
+        {/* The generous gap waits for 1500px. It widens the row from 868px
+            to 1036px, which needs ~1429px of viewport to still clear the
+            wordmark — measured at 1400px it left 5px. Between 1280 and
+            1500 the tighter gap keeps the bar breathing. */}
+        <ul className="hidden items-center gap-4 xl:flex min-[1500px]:gap-10">
           {LINKS.map((l) => (
             <li key={l.href}>
               <a
@@ -150,16 +163,20 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
           <li>
             <a
               href="/disclosures"
-              className="border border-gold/50 px-4 py-3 text-[0.68rem] font-medium uppercase tracking-[0.24em] text-gold transition-all duration-500 hover:bg-gold hover:text-ink xl:px-7"
+              className="border border-gold/50 px-4 py-3 text-[0.68rem] font-medium uppercase tracking-[0.24em] text-gold transition-all duration-500 hover:bg-gold hover:text-ink min-[1500px]:px-7"
             >
               Disclosures
             </a>
           </li>
         </ul>
 
+        {/* The icon is 24px; the hit area must not be. Padding takes the
+            target to 44x44 and the equal negative margin keeps the button
+            sitting exactly where it did, so this costs nothing visually.
+            This is the only way into the navigation on a phone. */}
         <button
           type="button"
-          className="text-paper min-[1080px]:hidden"
+          className="-m-2.5 p-2.5 text-paper xl:hidden"
           aria-expanded={open}
           aria-label={open ? "Close menu" : "Open menu"}
           onClick={() => setOpen((v) => !v)}
@@ -170,7 +187,7 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
 
       {/* Mobile overlay */}
       <div
-        className={`fixed inset-0 top-0 -z-10 flex flex-col justify-center bg-ink/[0.97] px-8 backdrop-blur-xl transition-opacity duration-500 min-[1080px]:hidden ${
+        className={`fixed inset-0 top-0 -z-10 flex flex-col justify-center bg-ink/[0.97] px-8 backdrop-blur-xl transition-opacity duration-500 xl:hidden ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       >

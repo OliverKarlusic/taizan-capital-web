@@ -37,11 +37,24 @@ const VIEWPORTS = [
   [390, 844],
 ];
 
+/* Every route that publishes a result gets checked at every viewport.
+   The two equity strategy pages were missing here while carrying the
+   heaviest layout on the site — a wide chart, a stats table and a
+   multi-column method list. */
 const DEFAULT_PATHS = [
   "/",
   "/performance",
   "/disclosures",
+  "/portfolios/long-term-growth",
+  "/portfolios/growth-maximisation",
   "/portfolios/options",
+  // The Research Terminal renders its data client-side, so these are
+  // checked in whatever state they reach by the audit's settle timeout —
+  // which is the point. The shell, the filter bar and the tab strip must
+  // lay out correctly before any data arrives, because that is what a
+  // reader on a slow connection sees.
+  "/research",
+  "/research/MSFT",
 ];
 
 const CHROME_CANDIDATES = [
