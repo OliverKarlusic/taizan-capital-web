@@ -43,16 +43,20 @@ next-env.d.ts
 # local capture output from dev tooling
 /.captures/
 
-# hero masters are large; keep source video out of git
+# Hero video: masters out, renditions in.
+#
+# The masters are 43 MB and 63 MB and nothing serves them. The renditions
+# are what the site actually plays, and they were excluded here too — so a
+# deploy from this repository shipped a homepage whose hero had no footage,
+# falling back to the poster still. Negations must follow the broad rule;
+# later patterns win in .gitignore.
 public/media/hero/*.mp4
+!public/media/hero/*-854.mp4
+!public/media/hero/*-1280.mp4
+!public/media/hero/*-1920.mp4
 
 # production build output (kept separate from the dev server cache)
 /.next-build/
-
-# encoded renditions are build output, regenerate with scripts/encode-media.mjs
-public/media/hero/*-854.mp4
-public/media/hero/*-1280.mp4
-public/media/hero/*-1920.mp4
 
 # supplied image masters — processed derivatives live in public/media
 /media-masters/
