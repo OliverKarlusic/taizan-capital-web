@@ -9,6 +9,7 @@ import { CONVICTIONS, CONVICTION_BY_SLUG } from "@/lib/portfolio";
 import Footer from "@/components/sections/Footer";
 import AllocationBreakdown from "@/components/sections/AllocationBreakdown";
 import OptionsResults from "@/components/sections/OptionsResults";
+import LongTermGrowthPerformance from "@/components/sections/LongTermGrowthPerformance";
 import Navbar from "@/components/ui/Navbar";
 
 /**
@@ -213,6 +214,7 @@ export default async function PortfolioPage({
         {/* Allocation is real, dated, broker-reported data and exists for
             exactly one strategy. It renders only there — a shared template
             must not imply the other four have a disclosed allocation. */}
+        {c.slug === "long-term-growth" ? <LongTermGrowthPerformance /> : null}
         {c.slug === "long-term-growth" ? <AllocationBreakdown /> : null}
         {c.slug === "options" ? <OptionsResults /> : null}
 
