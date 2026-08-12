@@ -413,6 +413,51 @@ const AUDIT = `(async function () {
   });
 })()`;
 
+/* ── reachability ──────────────────────────────────────────────────
+ * Every page that publishes something must be reachable by following
+ * links from the homepage. This is the check that was missing: three
+ * passes of "audit clean" while the results pages sat behind a card
+ * carousel and the navigation link led to an empty table. Rendering
+ * correctly and being findable are different properties, and only one of
+ * them was ever tested.
+ */
+const MUST_BE_REACHABLE = [
+  "/performance",
+  "/disclosures",
+  "/portfolios/long-term-growth",
+  "/portfolios/passive-income",
+  "/portfolios/growth-maximisation",
+  "/portfolios/impact-investing",
+  "/portfolios/options",
+];
+
+async function crawl(send, evaluate) {
+  const seen = new Set(["/"]);
+  const collect = async (route) => {
+    await send("Page.navigate", { url: base + route });
+    await new Promise((r) => setTimeout(r, route === "/" ? 7000 : 3000));
+    const raw = await evaluate(`JSON.stringify([...new Set(
+      [...document.querySelectorAll("a[href]")]
+        .map((a) => a.getAttribute("href"))
+        .filter((h) => h && h.startsWith("/") && !h.startsWith("//"))
+        .map((h) => h.split("#")[0])
+        .filter(Boolean)
+    )])`);
+    return JSON.parse(raw);
+  };
+
+  // Depth two: the homepage, then everything it links to. A page needing
+  // three hops from home is not meaningfully findable anyway.
+  const first = await collect("/");
+  first.forEach((h) => seen.add(h));
+  for (const route of first) {
+    if (!route.startsWith("/portfolios") && route !== "/performance") continue;
+    const next = await collect(route);
+    next.forEach((h) => seen.add(h));
+  }
+  return seen;
+}
+
 /* ── run ──────────────────────────────────────────────────────────── */
 
 const chrome = await launchChrome();
@@ -420,6 +465,27 @@ const { send, evaluate } = await connect();
 await send("Page.enable", {});
 
 let failures = 0;
+
+if (paths.length === 0) {
+  const reachable = await crawl(send, evaluate);
+  const orphans = MUST_BE_REACHABLE.filter((r) => !reachable.has(r));
+  console.log("");
+  console.log("Reachability from the homepage");
+  if (orphans.length === 0) {
+    console.log(
+      "  OK  all " + MUST_BE_REACHABLE.length +
+        " published pages reachable within two hops",
+    );
+  } else {
+    failures += orphans.length;
+    for (const o of orphans) {
+      console.log(
+        "  FAIL  orphan  " + o +
+          " - published but not linked from the homepage",
+      );
+    }
+  }
+}
 
 for (const route of routes) {
   console.log(`\n\u001b[1m${route}\u001b[0m`);
@@ -435,7 +501,7 @@ for (const route of routes) {
     const actual = await evaluate("innerWidth");
     if (Math.abs(actual - w) > 2 || Math.abs(vp.w - w) > 2) {
       console.log(
-        `  [31m✗[0m ${`${w}x${h}`.padEnd(10)} HARNESS ERROR: ` +
+        `  [31m✗[0m ${`${w}x${h}`.padEnd(10)} HARNESS ERROR: ` +
           `asked for ${w}px, page reports ${actual}px. Results discarded.`,
       );
       failures++;
