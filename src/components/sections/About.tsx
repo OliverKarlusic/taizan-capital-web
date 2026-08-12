@@ -140,8 +140,10 @@ export default function About() {
             </div>
             <Reveal delay={0.35}>
               <p className="mt-10 text-[0.65rem] leading-relaxed tracking-wide text-stone-dim">
-                Taizan Capital does not currently publish performance data.
-                Portfolio mandates describe investment approach only.
+                Taizan Capital publishes no fund-level track record.
+                  Portfolio mandates describe investment approach; realised
+                  results, where they exist, are shown on the relevant
+                  strategy page.
               </p>
             </Reveal>
           </div>

@@ -148,11 +148,13 @@ export default function DisclosuresPage() {
                 you before acting on it.
               </p>
               <p className="max-w-[74ch] text-[0.82rem] font-light leading-[1.9] text-stone">
-                Taizan Capital does not publish performance data. No returns,
-                benchmarks, track record or client statistics appear anywhere
-                on this website, and none should be inferred. Verified
-                figures will be reported once a record exists, with the
-                disclosures that must accompany them.
+                Taizan Capital publishes no fund-level track record and no
+                  client statistics, and none should be inferred. Where
+                  realised results are shown they belong to a single
+                  strategy, appear on that strategy&apos;s page, and cover
+                  positions actually closed. Fund-level figures will be
+                  reported once a record exists, with the disclosures that
+                  must accompany them.
               </p>
               <p className="max-w-[74ch] text-[0.82rem] font-light leading-[1.9] text-stone">
                 Investing carries risk, including the loss of capital. Past

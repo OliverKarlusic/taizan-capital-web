@@ -1,4 +1,5 @@
 import { CONVICTIONS } from "@/lib/portfolio";
+import { TRADES } from "@/data/optionsResults";
 
 /**
  * Quarterly performance and reporting.
@@ -166,6 +167,18 @@ export const FUND_ANNUALISED = annualise(FUND_CUMULATIVE, QUARTERS.length);
 
 export const hasPerformance = QUARTERS.some((q) => q.fund !== null);
 export const hasReports = QUARTERS.some((q) => q.report.href !== null);
+/**
+ * True when the site publishes results of any kind.
+ *
+ * hasPerformance tracks quarterly fund reporting only, and the footer used
+ * it to assert "Taizan Capital does not publish performance data". That
+ * became false the moment realised options trades went up, because a
+ * closed trade with a stated return is performance data whether or not a
+ * quarter has closed. A disclaimer that contradicts the page above it
+ * undermines every other line around it.
+ */
+export const hasPublishedResults = hasPerformance || TRADES.length > 0;
+
 export const LATEST: QuarterRecord | null =
   QUARTERS.length > 0 ? QUARTERS[QUARTERS.length - 1] : null;
 

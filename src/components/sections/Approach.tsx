@@ -183,11 +183,12 @@ export default function Approach() {
 
             <Reveal delay={0.25}>
               <p className="mt-8 max-w-[62ch] text-[0.65rem] leading-relaxed tracking-wide text-stone-dim">
-                Taizan Capital does not publish performance data. No returns,
-                benchmarks or track record are shown anywhere on this site,
-                and none should be inferred. Verified figures will be
-                reported once a record exists, with the disclosures that must
-                accompany them.
+                Taizan Capital publishes no fund-level track record and no
+                  benchmark comparison for the firm as a whole, and neither
+                  should be inferred. Realised results for an individual
+                  strategy, where shown, appear on that strategy&apos;s
+                  page. Fund-level figures will be reported once a record
+                  exists, with the disclosures that must accompany them.
               </p>
             </Reveal>
           </div>

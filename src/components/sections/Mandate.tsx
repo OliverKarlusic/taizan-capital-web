@@ -113,9 +113,9 @@ export default function Mandate() {
         </Reveal>
 
         <p className="mx-auto mt-16 max-w-3xl text-center text-[0.65rem] leading-relaxed tracking-wide text-stone-dim">
-          Taizan Capital does not currently publish performance data. Verified
-          figures will be reported once a track record exists, alongside the
-          disclosures that must accompany them.
+          Taizan Capital publishes no fund-level track record.
+            Verified figures will be reported once one exists, alongside the
+            disclosures that must accompany them.
         </p>
       </div>
     </section>

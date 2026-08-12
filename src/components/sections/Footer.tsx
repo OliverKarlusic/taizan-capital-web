@@ -1,6 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import { STATUS_LONG } from "@/lib/compliance";
-import { hasPerformance } from "@/lib/reports";
+import { hasPublishedResults } from "@/lib/reports";
 
 export default function Footer() {
   return (
@@ -102,18 +102,21 @@ export default function Footer() {
               performance page fills up is the kind of stale disclaimer that
               undermines every other line around it. */}
           <p className="text-[0.65rem] leading-[1.9] tracking-wide text-stone-dim">
-            {hasPerformance ? (
+            {hasPublishedResults ? (
               <>
-                Performance figures are time-weighted, calculated on the
-                basis published at{" "}
+                Where results are published they are realised figures for an
+                individual strategy, shown on that strategy&apos;s page with
+                the basis on which they were calculated. Taizan Capital
+                publishes no fund-level track record and has issued no
+                quarterly report; see{" "}
                 <a
                   href="/performance"
                   className="text-gold underline-offset-4 hover:underline"
                 >
                   Performance
                 </a>
-                , and past performance is not an indicator of future
-                performance.
+                . Past results are not an indicator of future results, and
+                no minimum, fee or return has been set or offered.
               </>
             ) : (
               <>
