@@ -40,7 +40,7 @@ export default function Footer() {
             </p>
             <a
               href="mailto:olikarlusic@outlook.com"
-              className="group mt-8 inline-flex items-center gap-2 text-sm text-gold transition-colors duration-500 hover:text-gold-bright"
+              className="group mt-8 inline-flex min-h-11 items-center gap-2 text-sm text-gold transition-colors duration-500 hover:text-gold-bright"
             >
               olikarlusic@outlook.com
               <ArrowUpRight
@@ -66,7 +66,10 @@ export default function Footer() {
                 <li key={href}>
                   <a
                     href={href}
-                    className="link-underline text-sm font-light text-paper-dim hover:text-paper"
+                    /* py-1.5 lifts the target from 17px to 29px; with the
+                       list's existing 14px separation that gives a 43px
+                       pitch between link centres on a phone. */
+                    className="link-underline inline-block py-1.5 text-sm font-light text-paper-dim hover:text-paper"
                   >
                     {label}
                   </a>

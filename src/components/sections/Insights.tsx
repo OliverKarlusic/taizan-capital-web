@@ -51,7 +51,7 @@ export default function Insights() {
             <Reveal delay={0.3}>
               <a
                 href="/performance"
-                className="group mt-9 inline-flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.24em] text-gold transition-colors duration-500 hover:text-gold-bright"
+                className="group mt-9 inline-flex min-h-11 items-center gap-2 text-[0.7rem] uppercase tracking-[0.24em] text-gold transition-colors duration-500 hover:text-gold-bright"
               >
                 Full results and methodology
                 <ArrowUpRight

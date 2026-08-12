@@ -122,7 +122,7 @@ function Card({ c, front }: { c: Conviction; front: boolean }) {
               href={`/portfolios/${c.slug}`}
               tabIndex={front ? 0 : -1}
               aria-hidden={!front}
-              className="mt-5 inline-flex items-center gap-2 border-b border-gold/50 pb-1 text-[0.6rem] uppercase tracking-[0.28em] text-gold transition-colors duration-500 hover:border-gold hover:text-gold-bright"
+              className="mt-5 inline-flex min-h-11 items-center gap-2 border-b border-gold/50 pb-1 text-[0.6rem] uppercase tracking-[0.28em] text-gold transition-colors duration-500 hover:border-gold hover:text-gold-bright"
             >
               See more
               <span aria-hidden="true">&rarr;</span>
@@ -289,7 +289,7 @@ export default function PortfolioGallery() {
             type="button"
             onClick={() => turn(-1)}
             aria-label="Previous conviction"
-            className="shrink-0 border border-paper/20 p-2.5 text-stone transition-colors duration-500 hover:border-gold hover:text-gold"
+            className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center border border-paper/20 text-stone transition-colors duration-500 hover:border-gold hover:text-gold"
           >
             <ChevronLeft size={15} strokeWidth={1.5} />
           </button>
@@ -301,7 +301,7 @@ export default function PortfolioGallery() {
                   onClick={() => rotateTo(-i * step)}
                   aria-label={`${c.index} — ${c.name}`}
                   aria-current={i === active}
-                  className="group block w-full py-3"
+                  className="group flex min-h-11 w-full items-center py-3"
                 >
                   <span
                     className={`block h-px w-full transition-colors duration-700 ${
@@ -316,7 +316,7 @@ export default function PortfolioGallery() {
             type="button"
             onClick={() => turn(1)}
             aria-label="Next conviction"
-            className="shrink-0 border border-paper/20 p-2.5 text-stone transition-colors duration-500 hover:border-gold hover:text-gold"
+            className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center border border-paper/20 text-stone transition-colors duration-500 hover:border-gold hover:text-gold"
           >
             <ChevronRight size={15} strokeWidth={1.5} />
           </button>
@@ -392,7 +392,7 @@ export default function PortfolioGallery() {
           type="button"
           onClick={() => turn(-1)}
           aria-label="Previous conviction"
-          className="border border-paper/20 p-2.5 text-stone transition-colors duration-500 hover:border-gold hover:text-gold"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center border border-paper/20 text-stone transition-colors duration-500 hover:border-gold hover:text-gold"
         >
           <ChevronLeft size={15} strokeWidth={1.5} />
         </button>
@@ -405,7 +405,7 @@ export default function PortfolioGallery() {
                 onClick={() => rotateTo(-i * step)}
                 aria-label={`${c.index} — ${c.name}`}
                 aria-current={i === active}
-                className="group block w-full py-3"
+                className="group flex min-h-11 w-full items-center py-3"
               >
                 <span
                   className={`block h-px w-full transition-colors duration-700 ${
@@ -423,7 +423,7 @@ export default function PortfolioGallery() {
           type="button"
           onClick={() => turn(1)}
           aria-label="Next conviction"
-          className="border border-paper/20 p-2.5 text-stone transition-colors duration-500 hover:border-gold hover:text-gold"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center border border-paper/20 text-stone transition-colors duration-500 hover:border-gold hover:text-gold"
         >
           <ChevronRight size={15} strokeWidth={1.5} />
         </button>

@@ -9,7 +9,13 @@
   --color-paper: #f4f3ee;
   --color-paper-dim: #c6cacd;
   --color-stone: #a8b0b8;
-  --color-stone-dim: #5d646c;
+  /* Was #5d646c, which measured 3.2–3.3:1 against ink, ink-soft and
+     charcoal — under the 4.5:1 WCAG AA floor for normal-size text, and
+     this token carries most of the site's fine print: provenance notes,
+     method notes, disclaimers. #787f89 measures 4.89:1 on ink, 4.72:1 on
+     ink-soft and 4.52:1 on charcoal, so it clears AA on every surface it
+     is used against while staying the same muted grey. */
+  --color-stone-dim: #787f89;
   --color-ice: #b8d4e3;
   --color-gold: #c6a664;
   --color-gold-bright: #ddc48d;
