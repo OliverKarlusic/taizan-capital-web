@@ -183,8 +183,7 @@ export default function AllocationBreakdown() {
           holding is a statement of what the portfolio owned on that date,
           not a recommendation to buy or sell any security, and nothing here
           takes account of your objectives, financial situation or needs.
-          Taizan Capital publishes no performance figures for this or any
-          strategy.
+          No performance figures are published for this strategy.
         </p>
       </div>
     </section>

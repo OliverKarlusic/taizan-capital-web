@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { CONVICTIONS, CONVICTION_BY_SLUG } from "@/lib/portfolio";
 import Footer from "@/components/sections/Footer";
 import AllocationBreakdown from "@/components/sections/AllocationBreakdown";
+import OptionsResults from "@/components/sections/OptionsResults";
 import Navbar from "@/components/ui/Navbar";
 
 /**
@@ -213,6 +214,7 @@ export default async function PortfolioPage({
             exactly one strategy. It renders only there — a shared template
             must not imply the other four have a disclosed allocation. */}
         {c.slug === "growth-maximisation" ? <AllocationBreakdown /> : null}
+        {c.slug === "options" ? <OptionsResults /> : null}
 
         {/* ── Horizon, universe, suitability ── */}
         <section className="border-t border-paper/10 bg-ink-soft">
