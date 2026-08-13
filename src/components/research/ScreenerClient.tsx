@@ -8,6 +8,8 @@ import {
   DASH,
   decimal,
   marketCap as fmtCap,
+  meaningfulRatio,
+  multiple,
   percent,
   signedPercent,
 } from "@/lib/research/format";
@@ -158,11 +160,16 @@ export default function ScreenerClient() {
     if (market !== "All") out = out.filter((r) => r.market === market);
     if (sector !== "All") out = out.filter((r) => r.sector === sector);
 
-    // A company with no P/E is not a company with a low P/E. Filtering on a
-    // maximum excludes it rather than letting a null slip under the bar.
+    // A company with no P/E is not a company with a low P/E, and a company
+    // with a NEGATIVE P/E is not the cheapest company on the exchange —
+    // it is one with no earnings. Both are excluded from a maximum filter
+    // rather than passing under the bar, and meaningfulRatio keeps them
+    // out of the sort for the same reason.
     const pe = Number(maxPE);
     if (maxPE && Number.isFinite(pe)) {
-      out = out.filter((r) => r.trailingPE !== null && r.trailingPE <= pe);
+      out = out.filter(
+        (r) => meaningfulRatio(r.trailingPE) !== null && r.trailingPE! <= pe,
+      );
     }
     const dy = Number(minYield);
     if (minYield && Number.isFinite(dy)) {
@@ -179,7 +186,12 @@ export default function ScreenerClient() {
         const bn = b.name ?? b.symbol;
         return an.localeCompare(bn) * sortDir;
       }
-      return compare(a[sortKey], b[sortKey], sortDir);
+      // Ratios sort on their meaningful value, so a negative multiple is
+      // held out with the nulls instead of leading an ascending sort.
+      const ratio = sortKey === "trailingPE" || sortKey === "priceToBook";
+      const av = ratio ? meaningfulRatio(a[sortKey]) : a[sortKey];
+      const bv = ratio ? meaningfulRatio(b[sortKey]) : b[sortKey];
+      return compare(av, bv, sortDir);
     });
     return out;
   }, [data, query, market, sector, maxPE, minYield, minCap, sortKey, sortDir]);
@@ -456,9 +468,9 @@ export default function ScreenerClient() {
                         <Change value={r.changePercent} />
                       </td>
                       <Num>{fmtCap(r.marketCap, null)}</Num>
-                      <Num>{r.trailingPE === null ? DASH : decimal(r.trailingPE, 1)}</Num>
+                      <Num>{multiple(r.trailingPE, 1)}</Num>
                       <td className="tabular hidden py-3 pl-4 text-right text-[0.82rem] text-paper-dim lg:table-cell">
-                        {r.priceToBook === null ? DASH : decimal(r.priceToBook, 1)}
+                        {multiple(r.priceToBook, 1)}
                       </td>
                       <Num>{percent(r.dividendYield, 2)}</Num>
                     </tr>
@@ -499,7 +511,7 @@ export default function ScreenerClient() {
                     <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-paper/10 pt-3">
                       {[
                         ["Cap", fmtCap(r.marketCap, null)],
-                        ["P/E", r.trailingPE === null ? DASH : decimal(r.trailingPE, 1)],
+                        ["P/E", multiple(r.trailingPE, 1)],
                         ["Yield", percent(r.dividendYield, 2)],
                       ].map(([label, value]) => (
                         <div key={label}>

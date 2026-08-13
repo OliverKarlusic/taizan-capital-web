@@ -296,8 +296,8 @@ export const COVERAGE: CoverageGroup[] = [
         name: "Trading ideas",
         state: "partial",
         present:
-          "An evidence-gathering research brief runs outside the app as a Claude Code command, constrained to produce no rating, target or recommendation.",
-        gap: "Not integrated into the terminal UI, and deliberately so while its output is unreconciled against the terminal's own feed.",
+          "An evidence-gathering research workflow runs outside the terminal, constrained to produce no rating, target or recommendation — it assembles figures, sources and dates, and stops where the evidence stops.",
+        gap: "Not integrated into the terminal itself, and deliberately so while its output is unreconciled against the terminal's own feed.",
       },
     ],
   },

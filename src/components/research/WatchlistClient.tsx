@@ -8,6 +8,7 @@ import {
   DASH,
   decimal,
   marketCap as fmtCap,
+  multiple,
   percent,
   signedPercent,
 } from "@/lib/research/format";
@@ -191,7 +192,7 @@ export default function WatchlistClient() {
                   {fmtCap(r.marketCap, null)}
                 </td>
                 <td className="tabular py-3 pl-4 text-right text-[0.82rem] text-paper-dim">
-                  {r.trailingPE === null ? DASH : decimal(r.trailingPE, 1)}
+                  {multiple(r.trailingPE, 1)}
                 </td>
                 <td className="tabular py-3 pl-4 text-right text-[0.82rem] text-paper-dim">
                   {percent(r.dividendYield, 2)}
@@ -235,7 +236,7 @@ export default function WatchlistClient() {
               {[
                 ["Price", r.price === null ? DASH : decimal(r.price)],
                 ["Chg", r.changePercent === null ? DASH : signedPercent(r.changePercent)],
-                ["P/E", r.trailingPE === null ? DASH : decimal(r.trailingPE, 1)],
+                ["P/E", multiple(r.trailingPE, 1)],
                 ["Yield", percent(r.dividendYield, 2)],
               ].map(([k, v]) => (
                 <div key={k}>

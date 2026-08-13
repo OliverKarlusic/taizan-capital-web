@@ -10,6 +10,37 @@
 
 export const DASH = "—";
 
+/** Shown where a ratio exists arithmetically but carries no meaning. */
+export const NOT_MEANINGFUL = "N/M";
+
+/**
+ * A multiple that is negative is not a cheap multiple — it is not a
+ * multiple at all.
+ *
+ * A company with negative earnings produces a negative price/earnings
+ * ratio, and the provider returns it: NEXTDC's forward P/E came back as
+ * −35.64. Rendered as a number in a valuation table it reads as a figure
+ * to compare against a peer's 22×, and sorting on it puts loss-making
+ * companies at the "cheapest" end of the column. The arithmetic is real;
+ * the meaning is not.
+ *
+ * These render as N/M rather than as a value or an em dash, because the
+ * two say different things: an em dash means the provider did not supply
+ * it, N/M means it was supplied and cannot be interpreted.
+ */
+export const meaningfulRatio = (v: number | null): number | null =>
+  v === null || v <= 0 ? null : v;
+
+export const isNotMeaningful = (v: number | null): boolean =>
+  v !== null && v <= 0;
+
+/** Formats an earnings-based multiple, marking negatives as N/M. */
+export const multiple = (v: number | null, places = 1): string => {
+  if (v === null) return DASH;
+  if (v <= 0) return NOT_MEANINGFUL;
+  return significant(v, places);
+};
+
 const nf = (min: number, max: number) =>
   new Intl.NumberFormat("en-AU", {
     minimumFractionDigits: min,

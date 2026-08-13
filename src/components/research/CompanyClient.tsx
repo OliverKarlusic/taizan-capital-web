@@ -9,6 +9,7 @@ import ThesisEditor from "@/components/research/ThesisEditor";
 import {
   DASH,
   decimal,
+  multiple,
   fraction,
   marketCap as fmtCap,
   percent,
@@ -364,9 +365,9 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
               <MetricsGrid
                 items={[
                   ["Market cap", fmtCap(quote.marketCap, quote.currency)],
-                  ["Trailing P/E", f.trailingPE === null ? DASH : decimal(f.trailingPE, 1)],
-                  ["Forward P/E", f.forwardPE === null ? DASH : decimal(f.forwardPE, 1)],
-                  ["Price / book", f.priceToBook === null ? DASH : decimal(f.priceToBook, 1)],
+                  ["Trailing P/E", multiple(f.trailingPE, 1)],
+                  ["Forward P/E", multiple(f.forwardPE, 1)],
+                  ["Price / book", multiple(f.priceToBook, 1)],
                   ["Dividend yield", percent(f.dividendYield, 2)],
                   ["EPS (trailing)", f.eps === null ? DASH : decimal(f.eps)],
                   ["52-week low", quote.fiftyTwoWeekLow === null ? DASH : decimal(quote.fiftyTwoWeekLow)],
@@ -421,11 +422,15 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
                     peer={peers.priceToBook.value}
                     count={peers.priceToBook.count}
                   />
+                  {/* A yield of zero is a real answer — the company pays no
+                      dividend — so this row is not treated as a multiple,
+                      where zero would render N/M. */}
                   <ValuationRow
                     label="Dividend yield %"
                     value={f.dividendYield}
                     peer={peers.dividendYield.value}
                     count={peers.dividendYield.count}
+                    kind="rate"
                   />
                   <ValuationRow
                     label="EV / EBITDA"
@@ -465,7 +470,7 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
                 items={[
                   ["Revenue growth (yoy)", fraction(f.revenueGrowth)],
                   ["Earnings growth (yoy)", fraction(f.earningsGrowth)],
-                  ["PEG ratio", f.pegRatio === null ? DASH : decimal(f.pegRatio)],
+                  ["PEG ratio", multiple(f.pegRatio, 2)],
                 ]}
               />
               <p className="mt-5 max-w-[62ch] text-[0.68rem] leading-[1.8] text-stone-dim">
@@ -783,10 +788,10 @@ function DetailPanel({
                     {big(p.marketCap, null)}
                   </td>
                   <td className="tabular py-3 pl-6 text-right text-[0.85rem] text-paper-dim">
-                    {p.trailingPE === null ? DASH : decimal(p.trailingPE, 1)}
+                    {multiple(p.trailingPE, 1)}
                   </td>
                   <td className="tabular py-3 pl-6 text-right text-[0.85rem] text-paper-dim">
-                    {p.priceToBook === null ? DASH : decimal(p.priceToBook, 1)}
+                    {multiple(p.priceToBook, 1)}
                   </td>
                   <td className="tabular py-3 pl-6 text-right text-[0.85rem] text-paper-dim">
                     {percent(p.dividendYield, 2)}
@@ -1073,12 +1078,17 @@ function ValuationRow({
   value,
   peer,
   count,
+  kind = "multiple",
 }: {
   label: string;
   value: number | null;
   peer: number | null;
   count: number;
+  /** A multiple cannot be negative or zero and stay meaningful; a rate can. */
+  kind?: "multiple" | "rate";
 }) {
+  const fmt = (v: number | null) =>
+    kind === "multiple" ? multiple(v, 2) : v === null ? DASH : decimal(v, 2);
   const direction = relativeTo(value, peer);
   const delta =
     value !== null && peer !== null && peer !== 0
@@ -1094,10 +1104,10 @@ function ValuationRow({
         {label}
       </th>
       <td className="tabular py-3 pl-6 text-right text-[0.88rem] text-paper">
-        {value === null ? DASH : decimal(value, 2)}
+        {fmt(value)}
       </td>
       <td className="tabular py-3 pl-6 text-right text-[0.88rem] text-stone">
-        {peer === null ? DASH : decimal(peer, 2)}
+        {fmt(peer)}
       </td>
       <td className="tabular py-3 pl-6 text-right text-[0.85rem] text-paper-dim">
         {delta === null ? DASH : signedPercent(delta, 0)}

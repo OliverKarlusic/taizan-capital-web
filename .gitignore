@@ -60,3 +60,6 @@ public/media/hero/*.mp4
 
 # supplied image masters — processed derivatives live in public/media
 /media-masters/
+
+# local editor/tooling config — not part of the product
+/.claude/
