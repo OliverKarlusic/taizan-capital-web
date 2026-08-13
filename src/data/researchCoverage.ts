@@ -272,10 +272,18 @@ export const COVERAGE: CoverageGroup[] = [
         gap: "Growth, margin, balance-sheet, cash-flow and quality filters need fundamentals across the whole population — one request per company against this provider, which is not viable. A custom AND/OR screen builder waits on the same data.",
       },
       {
-        name: "Watchlists / thesis monitoring",
-        state: "missing",
-        present: "Not built.",
-        gap: "No persistence layer. This is genuinely unblocked by data and is implementation work.",
+        name: "Watchlist",
+        state: "partial",
+        present:
+          "Securities can be followed from any research page and are priced together from one batch request, with the same delay labelling as the rest of the terminal.",
+        gap: "Stored in this browser only. The site has no accounts, and a server-stored list without them would be one list shared by every visitor. It does not follow the reader to another device.",
+      },
+      {
+        name: "Thesis monitoring",
+        state: "partial",
+        present:
+          "A thesis records what the reader expects, what they are relying on, and measurable conditions that would change their mind. Saving snapshots the current readings, and the monitoring page re-measures those same figures and reports which conditions have been met. A condition whose figure is unavailable is reported as unmeasurable rather than assumed intact.",
+        gap: "Conditions can only reference the ten metrics the terminal holds — a condition on free cash flow or ROIC cannot be written while those are unavailable. Stored in this browser only, and there are no alerts; the check runs when the page is opened.",
       },
       {
         name: "Portfolio analytics",

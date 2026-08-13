@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { CompanyPayload } from "@/app/api/research/company/[ticker]/route";
 import { Unavailable } from "@/components/research/TerminalChrome";
+import ThesisEditor from "@/components/research/ThesisEditor";
 import {
   DASH,
   decimal,
@@ -251,6 +252,27 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
               </p>
             </div>
           </div>
+
+          {/* Watchlist and thesis, where the reader is already looking at
+              the security rather than on a separate screen. */}
+          <ThesisEditor
+            symbol={data.symbol}
+            name={quote.name}
+            market={data.market}
+            securityType={quote.quoteType}
+            metrics={{
+              price: quote.price,
+              trailingPE: f.trailingPE,
+              priceToBook: f.priceToBook,
+              dividendYield: f.dividendYield,
+              marketCap: quote.marketCap,
+              revenueGrowth: f.revenueGrowth,
+              profitMargins: f.profitMargins,
+              returnOnEquity: f.returnOnEquity,
+              volatility1y: risk.volatility1y,
+              maxDrawdown1y: risk.maxDrawdown1y,
+            }}
+          />
 
           {/* A fact about the firm's own book, stated as one. */}
           {data.heldIn ? (

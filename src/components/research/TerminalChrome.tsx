@@ -26,6 +26,8 @@ import { ArrowLeft } from "lucide-react";
 
 const WORKSPACES = [
   { href: "/research", label: "Screener" },
+  { href: "/research/watchlist", label: "Watchlist" },
+  { href: "/research/thesis", label: "Thesis" },
   { href: "/research/coverage", label: "Coverage" },
 ];
 

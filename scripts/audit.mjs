@@ -56,6 +56,11 @@ const DEFAULT_PATHS = [
   "/research",
   "/research/MSFT",
   "/research/coverage",
+  // Both open on an empty state for a visitor with nothing stored, which
+  // is exactly the state worth checking: it is what every first-time
+  // reader sees, and it is easy to leave unstyled.
+  "/research/watchlist",
+  "/research/thesis",
 ];
 
 const CHROME_CANDIDATES = [

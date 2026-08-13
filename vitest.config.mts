@@ -1,5 +1,5 @@
 import { defineConfig } from "vitest/config";
-import path from "node:path";
+
 
 /**
  * Unit tests only — financial logic, provider normalisation and the
@@ -14,6 +14,6 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
   },
   resolve: {
-    alias: { "@": path.resolve(__dirname, "src") },
+    alias: { "@": new URL("./src", import.meta.url).pathname },
   },
 });
