@@ -55,6 +55,7 @@ const DEFAULT_PATHS = [
   // reader on a slow connection sees.
   "/research",
   "/research/MSFT",
+  "/research/coverage",
 ];
 
 const CHROME_CANDIDATES = [

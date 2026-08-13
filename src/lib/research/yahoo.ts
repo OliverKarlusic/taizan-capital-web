@@ -138,9 +138,36 @@ async function authed(url: string): Promise<unknown> {
 const num = (v: unknown): number | null =>
   typeof v === "number" && Number.isFinite(v) ? v : null;
 
-/** ...but wraps them as { raw, fmt } in quoteSummary. */
-const raw = (v: unknown): number | null =>
-  num((v as { raw?: unknown } | undefined)?.raw);
+/**
+ * quoteSummary wraps numbers as { raw, fmt }. This unwraps them and
+ * refuses the provider's placeholder zero.
+ *
+ * ── EMPIRICALLY DERIVED, NOT GUESSED ────────────────────────────────
+ * scripts/audit-placeholders.mjs walks every wrapper across a sample of
+ * US and ASX equities and ETFs and classifies it. The result is
+ * unambiguous:
+ *
+ *   {raw: 0, fmt: null}  appears on 9 fields, and on those fields a
+ *                        genuine value NEVER appears — 0 real out of 28
+ *                        observations for each income-statement line.
+ *                        It is a stripped field, not a measurement.
+ *
+ *   {raw: 0, fmt: "0%"}  appears on 7 fields — payoutRatio for a company
+ *                        that pays no dividend, regularMarketChange on a
+ *                        flat close, grossMargins where genuinely nil.
+ *                        These are real zeros and must survive.
+ *
+ * So the discriminator is `fmt`, and it is applied here rather than at
+ * each call site. Every accessor in this file inherits it, which means a
+ * field added later cannot reintroduce the bug by forgetting a guard.
+ * Non-zero values pass through untouched regardless of fmt.
+ */
+const raw = (v: unknown): number | null => {
+  const o = v as { raw?: unknown; fmt?: unknown } | undefined;
+  const n = num(o?.raw);
+  if (n === 0 && o?.fmt === null) return null;
+  return n;
+};
 
 const str = (v: unknown): string | null =>
   typeof v === "string" && v.trim() ? v.trim() : null;
@@ -513,30 +540,8 @@ export interface CompanyDetail {
 const fmtDate = (v: unknown): string | null =>
   (v as { fmt?: string } | undefined)?.fmt ?? null;
 
-/**
- * A statement line, distinguishing "reported as zero" from "stripped".
- *
- * ── THE BUG THIS EXISTS TO KILL ─────────────────────────────────────
- * Yahoo hollows out most statement lines but does not omit them. A real
- * figure arrives as {raw: 215938000000, fmt: "215.94B"}. A stripped one
- * arrives as {raw: 0, fmt: null, longFmt: "0"} — a zero that is not a
- * measurement. Read naively, the income statement said NVIDIA's cost of
- * revenue, gross profit and EBIT were all exactly $0 against $215.9bn of
- * revenue, and the page rendered those zeros as fact. The same is true of
- * Microsoft and, as far as could be tested, every company.
- *
- * The discriminator is `fmt`, not the magnitude: the provider formats
- * every genuine figure and leaves fmt null on the ones it has emptied. A
- * company that genuinely reported zero would still carry a formatted
- * string. Anything stripped becomes null here and renders as an em dash,
- * which is the one thing this codebase never lets a missing number be.
- */
-const reported = (v: unknown): number | null => {
-  const o = v as { raw?: unknown; fmt?: unknown } | undefined;
-  if (!o || typeof o.raw !== "number" || !Number.isFinite(o.raw)) return null;
-  if (o.raw === 0 && o.fmt === null) return null;
-  return o.raw;
-};
+/* Statement lines use the same guarded accessor as everything else —
+   see the note on `raw` above for why the guard lives there. */
 
 const DETAIL_MODULES = [
   "incomeStatementHistory",
@@ -620,18 +625,18 @@ export async function getCompanyDetail(
     return {
       income: inc.map((p) => ({
         endDate: fmtDate(p.endDate),
-        totalRevenue: reported(p.totalRevenue),
-        costOfRevenue: reported(p.costOfRevenue),
-        grossProfit: reported(p.grossProfit),
-        researchDevelopment: reported(p.researchDevelopment),
-        sellingGeneralAdministrative: reported(p.sellingGeneralAdministrative),
-        totalOperatingExpenses: reported(p.totalOperatingExpenses),
-        operatingIncome: reported(p.operatingIncome),
-        ebit: reported(p.ebit),
-        interestExpense: reported(p.interestExpense),
-        incomeBeforeTax: reported(p.incomeBeforeTax),
-        incomeTaxExpense: reported(p.incomeTaxExpense),
-        netIncome: reported(p.netIncome),
+        totalRevenue: raw(p.totalRevenue),
+        costOfRevenue: raw(p.costOfRevenue),
+        grossProfit: raw(p.grossProfit),
+        researchDevelopment: raw(p.researchDevelopment),
+        sellingGeneralAdministrative: raw(p.sellingGeneralAdministrative),
+        totalOperatingExpenses: raw(p.totalOperatingExpenses),
+        operatingIncome: raw(p.operatingIncome),
+        ebit: raw(p.ebit),
+        interestExpense: raw(p.interestExpense),
+        incomeBeforeTax: raw(p.incomeBeforeTax),
+        incomeTaxExpense: raw(p.incomeTaxExpense),
+        netIncome: raw(p.netIncome),
       })),
       ownership: {
         insidersPercentHeld: raw(major.insidersPercentHeld),

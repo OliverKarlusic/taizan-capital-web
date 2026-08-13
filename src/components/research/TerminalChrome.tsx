@@ -24,7 +24,10 @@ import { ArrowLeft } from "lucide-react";
  * workspace and back to the site.
  */
 
-const WORKSPACES = [{ href: "/research", label: "Screener" }];
+const WORKSPACES = [
+  { href: "/research", label: "Screener" },
+  { href: "/research/coverage", label: "Coverage" },
+];
 
 export function TerminalNav() {
   const pathname = usePathname();
