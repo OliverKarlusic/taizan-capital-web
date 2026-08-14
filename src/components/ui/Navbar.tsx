@@ -109,6 +109,26 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
     };
   }, [open]);
 
+  /**
+   * Close the menu and release the scroll lock in the same tick.
+   *
+   * ── WHY setOpen ALONE WAS NOT ENOUGH ────────────────────────────────
+   * The overlay locks the page with overflow:hidden while it is open, and
+   * releases it from an effect — which React runs after paint. The smooth
+   * scroller's anchor handler, by contrast, runs synchronously as the
+   * click bubbles to the document. So the order was: link clicked, close
+   * queued, scroller asked to move, page still locked, nothing happens,
+   * lock released a frame later with the destination forgotten.
+   *
+   * Every navigation link therefore looked dead on a phone: the menu
+   * closed and the page stayed exactly where it was. Clearing the lock
+   * here makes it gone before the scroller is asked to do anything.
+   */
+  const closeMenu = () => {
+    document.documentElement.style.overflow = "";
+    setOpen(false);
+  };
+
   return (
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-700 ${
@@ -191,13 +211,28 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
         </button>
       </nav>
 
-      {/* Mobile overlay */}
+      {/* ── Mobile overlay ──
+          Scrolls, and clears the header.
+
+          It was `justify-center` with no overflow, on a list that stands
+          537px tall. That fits the 812px viewport a desktop emulator
+          reports and not the ~540px a real phone leaves once the address
+          bar and home indicator are taken out — so "The Firm" sat behind
+          the fixed header, "Disclosures" fell off the bottom, and neither
+          could be reached because the overlay did not scroll.
+
+          Centring is done with `m-auto` on the list rather than
+          `justify-center` on the container: a flex container that centres
+          overflowing content puts the overflow above its own scroll
+          origin, so the top of the list becomes unreachable even once
+          scrolling is enabled. Auto margins collapse instead, which
+          centres a short list and top-aligns a tall one. */}
       <div
-        className={`fixed inset-0 top-0 -z-10 flex flex-col justify-center bg-ink/[0.97] px-8 backdrop-blur-xl transition-opacity duration-500 xl:hidden ${
+        className={`fixed inset-0 top-0 -z-10 flex overflow-y-auto overscroll-contain bg-ink/[0.97] px-8 pb-12 pt-24 backdrop-blur-xl transition-opacity duration-500 xl:hidden ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
-        <ul className="space-y-7">
+        <ul className="m-auto w-full space-y-7">
           {LINKS.map((l, i) => (
             <li
               key={l.href}
@@ -208,7 +243,7 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
             >
               <a
                 href={link(l.href)}
-                onClick={() => setOpen(false)}
+                onClick={closeMenu}
                 className="font-serif text-4xl text-paper"
               >
                 {l.label}
@@ -222,7 +257,7 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
           >
             <a
               href="/disclosures"
-              onClick={() => setOpen(false)}
+              onClick={closeMenu}
               className="inline-block border border-gold/50 px-8 py-3 text-[0.72rem] uppercase tracking-[0.24em] text-gold"
             >
               Disclosures

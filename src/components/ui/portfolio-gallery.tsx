@@ -156,8 +156,30 @@ export default function PortfolioGallery() {
 
   const step = 360 / CONVICTIONS.length;
 
-  /** Apply the ring angle, then re-derive each card's depth styling. */
+  /**
+   * Publish which conviction is in front, then style the ring if there is
+   * one.
+   *
+   * ── THE ORDER OF THESE TWO HALVES IS THE WHOLE BUG ──────────────────
+   * This used to bail on `if (!ring) return` before reaching setActive.
+   * Below 640px the ring is never rendered — the compact layout replaces
+   * it — so ringRef stayed null, render returned immediately, and
+   * `active` never changed. Every control routes through here: the
+   * arrows, the dot indicators and the swipe. All three animated the
+   * angle correctly and none of them could change the card, so the
+   * carousel was inert on every phone.
+   *
+   * The active index depends only on the angle, so it is derived first
+   * and unconditionally. The ring transforms are what actually need the
+   * element, and they stay behind the guard.
+   */
   const render = useCallback(() => {
+    const nearest =
+      ((Math.round(-angle.current.value / step) % CONVICTIONS.length) +
+        CONVICTIONS.length) %
+      CONVICTIONS.length;
+    setActive(nearest);
+
     const ring = ringRef.current;
     if (!ring) return;
     ring.style.transform = `translateZ(-${RADIUS}px) rotateY(${angle.current.value}deg)`;
@@ -171,16 +193,40 @@ export default function PortfolioGallery() {
       card.style.filter = `saturate(${1 - t * 0.55}) brightness(${1 - t * 0.3})`;
       card.style.pointerEvents = t < 0.2 ? "auto" : "none";
     });
-
-    const nearest =
-      ((Math.round(-angle.current.value / step) % CONVICTIONS.length) +
-        CONVICTIONS.length) %
-      CONVICTIONS.length;
-    setActive(nearest);
   }, [step, RADIUS]);
+
+  /**
+   * Move to an angle, publishing the destination before animating to it.
+   *
+   * ── THE CARD MUST NOT DEPEND ON THE ANIMATION RUNNING ───────────────
+   * `active` was only ever set from the tween's onUpdate, so which
+   * conviction showed depended on the animation ticking. On the ring that
+   * is invisible, because the rotation is the animation. On a phone the
+   * card is plain React state and the tween is decoration — if the ticker
+   * stalls for any reason, low-power mode, a backgrounded tab, a dropped
+   * frame budget, the control does nothing at all and the carousel looks
+   * broken rather than slow.
+   *
+   * The destination is known the moment the control is used, so it is
+   * published then. The tween still runs and still calls render for the
+   * ring's depth styling; it is no longer the only thing that can change
+   * what the visitor sees.
+   */
+  /** Where the ring is heading, which is not where it currently is. */
+  const target = useRef(0);
 
   const rotateTo = useCallback(
     (deg: number) => {
+      // Every route to a rotation goes through here — arrows, dots, swipe
+      // and the drag release — so recording the destination here keeps
+      // them all consistent with each other.
+      target.current = deg;
+
+      const nearest =
+        ((Math.round(-deg / step) % CONVICTIONS.length) + CONVICTIONS.length) %
+        CONVICTIONS.length;
+      setActive(nearest);
+
       gsap.to(angle.current, {
         value: deg,
         duration: 1.25,
@@ -188,11 +234,22 @@ export default function PortfolioGallery() {
         onUpdate: render,
       });
     },
-    [render],
+    [render, step],
   );
 
+  /**
+   * Step one conviction, from where we are heading rather than where we
+   * currently are.
+   *
+   * This read angle.current.value, which is the tween's live position. A
+   * second tap while the first was still animating therefore measured
+   * from a angle that had barely moved and computed the same
+   * destination — two taps, one card advanced. Tracking the target
+   * separately makes each press count, which is how anyone uses an arrow
+   * on a phone: quickly, several times.
+   */
   const turn = useCallback(
-    (dir: 1 | -1) => rotateTo(angle.current.value - dir * step),
+    (dir: 1 | -1) => rotateTo(target.current - dir * step),
     [rotateTo, step],
   );
 
