@@ -38,8 +38,13 @@ export function TerminalNav() {
   // so the bar keeps its height while every target inside it clears 44px.
   // The workspace links measured 74x16 and 88x15 on a phone, which is a
   // precise-mouse target on a device that has no mouse.
+  // Sticks below the header, not under it. The offset was 4.5rem (72px)
+  // against a header measuring 77px on a phone, so the top five pixels of
+  // this bar — and the workspace links in it — sat behind the fixed
+  // header. Measured rather than assumed: the solid header is 77px at
+  // mobile widths and 85px from lg up.
   return (
-    <div className="sticky top-[4.5rem] z-40 border-b border-paper/10 bg-ink/95 backdrop-blur-sm lg:top-[5.25rem]">
+    <div className="sticky top-[4.9rem] z-40 border-b border-paper/10 bg-ink/95 backdrop-blur-sm lg:top-[5.4rem]">
       <div className="mx-auto flex max-w-[110rem] flex-wrap items-center gap-x-8 px-6 lg:px-10">
         <span className="py-3.5 text-[0.6rem] uppercase tracking-[0.28em] text-gold">
           Research Terminal

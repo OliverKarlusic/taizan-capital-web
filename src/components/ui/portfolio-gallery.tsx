@@ -222,6 +222,13 @@ export default function PortfolioGallery() {
     return () => ctx.revert();
   }, [reduced, render, step, RADIUS]);
 
+  /** In-flight swipe on the compact carousel; see the note at its JSX. */
+  const swipe = useRef<{
+    x: number;
+    y: number;
+    decided: "horizontal" | "vertical" | null;
+  } | null>(null);
+
   // Pointer drag
   useEffect(() => {
     if (reduced) return;
@@ -270,6 +277,19 @@ export default function PortfolioGallery() {
   if (compact && !reduced) {
     return (
       <div className="select-none px-6">
+        {/* ── Swipe ──
+            The ring's drag handler binds to sectionRef, and sectionRef
+            belongs to the ring, which this layout replaces entirely — so
+            on a phone it attached to nothing and the only way to move
+            between strategies was the arrows. A card that fills the
+            screen and does not answer a swipe reads as broken, because
+            every other card-shaped thing on a phone does.
+
+            Direction is decided before anything moves: a gesture that is
+            mostly vertical is left to the page, so swiping past the
+            gallery still scrolls. Only a clearly horizontal one turns the
+            carousel, and only past a threshold, so a tap on the card's
+            link is never mistaken for a flick. */}
         <div
           role="group"
           aria-roledescription="carousel"
@@ -279,10 +299,41 @@ export default function PortfolioGallery() {
             if (e.key === "ArrowRight") { e.preventDefault(); turn(1); }
             if (e.key === "ArrowLeft") { e.preventDefault(); turn(-1); }
           }}
-          className="h-[27rem] focus:outline-none focus-visible:ring-1 focus-visible:ring-gold focus-visible:ring-offset-4 focus-visible:ring-offset-ink"
+          onPointerDown={(e) => {
+            swipe.current = { x: e.clientX, y: e.clientY, decided: null };
+          }}
+          onPointerMove={(e) => {
+            const s = swipe.current;
+            if (!s || s.decided === "vertical") return;
+            const dx = e.clientX - s.x;
+            const dy = e.clientY - s.y;
+            if (s.decided === null) {
+              if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+              s.decided = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
+            }
+          }}
+          onPointerUp={(e) => {
+            const s = swipe.current;
+            swipe.current = null;
+            if (!s || s.decided !== "horizontal") return;
+            const dx = e.clientX - s.x;
+            if (Math.abs(dx) < 40) return;
+            turn(dx < 0 ? 1 : -1);
+          }}
+          onPointerCancel={() => {
+            swipe.current = null;
+          }}
+          // Lets the browser keep vertical scrolling while this element
+          // claims horizontal gestures.
+          style={{ touchAction: "pan-y" }}
+          className="h-[27rem] cursor-grab touch-pan-y active:cursor-grabbing focus:outline-none focus-visible:ring-1 focus-visible:ring-gold focus-visible:ring-offset-4 focus-visible:ring-offset-ink"
         >
           <Card c={CONVICTIONS[active]} front />
         </div>
+
+        <p className="mt-4 text-center text-[0.62rem] uppercase tracking-[0.2em] text-stone-dim">
+          Swipe or use the arrows
+        </p>
 
         <div className="mt-8 flex items-center gap-4">
           <button

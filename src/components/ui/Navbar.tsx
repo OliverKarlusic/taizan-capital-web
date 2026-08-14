@@ -173,10 +173,16 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
         {/* The icon is 24px; the hit area must not be. Padding takes the
             target to 44x44 and the equal negative margin keeps the button
             sitting exactly where it did, so this costs nothing visually.
-            This is the only way into the navigation on a phone. */}
+            This is the only way into the navigation on a phone.
+
+            The drop shadow matches the wordmark's hero-legible treatment.
+            Over the opening frames of the film the icon is a thin white
+            stroke on bright mist, and without it the three lines wash out
+            against the footage — the control is present but the eye
+            cannot find it. */}
         <button
           type="button"
-          className="-m-2.5 p-2.5 text-paper xl:hidden"
+          className="-m-2.5 p-2.5 text-paper drop-shadow-[0_1px_3px_rgba(10,10,10,0.75)] xl:hidden"
           aria-expanded={open}
           aria-label={open ? "Close menu" : "Open menu"}
           onClick={() => setOpen((v) => !v)}
