@@ -60,10 +60,10 @@ export const COVERAGE: CoverageGroup[] = [
         gap: "No WebSocket entitlement on the free tier. The provider layer is isolated behind one module, so a streaming source can be added without touching the UI.",
       },
       {
-        name: "Historical prices",
+        name: "Price history and chart",
         state: "available",
         present:
-          "Daily closes for a year, used for realised volatility, maximum drawdown and range position. Holiday padding is dropped rather than carried forward.",
+          "A twelve-month closing-price chart on every security, plus realised volatility, maximum drawdown and range position computed from the same series. Holiday padding is dropped rather than carried forward, so no invented flat day depresses the volatility figure.",
         gap: "",
       },
     ],
@@ -106,21 +106,24 @@ export const COVERAGE: CoverageGroup[] = [
       },
       {
         name: "Balance sheet",
-        state: "missing",
-        present: "Not shown.",
-        gap: "The provider returns the periods with every line item removed — each arrives carrying only an end date. Nothing is reconstructed from ratios.",
+        state: "partial",
+        present:
+          "Five annual periods as filed for United States listings, from a dedicated statements provider: cash, receivables, inventory, property, goodwill, intangibles, payables, short and long-term debt, equity and net debt.",
+        gap: "United States listings only on the current plan. ASX companies fall back to the quote provider, whose balance-sheet periods arrive with every line item stripped, and the page names which provider reached the security.",
       },
       {
         name: "Cash flow statement",
-        state: "missing",
-        present: "Not shown.",
-        gap: "Same as the balance sheet: periods present, line items stripped. Free cash flow is the figure most worth having, which is why it is not inferred from earnings and an assumed capex rate.",
+        state: "partial",
+        present:
+          "Five annual periods for United States listings: operating cash flow, capital expenditure, acquisitions, share repurchases, dividends and free cash flow, as reported.",
+        gap: "United States listings only. Where the statements provider does not reach a security nothing is inferred from earnings and an assumed capital-expenditure rate.",
       },
       {
         name: "Statement history depth",
         state: "partial",
-        present: "Four annual periods where the provider carries them.",
-        gap: "Five to ten years, quarterly detail and segment splits need a fundamentals provider.",
+        present:
+          "Five annual periods for United States listings; four from the quote provider elsewhere.",
+        gap: "Ten years, quarterly detail and segment splits need a higher provider tier.",
       },
     ],
   },
@@ -136,27 +139,31 @@ export const COVERAGE: CoverageGroup[] = [
       },
       {
         name: "ROIC / ROCE",
-        state: "missing",
-        present: "Return on equity and return on assets only.",
-        gap: "Invested capital needs balance-sheet detail the provider strips. Deriving it from equity alone would produce a figure that looks like ROIC and is not.",
+        state: "partial",
+        present:
+          "Return on invested capital for United States listings, using the effective tax rate the company actually bore rather than a statutory assumption, and invested capital as debt plus equity less cash. The definition is stated on the page, because two defensible ones give materially different answers.",
+        gap: "United States listings only. Nothing is derived from equity alone, which would produce a figure that looks like ROIC and is not.",
       },
       {
         name: "Working capital (DSO, DIO, DPO)",
-        state: "missing",
-        present: "Not shown.",
-        gap: "Receivables, inventory and payables are balance-sheet lines, all unavailable.",
+        state: "partial",
+        present:
+          "Days sales outstanding, days inventory, days payable and the cash conversion cycle for United States listings. The cycle requires all three components and is left blank rather than computed from two.",
+        gap: "United States listings only.",
       },
       {
         name: "Capital allocation",
-        state: "missing",
-        present: "Dividend yield and payout ratio only.",
-        gap: "Buybacks, acquisitions, capex and debt repayment are cash-flow lines, all unavailable.",
+        state: "partial",
+        present:
+          "Capital expenditure, acquisitions, share repurchases, dividends paid and debt issuance from the cash flow statement, for United States listings, alongside dividend yield and payout.",
+        gap: "United States listings only. No judgement is drawn about whether the allocation was effective.",
       },
       {
         name: "Earnings quality / cash conversion",
-        state: "missing",
-        present: "Not shown.",
-        gap: "Requires operating cash flow against net income; cash flow is unavailable.",
+        state: "partial",
+        present:
+          "Operating cash flow against net income, free cash flow and FCF margin, plus stock-based compensation and the working-capital movement, for United States listings.",
+        gap: "United States listings only.",
       },
     ],
   },

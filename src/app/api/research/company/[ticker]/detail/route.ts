@@ -7,6 +7,12 @@ import {
   UpstreamError,
 } from "@/lib/research/yahoo";
 import { getUniverse } from "@/lib/research/constituents";
+import {
+  coverageFor,
+  getBalanceSheets,
+  getCashFlows,
+  getIncomeStatements,
+} from "@/lib/research/statements";
 
 /**
  * The heavier half of a company page: statements, ownership, calendar,
@@ -107,12 +113,34 @@ export async function GET(
       }
     }
 
+    /* ── Statements, from the dedicated provider where it reaches ──
+       Fetched in parallel and all three tolerate null: a company outside
+       the statements provider's coverage keeps the quote provider's
+       stripped view and the page says which. Nothing is merged silently —
+       the source of each statement is reported alongside it. */
+    const statementCoverage = coverageFor(symbol);
+    const [incomeStatements, balanceSheets, cashFlows] =
+      statementCoverage === "covered"
+        ? await Promise.all([
+            getIncomeStatements(symbol, 5),
+            getBalanceSheets(symbol, 5),
+            getCashFlows(symbol, 5),
+          ])
+        : [null, null, null];
+
     return NextResponse.json({
       ...detail,
       news,
       peers,
       peerBasis,
       currency: company?.quote.currency ?? null,
+      statements: {
+        coverage: statementCoverage,
+        source: incomeStatements ? "Financial Modeling Prep" : null,
+        income: incomeStatements,
+        balance: balanceSheets,
+        cashFlow: cashFlows,
+      },
       fetchedAt: new Date().toISOString(),
     });
   } catch (e) {

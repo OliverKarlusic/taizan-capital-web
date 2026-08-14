@@ -6,6 +6,32 @@ import { ArrowLeft } from "lucide-react";
 import type { CompanyPayload } from "@/app/api/research/company/[ticker]/route";
 import { Unavailable } from "@/components/research/TerminalChrome";
 import ThesisEditor from "@/components/research/ThesisEditor";
+import type {
+  BalanceSheet,
+  CashFlow,
+  IncomeStatement,
+} from "@/lib/research/statements";
+import {
+  cashConversion,
+  cashConversionCycle,
+  currentRatio,
+  dio,
+  dpo,
+  dso,
+  effectiveTaxRate,
+  fcfMargin,
+  freeCashFlow,
+  interestCoverage,
+  investedCapital,
+  netDebtToEbitda,
+  nopat,
+  quickRatio,
+  returnOnAssets,
+  returnOnEquity,
+  roic,
+  seriesCagr,
+  shareCountChange,
+} from "@/lib/research/fundamentals";
 import {
   DASH,
   decimal,
@@ -42,17 +68,22 @@ const TABS = [
   { id: "growth", label: "Growth & Profitability", live: true },
   { id: "risk", label: "Risk", live: true },
   { id: "financials", label: "Financials", live: true },
+  { id: "balance", label: "Balance Sheet", live: true },
+  { id: "cashflow", label: "Cash Flow", live: true },
+  { id: "quality", label: "Quality", live: true },
   { id: "peers", label: "Peers", live: true },
   { id: "ownership", label: "Ownership", live: true },
   { id: "filings", label: "News & Filings", live: true },
   { id: "calendar", label: "Calendar", live: true },
-  { id: "cashflow", label: "Cash Flow", live: false },
   { id: "thesis", label: "Thesis", live: false },
 ] as const;
 
 /** Tabs whose data comes from the second, lazily-fetched request. */
 const DETAIL_TABS = new Set([
   "financials",
+  "balance",
+  "cashflow",
+  "quality",
   "peers",
   "ownership",
   "filings",
@@ -62,11 +93,6 @@ const DETAIL_TABS = new Set([
 type TabId = (typeof TABS)[number]["id"];
 
 const UNAVAILABLE: Record<string, { title: string; reason: string }> = {
-  cashflow: {
-    title: "Cash flow statement",
-    reason:
-      "The feed still returns cash-flow periods for this company, but with every line item stripped out — each statement arrives carrying nothing but its end date. There is no operating, investing or financing figure to publish. Free cash flow is the number most worth having here, which is exactly why it will not be inferred from earnings and an assumed capital-expenditure rate. The same is true of the balance sheet, which is why the Financials tab shows the income statement alone.",
-  },
   thesis: {
     title: "Investment thesis",
     reason:
@@ -332,6 +358,16 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
 
       {/* ── Panels ── */}
       <div className="mx-auto max-w-[110rem] px-6 py-10 lg:px-10">
+        {tab === "overview" && data.history?.length > 1 ? (
+          <PriceChart
+            points={data.history}
+            currency={quote.currency}
+            low={quote.fiftyTwoWeekLow}
+            high={quote.fiftyTwoWeekHigh}
+            symbol={data.symbol}
+          />
+        ) : null}
+
         {tab === "overview" ? (
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-14">
             <div className="lg:col-span-7">
@@ -565,6 +601,184 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
   );
 }
 
+/**
+ * One year of closing prices.
+ *
+ * ── DRAWN FROM OBSERVED CLOSES, WITH NOTHING BETWEEN THEM ───────────
+ * The series is real daily closes from the price feed, thinned for
+ * transport. Holidays and halts were dropped upstream rather than
+ * carried forward, so the line joins observations and never invents a
+ * flat day that would depress the volatility computed from the same
+ * data. Closing prices only — no intraday high or low is claimed.
+ *
+ * The y-axis starts at the period's own low rather than at zero. A
+ * zero-based axis on a security that never approached zero compresses a
+ * year of movement into a band at the top of the frame; this is a price
+ * history, not a proportion of anything.
+ */
+function PriceChart({
+  points,
+  currency,
+  low,
+  high,
+  symbol,
+}: {
+  points: { t: number; c: number }[];
+  currency: string | null;
+  low: number | null;
+  high: number | null;
+  symbol: string;
+}) {
+  const W = 900;
+  const Hh = 260;
+  const PAD = { top: 18, right: 74, bottom: 30, left: 12 };
+
+  const closes = points.map((p) => p.c);
+  const min = Math.min(...closes);
+  const max = Math.max(...closes);
+  // A flat series would divide by zero; pad the range so it draws a line.
+  const span = max - min || Math.max(max * 0.02, 1);
+  const lo = min - span * 0.08;
+  const hi = max + span * 0.08;
+
+  const x = (i: number) =>
+    PAD.left + (i * (W - PAD.left - PAD.right)) / (points.length - 1);
+  const y = (v: number) =>
+    Hh - PAD.bottom - ((v - lo) / (hi - lo)) * (Hh - PAD.top - PAD.bottom);
+
+  const line = points
+    .map((p, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)} ${y(p.c).toFixed(1)}`)
+    .join(" ");
+  const area = `${line} L${x(points.length - 1).toFixed(1)} ${Hh - PAD.bottom} L${PAD.left} ${Hh - PAD.bottom} Z`;
+
+  const first = points[0];
+  const last = points[points.length - 1];
+  const change = ((last.c - first.c) / first.c) * 100;
+  const fmtDate = (t: number) =>
+    new Date(t * 1000).toLocaleDateString("en-AU", {
+      month: "short",
+      year: "2-digit",
+    });
+
+  return (
+    <figure className="mb-12">
+      <div className="flex flex-wrap items-baseline justify-between gap-4">
+        <h2 className="text-[0.62rem] uppercase tracking-[0.26em] text-gold">
+          Twelve-month price
+        </h2>
+        <p className="text-[0.62rem] uppercase tracking-[0.16em] text-stone-dim">
+          {points.length} observed closes · price only, excludes dividends
+        </p>
+      </div>
+
+      <div className="mt-5 overflow-x-auto">
+        <svg
+          viewBox={`0 0 ${W} ${Hh}`}
+          className="h-auto w-full min-w-[40rem] sm:min-w-0"
+          role="img"
+          aria-label={`${symbol} closing price over twelve months, from ${fmtDate(first.t)} to ${fmtDate(last.t)}. ${change >= 0 ? "Up" : "Down"} ${Math.abs(change).toFixed(1)} per cent over the period, on a range of ${decimal(min)} to ${decimal(max)}.`}
+        >
+          {[0, 0.25, 0.5, 0.75, 1].map((f) => {
+            const v = lo + (hi - lo) * f;
+            return (
+              <g key={f}>
+                <line
+                  x1={PAD.left}
+                  x2={W - PAD.right}
+                  y1={y(v)}
+                  y2={y(v)}
+                  stroke="currentColor"
+                  className="text-paper/[0.08]"
+                  strokeWidth={1}
+                />
+                <text
+                  x={W - PAD.right + 10}
+                  y={y(v) + 4}
+                  className="fill-stone-dim text-[11px]"
+                >
+                  {decimal(v, v >= 100 ? 0 : 2)}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* 52-week extremes, where they fall inside the drawn window. */}
+          {[
+            [low, "52w low"],
+            [high, "52w high"],
+          ].map(([v, label]) =>
+            typeof v === "number" && v > lo && v < hi ? (
+              <g key={label as string}>
+                <line
+                  x1={PAD.left}
+                  x2={W - PAD.right}
+                  y1={y(v)}
+                  y2={y(v)}
+                  stroke="currentColor"
+                  strokeDasharray="3 5"
+                  className="text-ice/30"
+                  strokeWidth={1}
+                />
+                <text
+                  x={PAD.left + 6}
+                  y={y(v) - 5}
+                  className="fill-ice/60 text-[10px] uppercase tracking-[0.14em]"
+                >
+                  {label as string}
+                </text>
+              </g>
+            ) : null,
+          )}
+
+          <path d={area} className="fill-gold/[0.07]" />
+          <path
+            d={line}
+            fill="none"
+            strokeWidth={1.75}
+            strokeLinejoin="round"
+            className="stroke-gold"
+          />
+          <circle cx={x(points.length - 1)} cy={y(last.c)} r={3} className="fill-gold" />
+
+          <text x={PAD.left} y={Hh - 8} className="fill-stone text-[11px]">
+            {fmtDate(first.t)}
+          </text>
+          <text
+            x={W - PAD.right}
+            y={Hh - 8}
+            textAnchor="end"
+            className="fill-stone text-[11px]"
+          >
+            {fmtDate(last.t)}
+          </text>
+          <text
+            x={W - PAD.right + 10}
+            y={y(last.c) - 8}
+            className="fill-gold text-[11px]"
+          >
+            {decimal(last.c)}
+          </text>
+        </svg>
+      </div>
+
+      <figcaption className="mt-4 flex flex-wrap items-baseline gap-x-8 gap-y-1 text-[0.68rem] text-stone">
+        <span>
+          {fmtDate(first.t)} to {fmtDate(last.t)}:{" "}
+          <span className={change >= 0 ? "text-gold" : "text-ice"}>
+            {signedPercent(change, 1)}
+          </span>
+        </span>
+        <span className="text-stone-dim">
+          Range {decimal(min)}–{decimal(max)} {currency ?? ""}
+        </span>
+        <span className="text-stone-dim">
+          Closing prices from the delayed feed; not adjusted for dividends
+        </span>
+      </figcaption>
+    </figure>
+  );
+}
+
 /* ── detail panels ────────────────────────────────────────────────── */
 
 interface DetailPayload {
@@ -617,6 +831,13 @@ interface DetailPayload {
   currency: string | null;
   balanceSheetEmpty: boolean;
   cashFlowEmpty: boolean;
+  statements?: {
+    coverage: "covered" | "out-of-coverage" | "not-configured";
+    source: string | null;
+    income: IncomeStatement[] | null;
+    balance: BalanceSheet[] | null;
+    cashFlow: CashFlow[] | null;
+  };
 }
 
 /** Large money, compactly — statements run to twelve digits. */
@@ -651,6 +872,82 @@ const INCOME_ROWS: [string, keyof DetailPayload["income"][number]][] = [
   ["Net income", "netIncome"],
 ];
 
+/**
+ * A statement table: line items down, periods across.
+ *
+ * Rows with no figure in any period are dropped rather than rendered as
+ * a row of em dashes — a statement is what was reported, not a list of
+ * what was not.
+ */
+function StatementTable<T extends { date: string | null }>({
+  periods,
+  rows,
+  currency,
+}: {
+  periods: T[];
+  rows: [string, keyof T][];
+  currency: string | null;
+}) {
+  const present = rows.filter(([, key]) =>
+    periods.some((p) => p[key] !== null && p[key] !== undefined),
+  );
+  return (
+    <div className="mt-8 overflow-x-auto">
+      <table className="w-full min-w-[42rem] border-collapse text-left">
+        <thead>
+          <tr className="border-b border-paper/15">
+            <th className="py-3 text-[0.58rem] font-medium uppercase tracking-[0.2em] text-stone">
+              Period ending
+            </th>
+            {periods.map((p) => (
+              <th
+                key={p.date ?? Math.random()}
+                className="tabular py-3 pl-6 text-right text-[0.58rem] font-medium uppercase tracking-[0.2em] text-stone"
+              >
+                {p.date ?? DASH}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {present.map(([label, key]) => (
+            <tr key={label} className="border-b border-paper/[0.07]">
+              <th
+                scope="row"
+                className="py-3 pr-6 text-left text-[0.8rem] font-normal text-paper-dim"
+              >
+                {label}
+              </th>
+              {periods.map((p, i) => (
+                <td
+                  key={i}
+                  className="tabular py-3 pl-6 text-right text-[0.85rem] text-paper"
+                >
+                  {big(p[key] as number | null, currency)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** Shown where the statements provider does not reach a listing. */
+function StatementsUnavailable({ coverage }: { coverage: string }) {
+  return (
+    <Unavailable
+      title="Financial statements"
+      reason={
+        coverage === "out-of-coverage"
+          ? "The statements provider's plan covers United States listings only, and this security trades elsewhere. That is a limit of the subscription, not a statement that the company does not file — its accounts are published by its own exchange. Nothing is estimated in their place, and the quote provider's own statement feed returns these periods with every line item stripped."
+          : "No statements provider is configured, so only the figures the quote provider carries are available. Balance-sheet and cash-flow periods arrive from it with their line items stripped, which is why neither is shown rather than shown empty."
+      }
+    />
+  );
+}
+
 function DetailPanel({
   tab,
   d,
@@ -662,6 +959,83 @@ function DetailPanel({
   currency: string | null;
   symbol: string;
 }) {
+  const st = d.statements;
+  const stCurrency = st?.income?.[0]?.currency ?? currency;
+
+  if (tab === "balance") {
+    if (!st?.balance?.length) return <StatementsUnavailable coverage={st?.coverage ?? "not-configured"} />;
+    return (
+      <div>
+        <H>Balance sheet</H>
+        <p className="mt-4 max-w-[80ch] text-[0.82rem] font-light leading-[1.9] text-stone">
+          Annual periods as filed, most recent first. Reported by {st.source};
+          figures are as filed and have not been restated or adjusted here.
+        </p>
+        <StatementTable
+          periods={st.balance}
+          currency={stCurrency}
+          rows={[
+            ["Cash and equivalents", "cashAndCashEquivalents"],
+            ["Short-term investments", "shortTermInvestments"],
+            ["Receivables", "netReceivables"],
+            ["Inventory", "inventory"],
+            ["Total current assets", "totalCurrentAssets"],
+            ["Property, plant & equipment", "propertyPlantEquipmentNet"],
+            ["Goodwill", "goodwill"],
+            ["Intangible assets", "intangibleAssets"],
+            ["Total assets", "totalAssets"],
+            ["Payables", "accountPayables"],
+            ["Short-term debt", "shortTermDebt"],
+            ["Total current liabilities", "totalCurrentLiabilities"],
+            ["Long-term debt", "longTermDebt"],
+            ["Total liabilities", "totalLiabilities"],
+            ["Total equity", "totalStockholdersEquity"],
+            ["Total debt", "totalDebt"],
+            ["Net debt", "netDebt"],
+          ]}
+        />
+      </div>
+    );
+  }
+
+  if (tab === "cashflow") {
+    if (!st?.cashFlow?.length) return <StatementsUnavailable coverage={st?.coverage ?? "not-configured"} />;
+    return (
+      <div>
+        <H>Cash flow statement</H>
+        <p className="mt-4 max-w-[80ch] text-[0.82rem] font-light leading-[1.9] text-stone">
+          Annual periods as filed, most recent first. Reported by {st.source}.
+          Capital expenditure is shown as reported, which is negative.
+        </p>
+        <StatementTable
+          periods={st.cashFlow}
+          currency={stCurrency}
+          rows={[
+            ["Net income", "netIncome"],
+            ["Depreciation & amortisation", "depreciationAndAmortization"],
+            ["Stock-based compensation", "stockBasedCompensation"],
+            ["Change in working capital", "changeInWorkingCapital"],
+            ["Operating cash flow", "netCashProvidedByOperatingActivities"],
+            ["Capital expenditure", "capitalExpenditure"],
+            ["Acquisitions, net", "acquisitionsNet"],
+            ["Investing activities", "netCashUsedForInvestingActivities"],
+            ["Share repurchases", "commonStockRepurchased"],
+            ["Dividends paid", "dividendsPaid"],
+            ["Financing activities", "netCashUsedProvidedByFinancingActivities"],
+            ["Free cash flow", "freeCashFlow"],
+          ]}
+        />
+      </div>
+    );
+  }
+
+  if (tab === "quality") {
+    if (!st?.income?.length || !st?.balance?.length || !st?.cashFlow?.length) {
+      return <StatementsUnavailable coverage={st?.coverage ?? "not-configured"} />;
+    }
+    return <QualityPanel st={st} />;
+  }
+
   if (tab === "financials") {
     if (!d.income.length) {
       return (
@@ -1024,6 +1398,111 @@ function DetailPanel({
   }
 
   return null;
+}
+
+/**
+ * Financial quality: the ratios a full statement set makes possible.
+ *
+ * Every figure is computed by src/lib/research/fundamentals.ts, which
+ * returns null wherever an input is missing rather than substituting a
+ * proxy. So a blank here means the arithmetic could not be done from
+ * reported figures — never that it was done with an assumption.
+ */
+function QualityPanel({ st }: { st: NonNullable<DetailPayload["statements"]> }) {
+  const inc = st.income!;
+  const bal = st.balance!;
+  const cf = st.cashFlow!;
+  const i = inc[0];
+  const b = bal[0];
+  const c = cf[0];
+  const years = inc.length - 1;
+
+  const pct = (v: number | null, p = 1) => (v === null ? DASH : fraction(v, p));
+  const x = (v: number | null, p = 2) => (v === null ? DASH : decimal(v, p));
+  const days = (v: number | null) => (v === null ? DASH : `${Math.round(v)} days`);
+
+  return (
+    <div>
+      <H>Financial quality</H>
+      <p className="mt-4 max-w-[80ch] text-[0.82rem] font-light leading-[1.9] text-stone">
+        Calculated from the statements as filed, for the period ending{" "}
+        {i.date ?? DASH}. Return on invested capital uses the effective tax
+        rate the company actually bore, not a statutory assumption, and
+        invested capital is debt plus equity less cash. Where an input is not
+        reported the ratio is left blank rather than estimated.
+      </p>
+
+      <div className="mt-8 grid grid-cols-1 gap-x-14 gap-y-10 lg:grid-cols-3">
+        <div>
+          <h3 className="text-[0.62rem] uppercase tracking-[0.22em] text-stone">
+            Returns on capital
+          </h3>
+          <MetricsGrid
+            columns={2}
+            items={[
+              ["Return on invested capital", pct(roic(i, b))],
+              ["Return on equity", pct(returnOnEquity(i, b))],
+              ["Return on assets", pct(returnOnAssets(i, b))],
+              ["Effective tax rate", pct(effectiveTaxRate(i))],
+              ["NOPAT", big(nopat(i), i.currency)],
+              ["Invested capital", big(investedCapital(b), i.currency)],
+            ]}
+          />
+        </div>
+
+        <div>
+          <h3 className="text-[0.62rem] uppercase tracking-[0.22em] text-stone">
+            Cash and leverage
+          </h3>
+          <MetricsGrid
+            columns={2}
+            items={[
+              ["Free cash flow", big(freeCashFlow(c), i.currency)],
+              ["FCF margin", pct(fcfMargin(c, i))],
+              ["Cash conversion", pct(cashConversion(c))],
+              ["Net debt / EBITDA", x(netDebtToEbitda(i, b))],
+              ["Current ratio", x(currentRatio(b))],
+              ["Quick ratio", x(quickRatio(b))],
+              ["Interest coverage", x(interestCoverage(i), 1)],
+            ]}
+          />
+        </div>
+
+        <div>
+          <h3 className="text-[0.62rem] uppercase tracking-[0.22em] text-stone">
+            Working capital & growth
+          </h3>
+          <MetricsGrid
+            columns={2}
+            items={[
+              ["Days sales outstanding", days(dso(i, b))],
+              ["Days inventory", days(dio(i, b))],
+              ["Days payable", days(dpo(i, b))],
+              ["Cash conversion cycle", days(cashConversionCycle(i, b))],
+              [
+                `Revenue CAGR (${years}y)`,
+                pct(seriesCagr(inc.map((p) => p.revenue))),
+              ],
+              [
+                `Net income CAGR (${years}y)`,
+                pct(seriesCagr(inc.map((p) => p.netIncome))),
+              ],
+              ["Share count change", pct(shareCountChange(inc))],
+            ]}
+          />
+        </div>
+      </div>
+
+      <p className="mt-10 max-w-[86ch] text-[0.68rem] leading-[1.85] text-stone-dim">
+        A compound growth rate is shown only where both endpoints are
+        positive — a move from a loss to a profit is a change of sign, not a
+        rate, and reporting a percentage for it would be arithmetic without
+        meaning. The cash conversion cycle requires all three of its
+        components; two of them would be a different measure under the same
+        name. Source: {st.source}.
+      </p>
+    </div>
+  );
 }
 
 /* ── small pieces ─────────────────────────────────────────────────── */

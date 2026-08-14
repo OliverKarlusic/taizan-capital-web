@@ -45,7 +45,15 @@ export function TerminalNav() {
           Research Terminal
         </span>
 
-        <nav aria-label="Research workspace" className="flex items-center gap-6">
+        {/* Wraps. The parent wraps, but this row did not, and at four
+            workspaces it measured 356px against a 327px content box on a
+            375px phone — five pixels of document overflow, hidden by the
+            overflow guard and visible only as a page that drifts
+            sideways under the thumb. */}
+        <nav
+          aria-label="Research workspace"
+          className="flex flex-wrap items-center gap-x-6 gap-y-1"
+        >
           {WORKSPACES.map((w) => {
             const active = pathname === w.href;
             return (
