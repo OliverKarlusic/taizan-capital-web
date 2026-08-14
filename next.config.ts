@@ -14,8 +14,20 @@ import { fileURLToPath } from "node:url";
  * builds to .next-build and leaves .next to the dev server alone. No
  * dependency, no flags to remember.
  */
+/**
+ * ── AND WHY IT MUST NOT APPLY ON A HOST ─────────────────────────────
+ * The split above solves a purely local problem: one machine running a
+ * dev server and a build at the same time. A deployment has neither
+ * conflict and its platform looks for .next by the name Next gives it —
+ * pointing the build elsewhere made Vercel fail with "the Next.js output
+ * directory .next was not found", because it was sitting in .next-build.
+ *
+ * VERCEL is set in that environment, so the redirect is skipped there and
+ * the local convenience stays local.
+ */
 const script = process.env.npm_lifecycle_event;
-const isProduction = script === "build" || script === "start";
+const isProduction =
+  !process.env.VERCEL && (script === "build" || script === "start");
 
 /**
  * The project root, resolved from this file rather than from cwd.
