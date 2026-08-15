@@ -183,7 +183,7 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
           <li>
             <a
               href="/disclosures"
-              className="border border-gold/50 px-4 py-3 text-[0.68rem] font-medium uppercase tracking-[0.24em] text-gold transition-all duration-500 hover:bg-gold hover:text-ink min-[1500px]:px-7"
+              className="inline-flex min-h-11 items-center border border-gold/50 px-4 py-3 text-[0.68rem] font-medium uppercase tracking-[0.24em] text-gold transition-all duration-500 hover:bg-gold hover:text-ink min-[1500px]:px-7"
             >
               Disclosures
             </a>

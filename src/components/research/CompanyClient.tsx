@@ -331,7 +331,7 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
                   type="button"
                   aria-selected={active}
                   onClick={() => setTab(t.id)}
-                  className={`whitespace-nowrap border-b-2 px-3 py-3 text-[0.62rem] uppercase tracking-[0.16em] transition-colors duration-300 sm:px-4 sm:text-[0.65rem] sm:tracking-[0.18em] ${
+                  className={`inline-flex min-h-11 items-center whitespace-nowrap border-b-2 px-3 py-3 text-[0.62rem] uppercase tracking-[0.16em] transition-colors duration-300 sm:px-4 sm:text-[0.65rem] sm:tracking-[0.18em] ${
                     active
                       ? "border-gold text-paper"
                       : "border-transparent text-stone hover:text-paper-dim"

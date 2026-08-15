@@ -41,10 +41,21 @@ export function TerminalNav() {
   // Sticks below the header, not under it. The offset was 4.5rem (72px)
   // against a header measuring 77px on a phone, so the top five pixels of
   // this bar — and the workspace links in it — sat behind the fixed
-  // header. Measured rather than assumed: the solid header is 77px at
-  // mobile widths and 85px from lg up.
+  // header.
+  //
+  // Measured rather than assumed, and re-measured because the lg figure
+  // had gone stale: the solid header is 76.7px at mobile widths and
+  // 96.7px from lg up, not the 85px this once claimed. The brand mark is
+  // h-11 (44px) below lg and h-14 (56px) from lg, inside py-4 / lg:py-5 —
+  // so the step at lg is 20px, and 5.4rem (86.4px) left the top 10px of
+  // this bar behind the header at every desktop width. 6.1rem clears
+  // 96.7px with a pixel to spare.
+  //
+  // If the mark or the header padding changes, these two numbers change
+  // with it. elementFromPoint at this bar's top edge returning HEADER is
+  // the test that catches it.
   return (
-    <div className="sticky top-[4.9rem] z-40 border-b border-paper/10 bg-ink/95 backdrop-blur-sm lg:top-[5.4rem]">
+    <div className="sticky top-[4.9rem] z-40 border-b border-paper/10 bg-ink/95 backdrop-blur-sm lg:top-[6.1rem]">
       <div className="mx-auto flex max-w-[110rem] flex-wrap items-center gap-x-8 px-6 lg:px-10">
         <span className="py-3.5 text-[0.6rem] uppercase tracking-[0.28em] text-gold">
           Research Terminal

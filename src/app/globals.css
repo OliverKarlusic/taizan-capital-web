@@ -257,6 +257,30 @@ body {
 .link-underline {
   position: relative;
 }
+
+/**
+ * The hit area, which is not the same shape as the text.
+ *
+ * These links set 0.7rem uppercase type and nothing else, so the box the
+ * pointer has to find is 13px tall. WCAG 2.5.8 asks for 24px in its
+ * smallest dimension and the comfortable figure is 44px; 13px is a
+ * precise-mouse target in a navigation bar, and it is the primary
+ * navigation on the widest screens where the pointer travels furthest to
+ * reach it.
+ *
+ * Padding cannot do this job here: ::after draws the underline at
+ * `bottom: -4px` of this same box, so any vertical padding would drag
+ * the rule down away from the baseline it belongs to. An absolutely
+ * positioned overlay takes no part in layout, so the row keeps its
+ * height, the underline keeps its position, and the target becomes 45px
+ * tall. Horizontal insets stay at 0 so neighbouring links never claim
+ * each other's clicks.
+ */
+.link-underline::before {
+  content: "";
+  position: absolute;
+  inset: -16px 0;
+}
 .link-underline::after {
   content: "";
   position: absolute;
