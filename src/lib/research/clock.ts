@@ -56,9 +56,34 @@ export const marketDateTime = (d: Date | string | number): string =>
     // absent and the string reads better with the parts separated.
     .replace(/\s([A-Z]{4,5})$/, " $1");
 
-/** "Aug 26" — compact axis label for a chart tick. */
+/**
+ * "Aug 2026" — an axis tick that cannot be mistaken for a date.
+ *
+ * ── THE FUTURE-DATE BUG THAT WAS NEVER A DATA BUG ───────────────────
+ * This used `year: "2-digit"`, which renders August 2025 as "Aug 25"
+ * and August 2026 as "Aug 26". Both are years. Both read as days.
+ *
+ * On a twelve-month chart ending 15 August 2026 the axis therefore ran
+ * "Aug 25 … Aug 26", and every reader who checked it against today's
+ * date saw two observations dated ten and eleven days into the future.
+ * The report of future-dated market data was correct as an observation
+ * and wrong as a diagnosis: the timestamps were sound, the series ended
+ * on the previous session, and no bar was ever forward-dated. The label
+ * was lying about what it was.
+ *
+ * Two lessons are worth keeping next to the code. A format that is
+ * ambiguous with a *different* unit is not a cosmetic choice — on a
+ * page whose entire claim is that no figure is invented, a label that
+ * reads as a fabricated date does the same damage as a fabricated
+ * number. And a user reporting a symptom is reporting something real;
+ * the guard added for forward-dated bars was worth having, but it was
+ * never going to fix this, because this was never that.
+ *
+ * Four digits are two characters wider and unambiguous. The axis has
+ * the room.
+ */
 export const axisMonth = (epochSeconds: number): string =>
-  fmt({ month: "short", year: "2-digit" }).format(new Date(epochSeconds * 1000));
+  fmt({ month: "short", year: "numeric" }).format(new Date(epochSeconds * 1000));
 
 /** The calendar date in Sydney right now, as YYYY-MM-DD. */
 export function todayInMarket(now = new Date()): string {

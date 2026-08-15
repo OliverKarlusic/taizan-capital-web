@@ -42,7 +42,21 @@ describe("dates resolve in the market's zone, not the host's", () => {
   });
 
   it("formats a chart tick from unix seconds", () => {
-    expect(axisMonth(Date.UTC(2026, 7, 15) / 1000)).toBe("Aug 26");
+    expect(axisMonth(Date.UTC(2026, 7, 15) / 1000)).toBe("Aug 2026");
+  });
+
+  it("never renders a year that could be read as a day of the month", () => {
+    // The reported "future dates" were "Aug 25" and "Aug 26" — August
+    // 2025 and August 2026 in two-digit form, read as the 25th and
+    // 26th. Any tick whose numeric part falls in 1–31 is ambiguous with
+    // a date, so the year is asserted to be four digits across a span
+    // that would have produced the misreadable range.
+    for (let y = 2020; y <= 2031; y++) {
+      const label = axisMonth(Date.UTC(y, 7, 15) / 1000);
+      const digits = label.match(/\d+/)?.[0] ?? "";
+      expect(digits).toHaveLength(4);
+      expect(Number(digits)).toBe(y);
+    }
   });
 
   it("gives the Sydney calendar date as ISO", () => {

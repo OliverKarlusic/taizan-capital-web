@@ -63,3 +63,7 @@ public/media/hero/*.mp4
 
 # local editor/tooling config — not part of the product
 /.claude/
+
+# Frame captures and probe scripts from local video/perf work.
+# Large binary output; regenerated on demand, never shipped.
+.video/
