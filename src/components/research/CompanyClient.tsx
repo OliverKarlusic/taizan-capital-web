@@ -63,21 +63,48 @@ import {
  * is; it may not publish what the number means for you.
  */
 
+/**
+ * `issuer: true` marks a section that only exists for an operating
+ * company.
+ *
+ * ── WHY A FUND MUST NOT BE OFFERED THESE ────────────────────────────
+ * An index fund has no income statement, no return on invested capital
+ * and no insider register. Offering the tabs anyway meant an ETF landed
+ * on "This section's data could not be retrieved — reload to try the
+ * feed again", which is false twice over: nothing failed, and reloading
+ * will never produce a figure. That is the same error as a fabricated
+ * number wearing different clothes — the reader is told something
+ * untrue about why a figure is absent, and sent to do something futile
+ * about it.
+ *
+ * A structural absence and a failed request are different facts and get
+ * different words.
+ */
 const TABS = [
-  { id: "overview", label: "Overview", live: true },
-  { id: "valuation", label: "Valuation", live: true },
-  { id: "growth", label: "Growth & Profitability", live: true },
-  { id: "risk", label: "Risk", live: true },
-  { id: "financials", label: "Financials", live: true },
-  { id: "balance", label: "Balance Sheet", live: true },
-  { id: "cashflow", label: "Cash Flow", live: true },
-  { id: "quality", label: "Quality", live: true },
-  { id: "peers", label: "Peers", live: true },
-  { id: "ownership", label: "Ownership", live: true },
-  { id: "filings", label: "News & Filings", live: true },
-  { id: "calendar", label: "Calendar", live: true },
-  { id: "thesis", label: "Thesis", live: false },
+  { id: "overview", label: "Overview", live: true, issuer: false },
+  { id: "valuation", label: "Valuation", live: true, issuer: false },
+  { id: "growth", label: "Growth & Profitability", live: true, issuer: true },
+  { id: "risk", label: "Risk", live: true, issuer: false },
+  { id: "financials", label: "Financials", live: true, issuer: true },
+  { id: "balance", label: "Balance Sheet", live: true, issuer: true },
+  { id: "cashflow", label: "Cash Flow", live: true, issuer: true },
+  { id: "quality", label: "Quality", live: true, issuer: true },
+  { id: "peers", label: "Peers", live: true, issuer: true },
+  { id: "ownership", label: "Ownership", live: true, issuer: true },
+  { id: "filings", label: "News & Filings", live: true, issuer: false },
+  { id: "calendar", label: "Calendar", live: true, issuer: false },
+  { id: "thesis", label: "Thesis", live: false, issuer: false },
 ] as const;
+
+/**
+ * Yahoo's quoteType for things that are funds rather than issuers.
+ * MUTUALFUND and MONEYMARKET are included because the same reasoning
+ * applies to them, even though the screener universe is equities and
+ * ETFs today.
+ */
+const FUND_TYPES = new Set(["ETF", "MUTUALFUND", "MONEYMARKET"]);
+const isFund = (quoteType: string | null | undefined) =>
+  FUND_TYPES.has((quoteType ?? "").toUpperCase());
 
 /** Tabs whose data comes from the second, lazily-fetched request. */
 const DETAIL_TABS = new Set([
@@ -218,6 +245,11 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
 
   const { quote, profile, fundamentals: f, risk, peers } = data;
 
+  // A fund is not an issuer, so the issuer-only sections are not offered
+  // rather than offered and then apologised for.
+  const fund = isFund(quote.quoteType);
+  const visibleTabs = TABS.filter((t) => !(fund && t.issuer));
+
   return (
     <div>
       {/* ── Masthead ── */}
@@ -319,10 +351,10 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
         <div className="mx-auto max-w-[110rem] px-6 lg:px-10">
           <div
             role="tablist"
-            aria-label="Company sections"
+            aria-label={fund ? "Fund sections" : "Company sections"}
             className="flex flex-wrap gap-x-1"
           >
-            {TABS.map((t) => {
+            {visibleTabs.map((t) => {
               const active = tab === t.id;
               return (
                 <button
@@ -352,6 +384,21 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
 
       {/* ── Panels ── */}
       <div className="mx-auto max-w-[110rem] px-6 py-10 lg:px-10">
+        {/* Said once, on the section the reader lands on. A fund missing
+            eight tabs with no explanation reads as a broken page; the
+            reason is structural and takes one sentence. */}
+        {fund && tab === "overview" ? (
+          <p className="mb-8 max-w-[76ch] text-[0.72rem] leading-[1.9] text-stone-dim">
+            This is a fund rather than an operating company. Statement,
+            profitability, quality, peer and ownership sections are not
+            shown for it — a fund files no income statement, earns no
+            return on invested capital and has no insider register, so
+            those figures do not exist to be retrieved. Price, risk,
+            calendar and news are drawn from the same feed as everywhere
+            else.
+          </p>
+        ) : null}
+
         {tab === "overview" && data.history?.length > 1 ? (
           <PriceChart
             points={data.history}
