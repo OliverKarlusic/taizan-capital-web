@@ -28,6 +28,12 @@
  */
 
 import { isFuture } from "./clock";
+import {
+  expenseRatio as domainExpenseRatio,
+  netAssets as domainNetAssets,
+  price as domainPrice,
+  weight as domainWeight,
+} from "./domain";
 
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
@@ -846,5 +852,118 @@ export async function getHistory(symbol: string, range = "1y"): Promise<History 
     if (!ts || !cl) return null;
 
     return dropFuture(ts, cl);
+  });
+}
+
+/* ── funds ────────────────────────────────────────────────────────── */
+
+export interface FundHolding {
+  symbol: string | null;
+  name: string | null;
+  /** Fraction of the portfolio, 0–1. */
+  weight: number | null;
+}
+
+export interface Fund {
+  issuer: string | null;
+  category: string | null;
+  legalType: string | null;
+  /** Fraction, 0–1. Null where the provider's figure cannot be real. */
+  expenseRatio: number | null;
+  netAssets: number | null;
+  navPrice: number | null;
+  yield: number | null;
+  inceptionDate: string | null;
+  holdings: FundHolding[];
+  /** How many the provider returned, which is not the fund's real count. */
+  holdingsReturned: number;
+  sectorWeights: { sector: string; weight: number | null }[];
+  /** Fraction of the portfolio the returned holdings account for. */
+  holdingsCoverage: number | null;
+}
+
+const FUND_MODULES = [
+  "fundProfile",
+  "topHoldings",
+  "defaultKeyStatistics",
+  "summaryDetail",
+].join(",");
+
+/**
+ * Fund-level data for an ETF or managed fund.
+ *
+ * ── WHAT THIS DELIBERATELY DOES NOT CLAIM ───────────────────────────
+ * `holdings` is what the provider returned, which for every fund tested
+ * is the top ten and never the full register. A fund of 300 lines shown
+ * as ten without saying so reads as a complete portfolio, so the count
+ * and the weight those ten actually cover are both carried out of here
+ * and stated on screen. Coverage is the honest figure: ten lines summing
+ * to 45% of VAS says more than "10 holdings" ever could.
+ *
+ * Expense ratio runs through the domain guard rather than the generic
+ * accessor, because the provider returns a *formatted* zero for
+ * ASX-listed funds — see domain.ts. That is the one field here where
+ * publishing the provider's number unaltered would state something
+ * false about the cost of holding the investment.
+ */
+export async function getFund(symbol: string): Promise<Fund | null> {
+  return cached(`fund:${symbol}`, TTL.profile, async () => {
+    let j: { quoteSummary?: { result?: Record<string, unknown>[] } };
+    try {
+      j = (await authed(
+        `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(
+          symbol,
+        )}?modules=${FUND_MODULES}`,
+      )) as { quoteSummary?: { result?: Record<string, unknown>[] } };
+    } catch {
+      return null;
+    }
+
+    const r = j?.quoteSummary?.result?.[0];
+    if (!r) return null;
+
+    const fp = (r.fundProfile ?? {}) as Record<string, unknown>;
+    const th = (r.topHoldings ?? {}) as Record<string, unknown>;
+    const ks = (r.defaultKeyStatistics ?? {}) as Record<string, unknown>;
+    const sd = (r.summaryDetail ?? {}) as Record<string, unknown>;
+
+    const fees = (fp.feesExpensesInvestment ?? {}) as Record<string, unknown>;
+
+    const holdings: FundHolding[] = (
+      (th.holdings as Record<string, unknown>[] | undefined) ?? []
+    ).map((h) => ({
+      symbol: str(h.symbol),
+      name: str(h.holdingName),
+      weight: domainWeight(raw(h.holdingPercent)),
+    }));
+
+    const covered = holdings.reduce((s, h) => s + (h.weight ?? 0), 0);
+
+    const sectorWeights = (
+      (th.sectorWeightings as Record<string, unknown>[] | undefined) ?? []
+    )
+      .map((s) => {
+        const key = Object.keys(s)[0];
+        return key
+          ? { sector: key, weight: domainWeight(raw(s[key])) }
+          : null;
+      })
+      .filter((x): x is { sector: string; weight: number | null } => x !== null);
+
+    return {
+      issuer: str(fp.family),
+      category: str(fp.categoryName),
+      legalType: str(fp.legalType),
+      expenseRatio: domainExpenseRatio(raw(fees.annualReportExpenseRatio)),
+      netAssets: domainNetAssets(raw(ks.totalAssets)),
+      navPrice: domainPrice(raw(sd.navPrice)),
+      yield: raw(sd.yield),
+      inceptionDate:
+        (ks.fundInceptionDate as { fmt?: string } | undefined)?.fmt ?? null,
+      holdings,
+      holdingsReturned: holdings.length,
+      sectorWeights,
+      holdingsCoverage: holdings.length ? covered : null,
+    };
   });
 }

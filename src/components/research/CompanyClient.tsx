@@ -454,6 +454,10 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
           </p>
         ) : null}
 
+        {fund && tab === "overview" && data.fund ? (
+          <FundPanel fund={data.fund} currency={quote.currency} />
+        ) : null}
+
         {tab === "overview" && data.history?.length > 1 ? (
           <PriceChart
             points={data.history}
@@ -1703,5 +1707,142 @@ function ValuationRow({
             : "No sector median available"}
       </td>
     </tr>
+  );
+}
+
+/**
+ * Fund facts, and an honest account of what the register shows.
+ *
+ * ── THE COVERAGE LINE IS THE POINT ──────────────────────────────────
+ * The provider returns the top ten holdings and never the full book.
+ * Ten lines presented as "Holdings" reads as the whole portfolio, so
+ * the weight those ten actually cover is stated beside them: ten names
+ * covering 46.7% of VAS says something true, where a bare list implies
+ * something false.
+ *
+ * Expense ratio arrives here already guarded — for ASX-listed funds the
+ * provider sends a formatted 0.00%, which is not a cheap fund but a
+ * missing figure. It renders as unavailable, with the reason given,
+ * because understating the cost of holding an investment is the worst
+ * direction for this particular number to be wrong in.
+ */
+function FundPanel({
+  fund,
+  currency,
+}: {
+  fund: NonNullable<CompanyPayload["fund"]>;
+  currency: string | null;
+}) {
+  const rows: [string, string][] = [
+    ["Issuer", fund.issuer ?? DASH],
+    ["Category", fund.category ?? DASH],
+    ["Net assets", fmtCap(fund.netAssets, currency)],
+    ["NAV", fund.navPrice === null ? DASH : decimal(fund.navPrice)],
+    ["Distribution yield", percent(fund.yield === null ? null : fund.yield * 100, 2)],
+    [
+      "Expense ratio",
+      fund.expenseRatio === null
+        ? DASH
+        : percent(fund.expenseRatio * 100, 2),
+    ],
+    ["Inception", fund.inceptionDate ?? DASH],
+  ];
+
+  return (
+    <section className="mb-12">
+      <h2 className="text-[0.62rem] uppercase tracking-[0.26em] text-gold">
+        Fund facts
+      </h2>
+
+      <dl className="mt-5 grid grid-cols-1 gap-x-10 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+        {rows.map(([k, v]) => (
+          <div
+            key={k}
+            className="flex items-baseline justify-between gap-4 border-b border-paper/[0.07] pb-2"
+          >
+            <dt className="text-[0.68rem] uppercase tracking-[0.14em] text-stone">
+              {k}
+            </dt>
+            <dd className="tabular text-right text-[0.85rem] text-paper-dim">
+              {v}
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      {fund.expenseRatio === null ? (
+        <p className="mt-4 max-w-[74ch] text-[0.68rem] leading-[1.8] text-stone-dim">
+          The expense ratio is shown as unavailable because the data feed
+          reports zero for this fund, and no fund operates at zero cost.
+          The published figure is in the fund&apos;s PDS or factsheet.
+          Nothing is estimated in its place.
+        </p>
+      ) : null}
+
+      {fund.holdings.length ? (
+        <div className="mt-9">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+            <h3 className="text-[0.62rem] uppercase tracking-[0.2em] text-stone">
+              Largest holdings
+            </h3>
+            <p className="text-[0.62rem] tracking-wide text-stone-dim">
+              {fund.holdingsReturned} returned by the feed
+              {fund.holdingsCoverage !== null
+                ? ` · covering ${(fund.holdingsCoverage * 100).toFixed(1)}% of the portfolio`
+                : ""}
+              {" · not the full register"}
+            </p>
+          </div>
+
+          <ul className="mt-4">
+            {fund.holdings.map((h) => (
+              <li
+                key={`${h.symbol}-${h.name}`}
+                className="flex items-baseline justify-between gap-4 border-b border-paper/[0.07] py-2"
+              >
+                <span className="min-w-0 text-[0.82rem] font-light text-paper-dim">
+                  {h.symbol ? (
+                    <Link
+                      href={`/research/${encodeURIComponent(h.symbol)}`}
+                      className="text-gold hover:text-gold-bright"
+                    >
+                      {h.symbol}
+                    </Link>
+                  ) : null}
+                  {h.symbol && h.name ? " · " : ""}
+                  {h.name ?? ""}
+                </span>
+                <span className="tabular shrink-0 text-[0.82rem] text-paper">
+                  {h.weight === null ? DASH : percent(h.weight * 100, 2)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {fund.sectorWeights.length ? (
+        <div className="mt-9">
+          <h3 className="text-[0.62rem] uppercase tracking-[0.2em] text-stone">
+            Sector exposure
+          </h3>
+          <ul className="mt-4 grid grid-cols-1 gap-x-10 sm:grid-cols-2">
+            {fund.sectorWeights.map((s) => (
+              <li
+                key={s.sector}
+                className="flex items-baseline justify-between gap-4 border-b border-paper/[0.07] py-2"
+              >
+                <span className="text-[0.8rem] font-light capitalize text-paper-dim">
+                  {s.sector.replace(/_/g, " ")}
+                </span>
+                <span className="tabular text-[0.8rem] text-paper">
+                  {s.weight === null ? DASH : percent(s.weight * 100, 1)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </section>
   );
 }

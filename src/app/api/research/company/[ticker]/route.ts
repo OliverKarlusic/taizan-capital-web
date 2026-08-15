@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import {
   getCompany,
+  getFund,
   getHistory,
   getQuotes,
   UpstreamError,
+  type Fund,
 } from "@/lib/research/yahoo";
 import { getUniverse, heldIn } from "@/lib/research/constituents";
 import {
@@ -71,6 +73,8 @@ export interface CompanyPayload {
    * about the data.
    */
   historyObservations: number;
+  /** Fund-level data. Null for anything that is not a fund. */
+  fund: Fund | null;
 }
 
 /**
@@ -120,6 +124,15 @@ export async function GET(
         { status: 404 },
       );
     }
+
+    // Fund data only for funds. Asking for it on an operating company
+    // returns an empty fundProfile, and an empty section is worse than
+    // an absent one — it implies the fund facts exist and could not be
+    // fetched, which is the error this terminal keeps making.
+    const isFund = ["ETF", "MUTUALFUND", "MONEYMARKET"].includes(
+      (company.quote.quoteType ?? "").toUpperCase(),
+    );
+    const fund: Fund | null = isFund ? await getFund(symbol) : null;
 
     const history = await getHistory(symbol, "1y");
 
@@ -205,6 +218,7 @@ export async function GET(
       // describe the twelve months it claimed to.
       history: thin(history, 120),
       historyObservations: history?.closes.length ?? 0,
+      fund,
     };
 
     return NextResponse.json(payload);
