@@ -349,19 +349,58 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
           reorganising for mobile means as opposed to shrinking. */}
       <div className="border-b border-paper/10">
         <div className="mx-auto max-w-[110rem] px-6 lg:px-10">
+          {/* The full tabs pattern, because the roles were already
+              claiming it.
+
+              This declared role="tab" on thirteen buttons and stopped
+              there: no tabpanel, no aria-controls, no ids, no roving
+              tabindex. A screen reader therefore announced "tab, 1 of
+              13" — which tells the user to press arrow keys — and the
+              arrow keys did nothing, because nothing handled them. The
+              roles promised an interaction the markup had not built, so
+              a keyboard user was worse off than if these had stayed
+              plain buttons.
+
+              Arrows move and select in one step (automatic activation),
+              which is the right choice where switching costs nothing:
+              every panel is already loaded or loads on demand. Home and
+              End jump to the ends. Only the selected tab is in the page
+              tab order, so Tab enters the strip once and leaves it
+              once. */}
           <div
             role="tablist"
             aria-label={fund ? "Fund sections" : "Company sections"}
             className="flex flex-wrap gap-x-1"
+            onKeyDown={(e) => {
+              const keys = ["ArrowRight", "ArrowLeft", "Home", "End"];
+              if (!keys.includes(e.key)) return;
+              e.preventDefault();
+              const i = visibleTabs.findIndex((v) => v.id === tab);
+              const last = visibleTabs.length - 1;
+              const next =
+                e.key === "Home"
+                  ? 0
+                  : e.key === "End"
+                    ? last
+                    : e.key === "ArrowRight"
+                      ? (i + 1) % visibleTabs.length
+                      : (i - 1 + visibleTabs.length) % visibleTabs.length;
+              const id = visibleTabs[next].id;
+              setTab(id);
+              document.getElementById(`tab-${id}`)?.focus();
+            }}
           >
             {visibleTabs.map((t) => {
               const active = tab === t.id;
               return (
                 <button
                   key={t.id}
+                  id={`tab-${t.id}`}
                   role="tab"
                   type="button"
                   aria-selected={active}
+                  aria-controls="company-panel"
+                  tabIndex={active ? 0 : -1}
                   onClick={() => setTab(t.id)}
                   className={`inline-flex min-h-11 items-center whitespace-nowrap border-b-2 px-3 py-3 text-[0.62rem] uppercase tracking-[0.16em] transition-colors duration-300 sm:px-4 sm:text-[0.65rem] sm:tracking-[0.18em] ${
                     active
@@ -382,8 +421,24 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
         </div>
       </div>
 
-      {/* ── Panels ── */}
-      <div className="mx-auto max-w-[110rem] px-6 py-10 lg:px-10">
+      {/* ── Panels ──
+          One panel element for all thirteen tabs, relabelled as the
+          selection changes. The alternative — thirteen panels with
+          twelve hidden — would ship every section's markup on every
+          view for no gain, since only one is ever rendered here anyway.
+
+          tabIndex={-1} makes it programmatically focusable without
+          entering the tab order: several panels open on a paragraph
+          with nothing focusable in it, and a panel a screen-reader user
+          can move to is the difference between hearing the new section
+          and hearing nothing after pressing an arrow key. */}
+      <div
+        id="company-panel"
+        role="tabpanel"
+        aria-labelledby={`tab-${tab}`}
+        tabIndex={-1}
+        className="mx-auto max-w-[110rem] px-6 py-10 lg:px-10"
+      >
         {/* Said once, on the section the reader lands on. A fund missing
             eight tabs with no explanation reads as a broken page; the
             reason is structural and takes one sentence. */}
