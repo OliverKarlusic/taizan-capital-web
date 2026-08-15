@@ -12,6 +12,7 @@ import {
   type TriggerMetric,
 } from "@/lib/research/store";
 import { DASH, decimal, signedPercent } from "@/lib/research/format";
+import { marketDate, marketDateTime } from "@/lib/research/clock";
 
 /**
  * Thesis monitoring.
@@ -139,14 +140,8 @@ export default function ThesisClient() {
         </span>
         {checkedAt ? (
           <span className="text-stone-dim">
-            Conditions checked{" "}
-            {new Date(checkedAt).toLocaleString("en-AU", {
-              day: "numeric",
-              month: "short",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}{" "}
-            · against delayed data
+            Conditions checked {marketDateTime(checkedAt)} · against delayed
+            data
           </span>
         ) : null}
         <button
@@ -184,7 +179,7 @@ export default function ThesisClient() {
                     </span>
                   </Link>
                   <p className="mt-1 text-[0.62rem] uppercase tracking-[0.16em] text-stone-dim">
-                    Recorded {new Date(t.createdAt).toLocaleDateString("en-AU")}
+                    Recorded {marketDate(t.createdAt)}
                     {t.horizon ? ` · horizon ${t.horizon}` : ""}
                   </p>
                 </div>

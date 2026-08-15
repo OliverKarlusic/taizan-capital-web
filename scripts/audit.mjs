@@ -30,11 +30,32 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 
+/**
+ * The ten the brief names, plus the two landscape phone cases.
+ *
+ * The four-viewport version passed while real defects sat between the
+ * samples: 1280 and 1024 are where the navigation row collapses into the
+ * overlay, 768 is the iPad-portrait breakpoint, and 430/412/393 differ
+ * from 390 by enough to change how many table columns survive. A sweep
+ * that only checks the extremes is a sweep that finds the extremes.
+ *
+ * Landscape phones are listed explicitly because height, not width, is
+ * what fails there — a 390-wide layout at 844 tall and the same layout at
+ * 390 tall are different tests.
+ */
 const VIEWPORTS = [
   [1920, 1080],
   [1440, 900],
+  [1280, 800],
+  [1024, 768],
   [834, 1112],
+  [768, 1024],
+  [430, 932],
+  [412, 915],
+  [393, 852],
   [390, 844],
+  [844, 390],
+  [932, 430],
 ];
 
 /* Every route that publishes a result gets checked at every viewport.

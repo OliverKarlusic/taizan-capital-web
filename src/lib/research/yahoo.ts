@@ -27,6 +27,8 @@
  * that is information, and a zero there would be a lie.
  */
 
+import { isFuture } from "./clock";
+
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 
@@ -789,6 +791,42 @@ export interface History {
   closes: number[];
 }
 
+/**
+ * Keep the observations that actually happened.
+ *
+ * Two filters, for two different kinds of non-observation:
+ *
+ * 1. Nulls. Yahoo pads holidays with them. Dropping them is correct;
+ *    carrying the previous close forward would invent a flat day and
+ *    depress the volatility figure computed from this series.
+ *
+ * 2. Future timestamps. The chart endpoint returns a bar for the session
+ *    in progress, and around the open it can carry a timestamp ahead of
+ *    the current instant. A chart that plots it is asserting that a
+ *    session closed at a price when the session has not closed — and on
+ *    a page whose whole claim is that nothing here is invented, a
+ *    fabricated final bar is exactly the wrong thing to ship.
+ *
+ * Exported for the test, which is the only way to assert the second
+ * filter without waiting for a market to open.
+ */
+export function dropFuture(
+  ts: number[],
+  cl: (number | null | undefined)[],
+  now = Date.now(),
+): History {
+  const timestamps: number[] = [];
+  const closes: number[] = [];
+  for (let i = 0; i < ts.length; i++) {
+    const c = cl[i];
+    if (typeof c !== "number" || !Number.isFinite(c)) continue;
+    if (isFuture(ts[i], now)) continue;
+    timestamps.push(ts[i]);
+    closes.push(c);
+  }
+  return { timestamps, closes };
+}
+
 /** Daily closes. Open endpoint — no crumb required. */
 export async function getHistory(symbol: string, range = "1y"): Promise<History | null> {
   return cached(`h:${symbol}:${range}`, TTL.history, async () => {
@@ -807,18 +845,6 @@ export async function getHistory(symbol: string, range = "1y"): Promise<History 
     const cl = res?.indicators?.quote?.[0]?.close;
     if (!ts || !cl) return null;
 
-    const timestamps: number[] = [];
-    const closes: number[] = [];
-    for (let i = 0; i < ts.length; i++) {
-      const c = cl[i];
-      // Yahoo pads holidays with nulls. Dropping them is correct; carrying
-      // the previous close forward would invent a flat day and depress the
-      // volatility figure computed from this series.
-      if (typeof c === "number" && Number.isFinite(c)) {
-        timestamps.push(ts[i]);
-        closes.push(c);
-      }
-    }
-    return { timestamps, closes };
+    return dropFuture(ts, cl);
   });
 }

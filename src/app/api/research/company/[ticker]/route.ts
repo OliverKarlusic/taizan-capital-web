@@ -61,6 +61,38 @@ export interface CompanyPayload {
     dividendYield: PeerContext;
   };
   history: { t: number; c: number }[];
+  /**
+   * How many closes the provider actually returned, before thinning.
+   *
+   * The chart caption used to print the *plotted* count and call them
+   * "observed closes", which understated a year of trading as 84
+   * sessions. The plotted count is a rendering decision; the observed
+   * count is a fact about the data, and the caption is making a claim
+   * about the data.
+   */
+  historyObservations: number;
+}
+
+/**
+ * Reduce a series to at most `max` points, keeping both endpoints.
+ *
+ * Keeping the last point is the whole reason this is not a one-line
+ * modulo filter — see the note at the call site.
+ */
+function thin(
+  history: { timestamps: number[]; closes: number[] } | null,
+  max: number,
+): { t: number; c: number }[] {
+  const all = (history?.closes ?? []).map((c, i) => ({
+    t: history!.timestamps[i],
+    c,
+  }));
+  if (all.length <= max) return all;
+  const step = Math.ceil(all.length / max);
+  const out = all.filter((_, i) => i % step === 0);
+  const last = all[all.length - 1];
+  if (out[out.length - 1].t !== last.t) out.push(last);
+  return out;
 }
 
 export async function GET(
@@ -162,9 +194,17 @@ export async function GET(
       peers,
       // Thinned for transport; the shape of a year needs ~120 points, not
       // 250, and this payload is fetched on every company page view.
-      history: (history?.closes ?? [])
-        .map((c, i) => ({ t: history!.timestamps[i], c }))
-        .filter((_, i, arr) => i % Math.max(1, Math.ceil(arr.length / 120)) === 0),
+      //
+      // The last observation is kept unconditionally. A plain modulo
+      // filter keeps index 0 and every nth after it, which lands on the
+      // final close only when the length happens to divide — so most of
+      // the time the chart ended days short of the most recent session.
+      // That is not merely a cosmetic truncation: the period return
+      // printed beside the chart is computed from the plotted endpoints,
+      // so a dropped final point published a percentage that did not
+      // describe the twelve months it claimed to.
+      history: thin(history, 120),
+      historyObservations: history?.closes.length ?? 0,
     };
 
     return NextResponse.json(payload);

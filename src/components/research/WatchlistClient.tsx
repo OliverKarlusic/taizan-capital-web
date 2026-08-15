@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { useResearchStore } from "./useResearchStore";
+import { marketDateTime } from "@/lib/research/clock";
 import {
   DASH,
   decimal,
@@ -107,13 +108,7 @@ export default function WatchlistClient() {
         </span>
         {asOf ? (
           <span className="text-stone-dim">
-            Data as of{" "}
-            {new Date(asOf).toLocaleString("en-AU", {
-              day: "numeric",
-              month: "short",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            Data as of {marketDateTime(asOf)}
             {delay ? ` · delayed ~${delay} min, not real time` : " · delayed, not real time"}
           </span>
         ) : null}

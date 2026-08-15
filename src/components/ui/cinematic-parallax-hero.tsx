@@ -320,19 +320,27 @@ export default function CinematicParallaxHero({
       /* ── The seven beats ──────────────────────────────────────────
          HERO       0.00–0.10  Fuji. Wordmark, tagline, CTAs.
          MOUNTAIN   0.10–0.30  Fuji alone. "01 — The Mountain".
-         MIST I     0.30–0.44  Fuji dissolves, forest resolves.
-         FOREST     0.44–0.66  Forest holds; "02 — The Forest".
-         MIST II    0.66–0.80  Forest dissolves, river resolves.
-         RIVER      0.80–1.00  River holds; "03 — The River".
+         MIST I     0.30–0.40  Fuji dissolves, forest resolves.
+         FOREST     0.40–0.66  Forest holds; "02 — The Forest".
+         MIST II    0.66–0.76  Forest dissolves, river resolves.
+         RIVER      0.76–1.00  River holds; "03 — The River".
          (HERO and MOUNTAIN share one environment; the film reads as three
          chapters, the timeline runs as seven beats.)
 
-         Both bridges are now cut to the same measure — the environment
-         leaves over 0.04, roughly 0.02 passes with neither on screen, and
-         the next arrives over 0.05. Mist I used to run 0.17 against Mist
-         II's 0.11, which is why the descent stalled on the way to the
-         forest and not on the way to the river. A film does not change its
-         cutting rhythm halfway through.
+         Both bridges are cut to the same measure — the environment leaves
+         over 0.03, 0.01 passes with neither on screen, and the next
+         arrives over 0.04. Mist I used to run 0.17 against Mist II's 0.11,
+         which is why the descent stalled on the way to the forest and not
+         on the way to the river. A film does not change its cutting rhythm
+         halfway through.
+
+         ── AND WHY BOTH ARE SHORTER THAN THEY WERE ──────────────────
+         Each bridge ran 0.14 and now runs 0.10. At 0.14 the fog was the
+         longest single held state in the piece apart from the chapters
+         themselves, which inverted the intent: the reader spent more
+         scroll inside the punctuation than reading the sentence after it.
+         The four beats reclaimed go to Forest and River, so both
+         environments now hold long enough to be looked at.
 
          The two environments never coexist. The gap between them is the
          descent through cloud: long enough to register as a passage,
@@ -366,51 +374,51 @@ export default function CinematicParallaxHero({
 
       // TRANSITION — fog thickens, then the veil blooms to carry the cut.
       if (mist) {
-        tl.to(mist, { opacity: 0.95, ease: "power2.in", duration: 0.05 }, 0.30);
+        tl.to(mist, { opacity: 0.95, ease: "power2.in", duration: 0.04 }, 0.30);
         // Growing the plate reads as moving into the cloud rather than
         // having a cloud laid over the lens.
         tl.to(
           atmosphereRef.current,
-          { scale: 1.3, ease: "power1.inOut", duration: 0.1 },
+          { scale: 1.3, ease: "power1.inOut", duration: 0.08 },
           0.30,
         );
         tl.to(
           atmosphereRef.current,
-          { scale: 1.1, ease: "power1.inOut", duration: 0.1 },
-          0.42,
+          { scale: 1.1, ease: "power1.inOut", duration: 0.08 },
+          0.375,
         );
       }
       tl.to(
         veilRef.current,
-        { opacity: 0.68, ease: "power2.inOut", duration: 0.05 },
-        0.31,
+        { opacity: 0.68, ease: "power2.inOut", duration: 0.04 },
+        0.305,
       );
 
-      // Fuji dissolves inside the bloom and is fully gone by 0.365.
+      // Fuji dissolves inside the bloom and is fully gone by 0.35.
       tl.to(
         envRef.current,
-        { opacity: 0, ease: "power1.in", duration: 0.04 },
-        0.325,
+        { opacity: 0, ease: "power1.in", duration: 0.03 },
+        0.32,
       );
 
-      // 0.365 to 0.385 carries no tween on either environment. Atmosphere
-      // only, and only for that fifth of a beat.
+      // 0.35 to 0.36 carries no tween on either environment. Atmosphere
+      // only, and only for that sliver of a beat.
 
       // FOREST — emerges from the same fog that swallowed the mountain.
       if (forestPlaneRef.current) {
         tl.to(
           forestPlaneRef.current,
-          { opacity: 1, ease: "power1.out", duration: 0.05 },
-          0.385,
+          { opacity: 1, ease: "power1.out", duration: 0.04 },
+          0.36,
         );
       }
       tl.to(
         veilRef.current,
-        { opacity: 0, ease: "power2.inOut", duration: 0.07 },
-        0.40,
+        { opacity: 0, ease: "power2.inOut", duration: 0.05 },
+        0.365,
       );
       if (mist) {
-        tl.to(mist, { opacity: 0.26, ease: "power2.out", duration: 0.08 }, 0.42);
+        tl.to(mist, { opacity: 0.26, ease: "power2.out", duration: 0.06 }, 0.375);
       }
 
       /* The whole darkening stack stands down inside fog.
@@ -425,18 +433,18 @@ export default function CinematicParallaxHero({
 
          They return the moment an environment does. */
       if (glowRef.current) {
-        tl.to(glowRef.current, { opacity: 1, ease: "power2.in", duration: 0.08 }, 0.31);
-        tl.to(glowRef.current, { opacity: 0, ease: "power2.out", duration: 0.07 }, 0.44);
-        tl.to(glowRef.current, { opacity: 0.9, ease: "power2.in", duration: 0.05 }, 0.67);
-        tl.to(glowRef.current, { opacity: 0, ease: "power2.out", duration: 0.06 }, 0.77);
+        tl.to(glowRef.current, { opacity: 1, ease: "power2.in", duration: 0.06 }, 0.305);
+        tl.to(glowRef.current, { opacity: 0, ease: "power2.out", duration: 0.06 }, 0.395);
+        tl.to(glowRef.current, { opacity: 0.9, ease: "power2.in", duration: 0.04 }, 0.665);
+        tl.to(glowRef.current, { opacity: 0, ease: "power2.out", duration: 0.05 }, 0.735);
       }
 
       [poolRef, washRef, vignetteRef].forEach((r) => {
         if (!r.current) return;
-        tl.to(r.current, { opacity: 0, ease: "power2.out", duration: 0.06 }, 0.30);
-        tl.to(r.current, { opacity: 1, ease: "power2.in", duration: 0.06 }, 0.45);
-        tl.to(r.current, { opacity: 0, ease: "power2.out", duration: 0.04 }, 0.66);
-        tl.to(r.current, { opacity: 1, ease: "power2.in", duration: 0.05 }, 0.78);
+        tl.to(r.current, { opacity: 0, ease: "power2.out", duration: 0.05 }, 0.30);
+        tl.to(r.current, { opacity: 1, ease: "power2.in", duration: 0.05 }, 0.405);
+        tl.to(r.current, { opacity: 0, ease: "power2.out", duration: 0.03 }, 0.66);
+        tl.to(r.current, { opacity: 1, ease: "power2.in", duration: 0.04 }, 0.73);
       });
 
       // FOREST — its statement, over its own environment.
@@ -460,44 +468,44 @@ export default function CinematicParallaxHero({
          makes the three environments read as one continuous piece rather
          than three clips. */
       if (mist) {
-        tl.to(mist, { opacity: 0.95, ease: "power2.in", duration: 0.05 }, 0.66);
+        tl.to(mist, { opacity: 0.95, ease: "power2.in", duration: 0.04 }, 0.66);
         tl.to(
           atmosphereRef.current,
-          { scale: 1.3, ease: "power1.inOut", duration: 0.1 },
+          { scale: 1.3, ease: "power1.inOut", duration: 0.08 },
           0.66,
         );
         tl.to(
           atmosphereRef.current,
-          { scale: 1.1, ease: "power1.inOut", duration: 0.1 },
-          0.78,
+          { scale: 1.1, ease: "power1.inOut", duration: 0.08 },
+          0.735,
         );
       }
       tl.to(
         veilRef.current,
-        { opacity: 0.68, ease: "power2.inOut", duration: 0.05 },
-        0.67,
+        { opacity: 0.68, ease: "power2.inOut", duration: 0.04 },
+        0.665,
       );
       if (forestPlaneRef.current) {
         tl.to(
           forestPlaneRef.current,
-          { opacity: 0, ease: "power1.in", duration: 0.04 },
-          0.685,
+          { opacity: 0, ease: "power1.in", duration: 0.03 },
+          0.68,
         );
       }
       if (riverPlaneRef.current) {
         tl.to(
           riverPlaneRef.current,
-          { opacity: 1, ease: "power1.out", duration: 0.05 },
-          0.745,
+          { opacity: 1, ease: "power1.out", duration: 0.04 },
+          0.72,
         );
       }
       tl.to(
         veilRef.current,
-        { opacity: 0, ease: "power2.inOut", duration: 0.07 },
-        0.76,
+        { opacity: 0, ease: "power2.inOut", duration: 0.05 },
+        0.725,
       );
       if (mist) {
-        tl.to(mist, { opacity: 0.26, ease: "power2.out", duration: 0.08 }, 0.78);
+        tl.to(mist, { opacity: 0.26, ease: "power2.out", duration: 0.06 }, 0.735);
       }
 
       // RIVER — its statement, over its own environment.

@@ -13,6 +13,7 @@ import {
   percent,
   signedPercent,
 } from "@/lib/research/format";
+import { marketDateTime } from "@/lib/research/clock";
 
 /**
  * The Market Screener — the Terminal's entry point.
@@ -306,12 +307,7 @@ export default function ScreenerClient() {
                 {data.rows.length.toLocaleString("en-AU")} companies
               </span>
               <span className="text-stone-dim">
-                Data as of {new Date(data.asOf).toLocaleString("en-AU", {
-                  day: "numeric",
-                  month: "short",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                Data as of {marketDateTime(data.asOf)}
                 {data.delayMinutes
                   ? ` · delayed ~${data.delayMinutes} min, not real time`
                   : " · delayed, not real time"}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { CompanyPayload } from "@/app/api/research/company/[ticker]/route";
 import { Unavailable } from "@/components/research/TerminalChrome";
+import { axisMonth, marketDate, marketDateTime } from "@/lib/research/clock";
 import ThesisEditor from "@/components/research/ThesisEditor";
 import type {
   BalanceSheet,
@@ -268,14 +269,7 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
                   who sees a number this prominent needs to know in the
                   same glance that it is not a real-time one. */}
               <p className="mt-2 text-[0.6rem] uppercase tracking-[0.14em] text-stone-dim">
-                As of{" "}
-                {new Date(fetchedAt).toLocaleString("en-AU", {
-                  day: "numeric",
-                  month: "short",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}{" "}
-                · delayed, not real time
+                As of {marketDateTime(fetchedAt)} · delayed, not real time
               </p>
             </div>
           </div>
@@ -361,6 +355,7 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
         {tab === "overview" && data.history?.length > 1 ? (
           <PriceChart
             points={data.history}
+            observations={data.historyObservations}
             currency={quote.currency}
             low={quote.fiftyTwoWeekLow}
             high={quote.fiftyTwoWeekHigh}
@@ -618,12 +613,15 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
  */
 function PriceChart({
   points,
+  observations,
   currency,
   low,
   high,
   symbol,
 }: {
   points: { t: number; c: number }[];
+  /** Closes the provider returned, which is more than are plotted. */
+  observations: number;
   currency: string | null;
   low: number | null;
   high: number | null;
@@ -654,11 +652,7 @@ function PriceChart({
   const first = points[0];
   const last = points[points.length - 1];
   const change = ((last.c - first.c) / first.c) * 100;
-  const fmtDate = (t: number) =>
-    new Date(t * 1000).toLocaleDateString("en-AU", {
-      month: "short",
-      year: "2-digit",
-    });
+  const fmtDate = (t: number) => axisMonth(t);
 
   return (
     <figure className="mb-12">
@@ -667,7 +661,11 @@ function PriceChart({
           Twelve-month price
         </h2>
         <p className="text-[0.62rem] uppercase tracking-[0.16em] text-stone-dim">
-          {points.length} observed closes · price only, excludes dividends
+          {observations} observed closes
+          {observations > points.length
+            ? `, ${points.length} plotted`
+            : ""}{" "}
+          · price only, excludes dividends
         </p>
       </div>
 
@@ -1334,7 +1332,7 @@ function DetailPanel({
                       {n.title}
                     </p>
                     <p className="mt-1.5 text-[0.65rem] uppercase tracking-[0.14em] text-stone-dim">
-                      {[n.publisher, n.published ? new Date(n.published).toLocaleDateString("en-AU") : null]
+                      {[n.publisher, n.published ? marketDate(n.published) : null]
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
