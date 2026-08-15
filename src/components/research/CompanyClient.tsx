@@ -5,7 +5,8 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { CompanyPayload } from "@/app/api/research/company/[ticker]/route";
 import { Unavailable } from "@/components/research/TerminalChrome";
-import { axisMonth, marketDate, marketDateTime } from "@/lib/research/clock";
+import PriceChart from "@/components/research/PriceChart";
+import { marketDate, marketDateTime } from "@/lib/research/clock";
 import ThesisEditor from "@/components/research/ThesisEditor";
 import type {
   BalanceSheet,
@@ -460,12 +461,14 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
 
         {tab === "overview" && data.history?.length > 1 ? (
           <PriceChart
-            points={data.history}
-            observations={data.historyObservations}
+            symbol={data.symbol}
             currency={quote.currency}
             low={quote.fiftyTwoWeekLow}
             high={quote.fiftyTwoWeekHigh}
-            symbol={data.symbol}
+            initial={{
+              points: data.history,
+              observations: data.historyObservations,
+            }}
           />
         ) : null}
 
@@ -702,186 +705,6 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
   );
 }
 
-/**
- * One year of closing prices.
- *
- * ── DRAWN FROM OBSERVED CLOSES, WITH NOTHING BETWEEN THEM ───────────
- * The series is real daily closes from the price feed, thinned for
- * transport. Holidays and halts were dropped upstream rather than
- * carried forward, so the line joins observations and never invents a
- * flat day that would depress the volatility computed from the same
- * data. Closing prices only — no intraday high or low is claimed.
- *
- * The y-axis starts at the period's own low rather than at zero. A
- * zero-based axis on a security that never approached zero compresses a
- * year of movement into a band at the top of the frame; this is a price
- * history, not a proportion of anything.
- */
-function PriceChart({
-  points,
-  observations,
-  currency,
-  low,
-  high,
-  symbol,
-}: {
-  points: { t: number; c: number }[];
-  /** Closes the provider returned, which is more than are plotted. */
-  observations: number;
-  currency: string | null;
-  low: number | null;
-  high: number | null;
-  symbol: string;
-}) {
-  const W = 900;
-  const Hh = 260;
-  const PAD = { top: 18, right: 74, bottom: 30, left: 12 };
-
-  const closes = points.map((p) => p.c);
-  const min = Math.min(...closes);
-  const max = Math.max(...closes);
-  // A flat series would divide by zero; pad the range so it draws a line.
-  const span = max - min || Math.max(max * 0.02, 1);
-  const lo = min - span * 0.08;
-  const hi = max + span * 0.08;
-
-  const x = (i: number) =>
-    PAD.left + (i * (W - PAD.left - PAD.right)) / (points.length - 1);
-  const y = (v: number) =>
-    Hh - PAD.bottom - ((v - lo) / (hi - lo)) * (Hh - PAD.top - PAD.bottom);
-
-  const line = points
-    .map((p, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)} ${y(p.c).toFixed(1)}`)
-    .join(" ");
-  const area = `${line} L${x(points.length - 1).toFixed(1)} ${Hh - PAD.bottom} L${PAD.left} ${Hh - PAD.bottom} Z`;
-
-  const first = points[0];
-  const last = points[points.length - 1];
-  const change = ((last.c - first.c) / first.c) * 100;
-  const fmtDate = (t: number) => axisMonth(t);
-
-  return (
-    <figure className="mb-12">
-      <div className="flex flex-wrap items-baseline justify-between gap-4">
-        <h2 className="text-[0.62rem] uppercase tracking-[0.26em] text-gold">
-          Twelve-month price
-        </h2>
-        <p className="text-[0.62rem] uppercase tracking-[0.16em] text-stone-dim">
-          {observations} observed closes
-          {observations > points.length
-            ? `, ${points.length} plotted`
-            : ""}{" "}
-          · price only, excludes dividends
-        </p>
-      </div>
-
-      <div className="mt-5 overflow-x-auto">
-        <svg
-          viewBox={`0 0 ${W} ${Hh}`}
-          className="h-auto w-full min-w-[40rem] sm:min-w-0"
-          role="img"
-          aria-label={`${symbol} closing price over twelve months, from ${fmtDate(first.t)} to ${fmtDate(last.t)}. ${change >= 0 ? "Up" : "Down"} ${Math.abs(change).toFixed(1)} per cent over the period, on a range of ${decimal(min)} to ${decimal(max)}.`}
-        >
-          {[0, 0.25, 0.5, 0.75, 1].map((f) => {
-            const v = lo + (hi - lo) * f;
-            return (
-              <g key={f}>
-                <line
-                  x1={PAD.left}
-                  x2={W - PAD.right}
-                  y1={y(v)}
-                  y2={y(v)}
-                  stroke="currentColor"
-                  className="text-paper/[0.08]"
-                  strokeWidth={1}
-                />
-                <text
-                  x={W - PAD.right + 10}
-                  y={y(v) + 4}
-                  className="fill-stone-dim text-[11px]"
-                >
-                  {decimal(v, v >= 100 ? 0 : 2)}
-                </text>
-              </g>
-            );
-          })}
-
-          {/* 52-week extremes, where they fall inside the drawn window. */}
-          {[
-            [low, "52w low"],
-            [high, "52w high"],
-          ].map(([v, label]) =>
-            typeof v === "number" && v > lo && v < hi ? (
-              <g key={label as string}>
-                <line
-                  x1={PAD.left}
-                  x2={W - PAD.right}
-                  y1={y(v)}
-                  y2={y(v)}
-                  stroke="currentColor"
-                  strokeDasharray="3 5"
-                  className="text-ice/30"
-                  strokeWidth={1}
-                />
-                <text
-                  x={PAD.left + 6}
-                  y={y(v) - 5}
-                  className="fill-ice/60 text-[10px] uppercase tracking-[0.14em]"
-                >
-                  {label as string}
-                </text>
-              </g>
-            ) : null,
-          )}
-
-          <path d={area} className="fill-gold/[0.07]" />
-          <path
-            d={line}
-            fill="none"
-            strokeWidth={1.75}
-            strokeLinejoin="round"
-            className="stroke-gold"
-          />
-          <circle cx={x(points.length - 1)} cy={y(last.c)} r={3} className="fill-gold" />
-
-          <text x={PAD.left} y={Hh - 8} className="fill-stone text-[11px]">
-            {fmtDate(first.t)}
-          </text>
-          <text
-            x={W - PAD.right}
-            y={Hh - 8}
-            textAnchor="end"
-            className="fill-stone text-[11px]"
-          >
-            {fmtDate(last.t)}
-          </text>
-          <text
-            x={W - PAD.right + 10}
-            y={y(last.c) - 8}
-            className="fill-gold text-[11px]"
-          >
-            {decimal(last.c)}
-          </text>
-        </svg>
-      </div>
-
-      <figcaption className="mt-4 flex flex-wrap items-baseline gap-x-8 gap-y-1 text-[0.68rem] text-stone">
-        <span>
-          {fmtDate(first.t)} to {fmtDate(last.t)}:{" "}
-          <span className={change >= 0 ? "text-gold" : "text-ice"}>
-            {signedPercent(change, 1)}
-          </span>
-        </span>
-        <span className="text-stone-dim">
-          Range {decimal(min)}–{decimal(max)} {currency ?? ""}
-        </span>
-        <span className="text-stone-dim">
-          Closing prices from the delayed feed; not adjusted for dividends
-        </span>
-      </figcaption>
-    </figure>
-  );
-}
 
 /* ── detail panels ────────────────────────────────────────────────── */
 

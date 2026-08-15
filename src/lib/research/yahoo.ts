@@ -834,12 +834,16 @@ export function dropFuture(
 }
 
 /** Daily closes. Open endpoint — no crumb required. */
-export async function getHistory(symbol: string, range = "1y"): Promise<History | null> {
-  return cached(`h:${symbol}:${range}`, TTL.history, async () => {
+export async function getHistory(
+  symbol: string,
+  range = "1y",
+  interval = "1d",
+): Promise<History | null> {
+  return cached(`h:${symbol}:${range}:${interval}`, TTL.history, async () => {
     const r = await fetch(
       `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
         symbol,
-      )}?range=${range}&interval=1d`,
+      )}?range=${range}&interval=${interval}`,
       { headers: { "User-Agent": UA } },
     );
     if (!r.ok) return null;
