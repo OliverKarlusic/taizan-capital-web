@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { UpstreamError, getHistory } from "@/lib/research/yahoo";
 import { RANGES, isRangeKey } from "@/lib/research/ranges";
+import { benchmarkFor } from "@/lib/research/benchmark";
 
 /**
  * One security's price series at one range.
@@ -48,6 +49,20 @@ export interface HistoryPayload {
    */
   exchangeTimezone: string | null;
   points: { t: number; c: number }[];
+  /**
+   * The index this listing is measured against, over the same window.
+   *
+   * Its own timestamps are kept rather than being aligned to the
+   * security's: two exchanges keep different holidays, so pairing by
+   * index would match a Tuesday to a Wednesday, and interpolating the
+   * index onto the security's dates would publish levels that were
+   * never printed.
+   */
+  benchmark: {
+    symbol: string;
+    name: string;
+    points: { t: number; c: number }[];
+  } | null;
   observations: number;
   available: boolean;
 }
@@ -84,7 +99,19 @@ export async function GET(
   const spec = RANGES[key];
 
   try {
-    const h = await getHistory(symbol, spec.range, spec.interval);
+    const bm = benchmarkFor(symbol);
+    // Fetched together so the comparison covers the same window. If the
+    // index call fails the security still renders — a missing benchmark
+    // is a missing comparison, not a broken page.
+    const [h, bh] = await Promise.all([
+      getHistory(symbol, spec.range, spec.interval),
+      bm ? getHistory(bm.symbol, spec.range, spec.interval).catch(() => null) : null,
+    ]);
+
+    const bench =
+      bm && bh && bh.closes.length > 1
+        ? { symbol: bm.symbol, name: bm.name, points: thin(bh, 260) }
+        : null;
     // Two points are the minimum that can describe a change; one is a
     // dot the reader would have to interpret as a trend.
     const available = !!h && h.closes.length > 1;
@@ -117,6 +144,7 @@ export async function GET(
       intraday: spec.intraday,
       exchangeTimezone: h?.exchangeTimezone ?? null,
       points,
+      benchmark: bench,
       observations: h?.closes.length ?? 0,
       available,
     };

@@ -5,6 +5,7 @@ import type { HistoryPayload } from "@/app/api/research/history/[ticker]/route";
 import { RANGE_KEYS, type RangeKey } from "@/lib/research/ranges";
 import { sessionAxis, sessionDate, sessionDateTime } from "@/lib/research/clock";
 import { DASH, decimal, signedPercent } from "@/lib/research/format";
+import { benchmarkFor, rebase } from "@/lib/research/benchmark";
 
 /**
  * The price chart an analyst can actually read a number off.
@@ -83,6 +84,14 @@ export default function PriceChart({
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
   const [cursor, setCursor] = useState<number | null>(null);
   const [expanded, setExpanded] = useState(false);
+  /**
+   * Comparison mode rebases both lines to per-cent change.
+   *
+   * Off by default: the price axis answers "what does it cost", which is
+   * the first question. Comparison answers "did it beat the market",
+   * which is a different one and should be asked deliberately.
+   */
+  const [compare, setCompare] = useState(false);
   /** Ranges the feed has already told us are empty for this symbol. */
   const [empty, setEmpty] = useState<Set<RangeKey>>(new Set());
 
@@ -133,7 +142,13 @@ export default function PriceChart({
   useEffect(() => {
     // 1Y on first view is what the server already sent; re-fetching it
     // would be a wasted round trip for the view the reader starts on.
-    if (range === "1Y" && !servedInitial.current) {
+    //
+    // Comparison is the exception. The server-rendered series carries
+    // no benchmark — the company payload has no reason to fetch an
+    // index nobody has asked for — so turning comparison on is the
+    // first moment the index is actually needed, and that is when it
+    // is fetched.
+    if (range === "1Y" && !servedInitial.current && !compare) {
       servedInitial.current = true;
       return;
     }
@@ -151,7 +166,41 @@ export default function PriceChart({
       .catch(() => {
         if (id === reqRef.current) setState("error");
       });
-  }, [symbol, range]);
+  }, [symbol, range, compare]);
+
+  const bench = data?.benchmark ?? null;
+  const showCompare = compare && !!bench && bench.points.length > 1;
+
+  /**
+   * Whether to offer the control at all.
+   *
+   * Derived from the symbol rather than from the payload, because the
+   * payload has no benchmark until comparison is switched on — and a
+   * control that only appears after you have used it is no control.
+   * The rule lives in one place; this reads it client-side to decide
+   * what to render, the route reads it server-side to decide what to
+   * fetch.
+   */
+  const benchName = benchmarkFor(symbol)?.name ?? null;
+
+  /**
+   * In comparison mode both series are per-cent change from their own
+   * first observation, so the axis is shared and meaningful. Each keeps
+   * its own timestamps — see benchmark.ts on why they are not zipped.
+   */
+  const cmp = useMemo(() => {
+    if (!showCompare || !bench) return null;
+    const a = rebase(points);
+    const b = rebase(bench.points);
+    if (!a.length || !b.length) return null;
+    const t0 = Math.min(a[0].t, b[0].t);
+    const t1 = Math.max(a[a.length - 1].t, b[b.length - 1].t);
+    const vs = [...a, ...b].map((p) => p.v);
+    const lo = Math.min(...vs);
+    const hi = Math.max(...vs);
+    const pad = (hi - lo) * 0.08 || 1;
+    return { a, b, t0, t1, lo: lo - pad, hi: hi + pad };
+  }, [showCompare, bench, points]);
 
   const geom = useMemo(() => {
     if (points.length < 2) return null;
@@ -230,6 +279,19 @@ export default function PriceChart({
             </span>
           ) : null}
         </div>
+
+        {benchName ? (
+          <button
+            type="button"
+            aria-pressed={showCompare}
+            onClick={() => setCompare((v) => !v)}
+            className={`inline-flex min-h-11 items-center text-[0.62rem] uppercase tracking-[0.2em] transition-colors ${
+              showCompare ? "text-gold" : "text-stone hover:text-paper"
+            }`}
+          >
+            vs {benchName}
+          </button>
+        ) : null}
 
         <button
           type="button"
@@ -365,13 +427,67 @@ export default function PriceChart({
                 />
               ) : null}
 
-              <path
-                d={geom.line}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.5}
-                className={up ? "text-gold" : "text-ice"}
-              />
+              {/* Comparison draws both series rebased to per-cent
+                  change, on a time-based x scale so two exchanges with
+                  different holiday calendars still line up by date
+                  rather than by array index. */}
+              {showCompare && cmp ? (
+                (() => {
+                  const cx = (t: number) =>
+                    PAD.left +
+                    ((t - cmp.t0) / (cmp.t1 - cmp.t0 || 1)) *
+                      (W - PAD.left - PAD.right);
+                  const cy = (v: number) =>
+                    H -
+                    PAD.bottom -
+                    ((v - cmp.lo) / (cmp.hi - cmp.lo || 1)) *
+                      (H - PAD.top - PAD.bottom);
+                  const path = (pts: { t: number; v: number }[]) =>
+                    pts
+                      .map(
+                        (q, i) =>
+                          `${i === 0 ? "M" : "L"}${cx(q.t).toFixed(1)} ${cy(q.v).toFixed(1)}`,
+                      )
+                      .join(" ");
+                  return (
+                    <g>
+                      {cmp.lo < 0 && cmp.hi > 0 ? (
+                        <line
+                          x1={PAD.left}
+                          x2={W - PAD.right}
+                          y1={cy(0)}
+                          y2={cy(0)}
+                          stroke="currentColor"
+                          className="text-paper/20"
+                          strokeDasharray="2 4"
+                        />
+                      ) : null}
+                      <path
+                        d={path(cmp.b)}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.25}
+                        className="text-stone"
+                      />
+                      <path
+                        d={path(cmp.a)}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.5}
+                        className={up ? "text-gold" : "text-ice"}
+                      />
+                    </g>
+                  );
+                })()
+              ) : (
+                <path
+                  d={geom.line}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  className={up ? "text-gold" : "text-ice"}
+                />
+              )}
 
               {active && cursor !== null ? (
                 <g>
@@ -417,6 +533,9 @@ export default function PriceChart({
                 data ? data.observedSpacingDays : 1,
                 intraday,
               )}
+              {showCompare && bench
+                ? ` · both rebased to per cent change · ${bench.name} is a price index`
+                : ""}
               {" · price only, excludes dividends · delayed, not real time"}
             </figcaption>
           </>
