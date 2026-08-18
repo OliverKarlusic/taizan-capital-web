@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import {
   getCompany,
   getCompanyDetail,
+  getDistributions,
+  getEstimates,
   getNews,
   getQuotes,
   UpstreamError,
@@ -56,9 +58,17 @@ export async function GET(
     // The company must resolve before news, which needs its name to judge
     // whether a headline is actually about it.
     const company = await getCompany(symbol);
-    const [detail, news] = await Promise.all([
+    const [detail, news, estimates, distributions] = await Promise.all([
       getCompanyDetail(symbol),
       getNews(symbol, company?.quote.name ?? null),
+      // Both degrade to empty rather than failing the panel: a company
+      // with no analyst coverage and a company that pays nothing are
+      // ordinary cases, not errors.
+      getEstimates(symbol).catch(() => []),
+      getDistributions(symbol, "10y").catch(() => ({
+        rows: [],
+        exchangeTimezone: null,
+      })),
     ]);
 
     if (!detail) {
@@ -134,6 +144,9 @@ export async function GET(
       peers,
       peerBasis,
       currency: company?.quote.currency ?? null,
+      estimates,
+      distributions: distributions.rows,
+      distributionsTimezone: distributions.exchangeTimezone,
       statements: {
         coverage: statementCoverage,
         source: incomeStatements ? "Financial Modeling Prep" : null,

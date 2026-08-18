@@ -986,3 +986,148 @@ export async function getFund(symbol: string): Promise<Fund | null> {
     };
   });
 }
+
+/* ── estimates and distributions ──────────────────────────────────── */
+
+export interface EstimatePeriod {
+  /** Provider's label: 0q, +1q, 0y, +1y. */
+  period: string;
+  /** Period end, as the provider states it. Forward periods are future. */
+  endDate: string | null;
+  epsAvg: number | null;
+  epsLow: number | null;
+  epsHigh: number | null;
+  epsAnalysts: number | null;
+  epsYearAgo: number | null;
+  revenueAvg: number | null;
+  revenueLow: number | null;
+  revenueHigh: number | null;
+  revenueAnalysts: number | null;
+  revenueYearAgo: number | null;
+  currency: string | null;
+}
+
+/**
+ * Consensus estimates for the coming periods.
+ *
+ * ── WHAT IS TAKEN AND WHAT IS REFUSED ───────────────────────────────
+ * The earningsTrend module carries estimate levels, the analyst count
+ * behind each, and the year-ago comparative. All of that is evidence: a
+ * reader can see what the market expects and how widely the estimates
+ * disagree, and reach their own view.
+ *
+ * The sibling modules — recommendationTrend, financialData's
+ * recommendationKey and targetMeanPrice — are not requested here. They
+ * are free and well populated, and they are the verdict rather than the
+ * evidence. See NEVER_INGEST in domain.ts: the boundary is at fetch
+ * time, so a field that never enters the process cannot reach a table.
+ *
+ * ── ESTIMATES ARE DATED FORWARD, AND THAT IS CORRECT ────────────────
+ * A +1y period ends in 2027. On a terminal where a future date was a
+ * genuine defect, that distinction has to survive to the screen: these
+ * are labelled as estimates, carry their analyst counts, and are never
+ * mixed into the observed-history series.
+ */
+export async function getEstimates(
+  symbol: string,
+): Promise<EstimatePeriod[]> {
+  return cached(`est:${symbol}`, TTL.summary, async () => {
+    let j: { quoteSummary?: { result?: Record<string, unknown>[] } };
+    try {
+      j = (await authed(
+        `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(
+          symbol,
+        )}?modules=earningsTrend`,
+      )) as { quoteSummary?: { result?: Record<string, unknown>[] } };
+    } catch {
+      return [];
+    }
+    const trend =
+      ((j?.quoteSummary?.result?.[0]?.earningsTrend as
+        | { trend?: Record<string, unknown>[] }
+        | undefined)?.trend ?? []);
+
+    return trend
+      .map((t) => {
+        const e = (t.earningsEstimate ?? {}) as Record<string, unknown>;
+        const r = (t.revenueEstimate ?? {}) as Record<string, unknown>;
+        return {
+          period: str(t.period) ?? "",
+          endDate: str(t.endDate),
+          epsAvg: raw(e.avg),
+          epsLow: raw(e.low),
+          epsHigh: raw(e.high),
+          epsAnalysts: raw(e.numberOfAnalysts),
+          epsYearAgo: raw(e.yearAgoEps),
+          revenueAvg: raw(r.avg),
+          revenueLow: raw(r.low),
+          revenueHigh: raw(r.high),
+          revenueAnalysts: raw(r.numberOfAnalysts),
+          revenueYearAgo: raw(r.yearAgoRevenue),
+          currency: str(e.earningsCurrency) ?? str(r.revenueCurrency),
+        };
+      })
+      // A period with neither an EPS nor a revenue estimate is a row of
+      // dashes; the provider returns those for thinly covered listings.
+      .filter((p) => p.epsAvg !== null || p.revenueAvg !== null);
+  });
+}
+
+export interface Distribution {
+  /** Unix seconds — the ex-date, in the exchange's calendar. */
+  date: number;
+  amount: number;
+}
+
+/**
+ * Dividend and distribution history from the chart endpoint's events.
+ *
+ * Open endpoint, no crumb. Returned newest first. Amounts are per share
+ * in the listing currency, and are as-paid rather than adjusted, which
+ * is why they are not derived from the adjusted close series.
+ */
+export async function getDistributions(
+  symbol: string,
+  range = "5y",
+): Promise<{ rows: Distribution[]; exchangeTimezone: string | null }> {
+  return cached(`div:${symbol}:${range}`, TTL.history, async () => {
+    try {
+      const r = await fetch(
+        `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
+          symbol,
+        )}?range=${range}&interval=1d&events=div%2Csplit`,
+        { headers: { "User-Agent": UA } },
+      );
+      if (!r.ok) return { rows: [], exchangeTimezone: null };
+      const res = (
+        (await r.json()) as {
+          chart?: {
+            result?: {
+              meta?: { exchangeTimezoneName?: string };
+              events?: { dividends?: Record<string, { date?: number; amount?: number }> };
+            }[];
+          };
+        }
+      )?.chart?.result?.[0];
+
+      const rows = Object.values(res?.events?.dividends ?? {})
+        .map((d) => ({ date: num(d.date), amount: num(d.amount) }))
+        .filter(
+          (d): d is Distribution =>
+            d.date !== null && d.amount !== null && d.amount > 0,
+        )
+        // A distribution dated after now has not been paid. The same
+        // rule as the price series: nothing is shown as having happened
+        // until it has.
+        .filter((d) => !isFuture(d.date))
+        .sort((a, b) => b.date - a.date);
+
+      return {
+        rows,
+        exchangeTimezone: res?.meta?.exchangeTimezoneName ?? null,
+      };
+    } catch {
+      return { rows: [], exchangeTimezone: null };
+    }
+  });
+}

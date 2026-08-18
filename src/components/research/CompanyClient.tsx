@@ -6,7 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import type { CompanyPayload } from "@/app/api/research/company/[ticker]/route";
 import { Unavailable } from "@/components/research/TerminalChrome";
 import PriceChart from "@/components/research/PriceChart";
-import { marketDate, marketDateTime } from "@/lib/research/clock";
+import { marketDate, marketDateTime, sessionDate } from "@/lib/research/clock";
 import ThesisEditor from "@/components/research/ThesisEditor";
 import type {
   BalanceSheet,
@@ -709,7 +709,31 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
 
 /* ── detail panels ────────────────────────────────────────────────── */
 
+interface EstimatePeriodView {
+  period: string;
+  endDate: string | null;
+  epsAvg: number | null;
+  epsLow: number | null;
+  epsHigh: number | null;
+  epsAnalysts: number | null;
+  epsYearAgo: number | null;
+  revenueAvg: number | null;
+  revenueLow: number | null;
+  revenueHigh: number | null;
+  revenueAnalysts: number | null;
+  revenueYearAgo: number | null;
+  currency: string | null;
+}
+
+interface DistributionView {
+  date: number;
+  amount: number;
+}
+
 interface DetailPayload {
+  estimates?: EstimatePeriodView[];
+  distributions?: DistributionView[];
+  distributionsTimezone?: string | null;
   income: {
     endDate: string | null;
     totalRevenue: number | null;
@@ -1205,7 +1229,15 @@ function DetailPanel({
 
   if (tab === "calendar") {
     const c = d.calendar;
-    if (!c.earningsDate && !c.exDividendDate && !c.dividendDate) {
+    const est = d.estimates ?? [];
+    const dist = d.distributions ?? [];
+    if (
+      !c.earningsDate &&
+      !c.exDividendDate &&
+      !c.dividendDate &&
+      !est.length &&
+      !dist.length
+    ) {
       return (
         <Unavailable
           title="Calendar"
@@ -1235,10 +1267,14 @@ function DetailPanel({
           {c.earningsDateIsEstimate
             ? "The results date is the provider's estimate, not a date confirmed by the company, and is labelled as such above."
             : "The results date is reported by the provider as confirmed."}{" "}
-          No analyst revenue or earnings expectations are published here.
           Dates should be checked against the company&apos;s own announcements
           before being relied on.
         </p>
+
+        {est.length ? <Estimates rows={est} /> : null}
+        {dist.length ? (
+          <Distributions rows={dist} tz={d.distributionsTimezone ?? null} />
+        ) : null}
       </div>
     );
   }
@@ -1667,6 +1703,192 @@ function FundPanel({
           </ul>
         </div>
       ) : null}
+    </section>
+  );
+}
+
+/**
+ * Consensus estimates, with the spread and the count behind them.
+ *
+ * ── WHY THE RANGE AND THE COUNT ARE NOT OPTIONAL ────────────────────
+ * A single consensus figure invites the reader to treat it as a fact.
+ * The low and the high say how much the people producing it disagree,
+ * and the analyst count says how many there are — an estimate from
+ * three analysts and one from forty are different objects, and only the
+ * count distinguishes them. The average alone would be the most
+ * confident-looking and least informative version of this panel.
+ *
+ * ── WHY THESE PERIODS ARE DATED IN THE FUTURE ───────────────────────
+ * They are estimates; that is what an estimate is. On a terminal where
+ * a future date was a real defect, the distinction has to be explicit
+ * rather than inferred, so the copy says these are forecasts and every
+ * period carries the date it runs to.
+ *
+ * ── AND WHAT IS NOT HERE ────────────────────────────────────────────
+ * The provider publishes a consensus recommendation and a mean price
+ * target alongside these. Neither is fetched. Those are the verdict,
+ * and reaching the verdict is the reader's job.
+ */
+function Estimates({ rows }: { rows: EstimatePeriodView[] }) {
+  const label = (p: string) =>
+    p === "0q"
+      ? "Current quarter"
+      : p === "+1q"
+        ? "Next quarter"
+        : p === "0y"
+          ? "Current year"
+          : p === "+1y"
+            ? "Next year"
+            : p;
+
+  const HEADS = ["Period", "Ends", "EPS estimate", "EPS range", "Revenue", "Analysts"];
+
+  return (
+    <section className="mt-14">
+      <H>Analyst expectations</H>
+      <p className="mt-3 max-w-[80ch] text-[0.72rem] leading-[1.85] text-stone-dim">
+        Consensus estimates collected by the data provider for periods not
+        yet reported. These are forecasts rather than results, and the
+        range shows how far the contributing analysts disagree. No
+        recommendation or price target is published here.
+      </p>
+
+      <div className="mt-6 overflow-x-auto">
+        <table className="w-full min-w-[40rem] border-collapse text-left">
+          <thead>
+            <tr className="border-b border-paper/15">
+              {HEADS.map((h, i) => (
+                <th
+                  key={h}
+                  scope="col"
+                  className={`py-3 text-[0.58rem] font-medium uppercase tracking-[0.2em] text-stone ${
+                    i > 1 ? "pl-4 text-right" : ""
+                  }`}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.period} className="border-b border-paper/[0.07]">
+                <td className="py-3 pr-4 text-[0.82rem] text-paper-dim">
+                  {label(r.period)}
+                </td>
+                <td className="py-3 pr-4 text-[0.82rem] text-stone">
+                  {r.endDate ?? DASH}
+                </td>
+                <td className="tabular py-3 pl-4 text-right text-[0.85rem] text-paper">
+                  {r.epsAvg === null ? DASH : decimal(r.epsAvg)}
+                </td>
+                <td className="tabular py-3 pl-4 text-right text-[0.8rem] text-stone">
+                  {r.epsLow === null || r.epsHigh === null
+                    ? DASH
+                    : `${decimal(r.epsLow)} – ${decimal(r.epsHigh)}`}
+                </td>
+                <td className="tabular py-3 pl-4 text-right text-[0.82rem] text-paper-dim">
+                  {fmtCap(r.revenueAvg, r.currency)}
+                </td>
+                <td className="tabular py-3 pl-4 text-right text-[0.82rem] text-stone">
+                  {r.epsAnalysts === null ? DASH : r.epsAnalysts}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Distributions actually paid, newest first.
+ *
+ * ── PAID, NOT DECLARED ──────────────────────────────────────────────
+ * Anything dated after now is filtered upstream. A dividend announced
+ * but not yet gone ex has not been paid, and listing it among history
+ * would say that it had — the same rule the price series follows,
+ * applied to the other place this terminal shows dated events.
+ *
+ * Amounts are as-paid per share in the listing currency. No total-return
+ * figure is derived from them: doing that properly needs a reinvestment
+ * assumption stated on screen, and an unstated one is a number the
+ * reader cannot check.
+ */
+function Distributions({
+  rows,
+  tz,
+}: {
+  rows: DistributionView[];
+  tz: string | null;
+}) {
+  const years = new Map<number, number>();
+  for (const r of rows) {
+    // Grouped by the exchange's calendar year, matching the session-date
+    // rule used everywhere else on this page.
+    const y = Number(
+      new Intl.DateTimeFormat("en-AU", {
+        timeZone: tz ?? "Australia/Sydney",
+        year: "numeric",
+      }).format(new Date(r.date * 1000)),
+    );
+    years.set(y, (years.get(y) ?? 0) + r.amount);
+  }
+  const byYear = [...years.entries()].sort((a, b) => b[0] - a[0]);
+
+  return (
+    <section className="mt-14">
+      <H>Distribution history</H>
+      <p className="mt-3 max-w-[80ch] text-[0.72rem] leading-[1.85] text-stone-dim">
+        Distributions that have gone ex, newest first, per share in the
+        listing currency. Announced but unpaid distributions are not
+        listed. No total-return figure is derived from these, because that
+        needs a reinvestment assumption this terminal does not make on the
+        reader&apos;s behalf.
+      </p>
+
+      <div className="mt-6 grid grid-cols-1 gap-x-14 gap-y-8 lg:grid-cols-2">
+        <div>
+          <h4 className="text-[0.6rem] uppercase tracking-[0.2em] text-stone">
+            By year
+          </h4>
+          <ul className="mt-3">
+            {byYear.map(([y, total]) => (
+              <li
+                key={y}
+                className="flex items-baseline justify-between gap-4 border-b border-paper/[0.07] py-2"
+              >
+                <span className="tabular text-[0.82rem] text-paper-dim">{y}</span>
+                <span className="tabular text-[0.82rem] text-paper">
+                  {decimal(total)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="text-[0.6rem] uppercase tracking-[0.2em] text-stone">
+            Individual payments
+          </h4>
+          <ul className="mt-3 max-h-[22rem] overflow-y-auto pr-2">
+            {rows.map((r) => (
+              <li
+                key={r.date}
+                className="flex items-baseline justify-between gap-4 border-b border-paper/[0.07] py-2"
+              >
+                <span className="text-[0.8rem] font-light text-stone">
+                  {sessionDate(r.date, tz)}
+                </span>
+                <span className="tabular text-[0.82rem] text-paper-dim">
+                  {decimal(r.amount)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </section>
   );
 }
