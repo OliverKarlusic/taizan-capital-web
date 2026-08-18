@@ -101,3 +101,59 @@ function toDate(d: Date | string | number): Date {
   if (typeof d === "number") return new Date(d);
   return new Date(d);
 }
+
+/**
+ * A trading session's date, in the exchange's own zone.
+ *
+ * ── WHY NOT marketDate FOR THIS ─────────────────────────────────────
+ * marketDate resolves in Australia/Sydney, which is right for a
+ * retrieval stamp: "as of 15 Aug, 13:29 AEST" describes when this site
+ * fetched something, and the reader of this site is in Sydney.
+ *
+ * A session date is a different kind of fact. Apple's close on
+ * 2026-08-14 belongs to the 14th because that is the date on the NYSE
+ * calendar, and it stays the 14th whoever is reading. Rendered in
+ * Sydney that bar reads "15 Aug 2026" — a day later than every other
+ * source an analyst would check it against, and on a chart ending near
+ * today it also drifts toward looking future-dated again.
+ *
+ * So: retrieval stamps in the reader's market, session dates in the
+ * instrument's. The provider supplies exchangeTimezoneName per symbol,
+ * so this is a fact carried with the data rather than a guess.
+ */
+export const sessionDate = (
+  epochSeconds: number,
+  exchangeTz: string | null,
+): string =>
+  new Intl.DateTimeFormat("en-AU", {
+    timeZone: exchangeTz ?? MARKET_TZ,
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(epochSeconds * 1000));
+
+/** An intraday instant, in the exchange's zone, with the zone named. */
+export const sessionDateTime = (
+  epochSeconds: number,
+  exchangeTz: string | null,
+): string =>
+  new Intl.DateTimeFormat("en-AU", {
+    timeZone: exchangeTz ?? MARKET_TZ,
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZoneName: "short",
+  }).format(new Date(epochSeconds * 1000));
+
+/** A chart tick in the exchange's zone. Four-digit year, always. */
+export const sessionAxis = (
+  epochSeconds: number,
+  exchangeTz: string | null,
+): string =>
+  new Intl.DateTimeFormat("en-AU", {
+    timeZone: exchangeTz ?? MARKET_TZ,
+    month: "short",
+    year: "numeric",
+  }).format(new Date(epochSeconds * 1000));

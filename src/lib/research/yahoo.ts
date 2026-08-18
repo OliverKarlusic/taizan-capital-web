@@ -795,6 +795,14 @@ export interface History {
   /** Unix seconds. */
   timestamps: number[];
   closes: number[];
+  /**
+   * IANA zone of the listing exchange, e.g. America/New_York.
+   *
+   * Carried with the series because a session date belongs to the
+   * exchange rather than to the reader: Apple closing on the 14th is
+   * the 14th in New York whoever is looking at it.
+   */
+  exchangeTimezone: string | null;
 }
 
 /**
@@ -820,6 +828,7 @@ export function dropFuture(
   ts: number[],
   cl: (number | null | undefined)[],
   now = Date.now(),
+  exchangeTimezone: string | null = null,
 ): History {
   const timestamps: number[] = [];
   const closes: number[] = [];
@@ -830,7 +839,7 @@ export function dropFuture(
     timestamps.push(ts[i]);
     closes.push(c);
   }
-  return { timestamps, closes };
+  return { timestamps, closes, exchangeTimezone };
 }
 
 /** Daily closes. Open endpoint — no crumb required. */
@@ -848,14 +857,20 @@ export async function getHistory(
     );
     if (!r.ok) return null;
     const j = (await r.json()) as {
-      chart?: { result?: { timestamp?: number[]; indicators?: { quote?: { close?: (number | null)[] }[] } }[] };
+      chart?: {
+        result?: {
+          timestamp?: number[];
+          meta?: { exchangeTimezoneName?: string };
+          indicators?: { quote?: { close?: (number | null)[] }[] };
+        }[];
+      };
     };
     const res = j?.chart?.result?.[0];
     const ts = res?.timestamp;
     const cl = res?.indicators?.quote?.[0]?.close;
     if (!ts || !cl) return null;
 
-    return dropFuture(ts, cl);
+    return dropFuture(ts, cl, Date.now(), res?.meta?.exchangeTimezoneName ?? null);
   });
 }
 

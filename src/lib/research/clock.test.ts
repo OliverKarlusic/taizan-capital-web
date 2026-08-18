@@ -4,6 +4,8 @@ import {
   isFuture,
   marketDate,
   marketDateTime,
+  sessionAxis,
+  sessionDate,
   todayInMarket,
 } from "./clock";
 import { dropFuture } from "./yahoo";
@@ -111,5 +113,38 @@ describe("no data point is dated ahead of now", () => {
   it("treats the boundary as past, not future", () => {
     expect(isFuture(now / 1000, now)).toBe(false);
     expect(isFuture(now / 1000 + 1, now)).toBe(true);
+  });
+});
+
+describe("session dates belong to the exchange, not the reader", () => {
+  // 2026-08-14 20:00 UTC is the close of the 14th in New York and the
+  // morning of the 15th in Sydney. The session is the 14th.
+  const close = Date.UTC(2026, 7, 14, 20, 0) / 1000;
+
+  it("renders a US close on its own trading date", () => {
+    expect(sessionDate(close, "America/New_York")).toBe("14 Aug 2026");
+  });
+
+  it("does not shift it into the reader's zone", () => {
+    // What the bug produced: the same bar a day later.
+    expect(marketDate(close * 1000)).toBe("15 Aug 2026");
+    expect(sessionDate(close, "America/New_York")).not.toBe(
+      marketDate(close * 1000),
+    );
+  });
+
+  it("leaves an ASX session unchanged, since the zones agree", () => {
+    const asx = Date.UTC(2026, 7, 14, 6, 0) / 1000; // 16:00 AEST on the 14th
+    expect(sessionDate(asx, "Australia/Sydney")).toBe("14 Aug 2026");
+  });
+
+  it("falls back to the market zone when the exchange is unknown", () => {
+    expect(sessionDate(close, null)).toBe(marketDate(close * 1000));
+  });
+
+  it("keeps four-digit years on the axis in any zone", () => {
+    for (const tz of ["America/New_York", "Asia/Hong_Kong", null]) {
+      expect(sessionAxis(close, tz)).toMatch(/\d{4}$/);
+    }
   });
 });

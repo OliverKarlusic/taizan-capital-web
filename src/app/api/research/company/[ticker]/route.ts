@@ -73,6 +73,8 @@ export interface CompanyPayload {
    * about the data.
    */
   historyObservations: number;
+  /** IANA zone of the listing exchange, for session dates. */
+  exchangeTimezone: string | null;
   /** Fund-level data. Null for anything that is not a fund. */
   fund: Fund | null;
 }
@@ -218,6 +220,7 @@ export async function GET(
       // describe the twelve months it claimed to.
       history: thin(history, 120),
       historyObservations: history?.closes.length ?? 0,
+      exchangeTimezone: history?.exchangeTimezone ?? null,
       fund,
     };
 

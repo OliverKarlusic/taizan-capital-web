@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { HistoryPayload } from "@/app/api/research/history/[ticker]/route";
 import { RANGE_KEYS, type RangeKey } from "@/lib/research/ranges";
-import { axisMonth, marketDate, marketDateTime } from "@/lib/research/clock";
+import { sessionAxis, sessionDate, sessionDateTime } from "@/lib/research/clock";
 import { DASH, decimal, signedPercent } from "@/lib/research/format";
 
 /**
@@ -41,7 +41,11 @@ interface Props {
   low: number | null;
   high: number | null;
   /** Server-rendered first paint, so the chart is never briefly empty. */
-  initial: { points: { t: number; c: number }[]; observations: number };
+  initial: {
+    points: { t: number; c: number }[];
+    observations: number;
+    exchangeTimezone: string | null;
+  };
 }
 
 const W = 900;
@@ -88,6 +92,16 @@ export default function PriceChart({
   const points = data?.points ?? initial.points;
   const intraday = data?.intraday ?? false;
   const observations = data?.observations ?? initial.observations;
+  /**
+   * The exchange's zone, not the reader's.
+   *
+   * A session belongs to the calendar of the market that traded it.
+   * Apple's close on the 14th is the 14th in New York for everyone,
+   * and rendering it in Sydney put every US session a day ahead of
+   * what any other source would call it — which on a chart ending near
+   * today also reads uncomfortably like a future date again.
+   */
+  const tz = data?.exchangeTimezone ?? initial.exchangeTimezone;
 
   /**
    * Whether the server's 1Y series has been consumed for this symbol.
@@ -194,7 +208,7 @@ export default function PriceChart({
   };
 
   const stamp = (t: number) =>
-    intraday ? marketDateTime(t * 1000) : marketDate(t * 1000);
+    intraday ? sessionDateTime(t, tz) : sessionDate(t, tz);
 
   const readout = active
     ? `${stamp(active.t)} · ${decimal(active.c)}${currency ? ` ${currency}` : ""}`
@@ -380,7 +394,7 @@ export default function PriceChart({
               ) : null}
 
               <text x={PAD.left} y={H - 8} className="fill-stone-dim text-[11px]">
-                {first ? (intraday ? stamp(first.t) : axisMonth(first.t)) : ""}
+                {first ? (intraday ? stamp(first.t) : sessionAxis(first.t, tz)) : ""}
               </text>
               <text
                 x={W - PAD.right}
@@ -388,7 +402,7 @@ export default function PriceChart({
                 textAnchor="end"
                 className="fill-stone-dim text-[11px]"
               >
-                {last ? (intraday ? stamp(last.t) : axisMonth(last.t)) : ""}
+                {last ? (intraday ? stamp(last.t) : sessionAxis(last.t, tz)) : ""}
               </text>
             </svg>
 

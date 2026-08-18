@@ -15,6 +15,16 @@
 
 import type { History } from "./yahoo";
 
+/**
+ * The part of a History these measures actually use.
+ *
+ * They compute over closes and their spacing; the listing exchange's
+ * timezone is irrelevant to a standard deviation. Narrowing the
+ * parameter keeps callers — and tests — from having to supply fields
+ * the arithmetic never reads.
+ */
+type Series = Pick<History, "timestamps" | "closes">;
+
 const TRADING_DAYS = 252;
 
 /**
@@ -25,7 +35,7 @@ const TRADING_DAYS = 252;
  * observations — annualising a fortnight of data produces a number that
  * looks authoritative and means very little.
  */
-export function realisedVolatility(history: History | null): number | null {
+export function realisedVolatility(history: Series | null): number | null {
   if (!history || history.closes.length < 31) return null;
 
   const returns: number[] = [];
@@ -51,7 +61,7 @@ export function realisedVolatility(history: History | null): number | null {
  * decline and not the worst intraday one. The true drawdown was at least
  * this large and may have been larger.
  */
-export function maxDrawdown(history: History | null): number | null {
+export function maxDrawdown(history: Series | null): number | null {
   if (!history || history.closes.length < 2) return null;
   let peak = history.closes[0];
   let worst = 0;
@@ -63,7 +73,7 @@ export function maxDrawdown(history: History | null): number | null {
 }
 
 /** Total return across the observed window, price only — excludes dividends. */
-export function periodReturn(history: History | null): number | null {
+export function periodReturn(history: Series | null): number | null {
   if (!history || history.closes.length < 2) return null;
   const first = history.closes[0];
   const last = history.closes[history.closes.length - 1];

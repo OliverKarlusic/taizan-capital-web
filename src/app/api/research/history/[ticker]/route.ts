@@ -38,6 +38,15 @@ export interface HistoryPayload {
    */
   observedSpacingDays: number | null;
   intraday: boolean;
+  /**
+   * IANA zone of the listing exchange.
+   *
+   * Session dates are rendered in it rather than in the reader's zone:
+   * Apple's close on the 14th is the 14th in New York whoever is
+   * looking, and rendering it in Sydney put it a day ahead of every
+   * other source an analyst would check it against.
+   */
+  exchangeTimezone: string | null;
   points: { t: number; c: number }[];
   observations: number;
   available: boolean;
@@ -106,6 +115,7 @@ export async function GET(
       interval: spec.interval,
       observedSpacingDays,
       intraday: spec.intraday,
+      exchangeTimezone: h?.exchangeTimezone ?? null,
       points,
       observations: h?.closes.length ?? 0,
       available,

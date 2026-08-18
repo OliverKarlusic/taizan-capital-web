@@ -468,6 +468,7 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
             initial={{
               points: data.history,
               observations: data.historyObservations,
+              exchangeTimezone: data.exchangeTimezone,
             }}
           />
         ) : null}
