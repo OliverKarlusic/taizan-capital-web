@@ -41,7 +41,6 @@ import {
   fraction,
   marketCap as fmtCap,
   percent,
-  relativeTo,
   signedPercent,
 } from "@/lib/research/format";
 
@@ -64,70 +63,16 @@ import {
  * is; it may not publish what the number means for you.
  */
 
-/**
- * `issuer: true` marks a section that only exists for an operating
- * company.
- *
- * ── WHY A FUND MUST NOT BE OFFERED THESE ────────────────────────────
- * An index fund has no income statement, no return on invested capital
- * and no insider register. Offering the tabs anyway meant an ETF landed
- * on "This section's data could not be retrieved — reload to try the
- * feed again", which is false twice over: nothing failed, and reloading
- * will never produce a figure. That is the same error as a fabricated
- * number wearing different clothes — the reader is told something
- * untrue about why a figure is absent, and sent to do something futile
- * about it.
- *
- * A structural absence and a failed request are different facts and get
- * different words.
- */
-const TABS = [
-  { id: "overview", label: "Overview", live: true, issuer: false },
-  { id: "valuation", label: "Valuation", live: true, issuer: false },
-  { id: "growth", label: "Growth & Profitability", live: true, issuer: true },
-  { id: "risk", label: "Risk", live: true, issuer: false },
-  { id: "financials", label: "Financials", live: true, issuer: true },
-  { id: "balance", label: "Balance Sheet", live: true, issuer: true },
-  { id: "cashflow", label: "Cash Flow", live: true, issuer: true },
-  { id: "quality", label: "Quality", live: true, issuer: true },
-  { id: "peers", label: "Peers", live: true, issuer: true },
-  { id: "ownership", label: "Ownership", live: true, issuer: true },
-  { id: "filings", label: "News & Filings", live: true, issuer: false },
-  { id: "calendar", label: "Calendar", live: true, issuer: false },
-  { id: "thesis", label: "Thesis", live: false, issuer: false },
-] as const;
-
-/**
- * Yahoo's quoteType for things that are funds rather than issuers.
- * MUTUALFUND and MONEYMARKET are included because the same reasoning
- * applies to them, even though the screener universe is equities and
- * ETFs today.
- */
-const FUND_TYPES = new Set(["ETF", "MUTUALFUND", "MONEYMARKET"]);
-const isFund = (quoteType: string | null | undefined) =>
-  FUND_TYPES.has((quoteType ?? "").toUpperCase());
-
-/** Tabs whose data comes from the second, lazily-fetched request. */
-const DETAIL_TABS = new Set([
-  "financials",
-  "balance",
-  "cashflow",
-  "quality",
-  "peers",
-  "ownership",
-  "filings",
-  "calendar",
-]);
-
-type TabId = (typeof TABS)[number]["id"];
-
-const UNAVAILABLE: Record<string, { title: string; reason: string }> = {
-  thesis: {
-    title: "Investment thesis",
-    reason:
-      "Held for a later phase, and constrained when it arrives: it will describe how Taizan Capital reads a business — what the firm looks at and what it has concluded about its own holding — and it will not tell a reader what to do. A thesis that recommends is advice, and the firm is not licensed to give it. Nothing is drafted here in the meantime.",
-  },
-};
+import {
+  DETAIL_TABS,
+  TABS,
+  UNAVAILABLE,
+  isFund,
+  type DetailPayload,
+  type DistributionView,
+  type EstimatePeriodView,
+  type TabId,
+} from "@/components/research/companyTypes";
 
 export default function CompanyClient({ symbol }: { symbol: string }) {
   const [data, setData] = useState<CompanyPayload | null>(null);
@@ -505,14 +450,14 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
               <H>Key figures</H>
               <MetricsGrid
                 items={[
-                  ["Market cap", fmtCap(quote.marketCap, quote.currency)],
-                  ["Trailing P/E", multiple(f.trailingPE, 1)],
-                  ["Forward P/E", multiple(f.forwardPE, 1)],
-                  ["Price / book", multiple(f.priceToBook, 1)],
-                  ["Dividend yield", percent(f.dividendYield, 2)],
+                  ["Market cap", fmtCap(quote.marketCap, quote.currency), "marketCap"],
+                  ["Trailing P/E", multiple(f.trailingPE, 1), "trailingPE"],
+                  ["Forward P/E", multiple(f.forwardPE, 1), "forwardPE"],
+                  ["Price / book", multiple(f.priceToBook, 1), "priceToBook"],
+                  ["Dividend yield", percent(f.dividendYield, 2), "dividendYield"],
                   ["EPS (trailing)", f.eps === null ? DASH : decimal(f.eps)],
-                  ["52-week low", quote.fiftyTwoWeekLow === null ? DASH : decimal(quote.fiftyTwoWeekLow)],
-                  ["52-week high", quote.fiftyTwoWeekHigh === null ? DASH : decimal(quote.fiftyTwoWeekHigh)],
+                  ["52-week low", quote.fiftyTwoWeekLow === null ? DASH : decimal(quote.fiftyTwoWeekLow), "fiftyTwoWeekRange"],
+                  ["52-week high", quote.fiftyTwoWeekHigh === null ? DASH : decimal(quote.fiftyTwoWeekHigh), "fiftyTwoWeekRange"],
                 ]}
               />
             </div>
@@ -624,13 +569,13 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
               <H>Profitability</H>
               <MetricsGrid
                 items={[
-                  ["Gross margin", fraction(f.grossMargins)],
-                  ["Operating margin", fraction(f.operatingMargins)],
-                  ["Net margin", fraction(f.profitMargins)],
-                  ["Return on equity", fraction(f.returnOnEquity)],
-                  ["Return on assets", fraction(f.returnOnAssets)],
-                  ["Debt / equity", f.debtToEquity === null ? DASH : decimal(f.debtToEquity, 1)],
-                  ["Current ratio", f.currentRatio === null ? DASH : decimal(f.currentRatio)],
+                  ["Gross margin", fraction(f.grossMargins), "grossMargin"],
+                  ["Operating margin", fraction(f.operatingMargins), "operatingMargin"],
+                  ["Net margin", fraction(f.profitMargins), "netMargin"],
+                  ["Return on equity", fraction(f.returnOnEquity), "roe"],
+                  ["Return on assets", fraction(f.returnOnAssets), "roa"],
+                  ["Debt / equity", f.debtToEquity === null ? DASH : decimal(f.debtToEquity, 1), "debtToEquity"],
+                  ["Current ratio", f.currentRatio === null ? DASH : decimal(f.currentRatio), "currentRatio"],
                   ["Book value / share", f.bookValue === null ? DASH : decimal(f.bookValue)],
                 ]}
               />
@@ -651,7 +596,7 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
               <MetricsGrid
                 columns={2}
                 items={[
-                  ["Beta", risk.beta === null ? DASH : decimal(risk.beta)],
+                  ["Beta", risk.beta === null ? DASH : decimal(risk.beta), "beta"],
                   ["Realised volatility (1y, annualised)", percent(risk.volatility1y, 1)],
                   ["Maximum drawdown (1y, on closes)", percent(risk.maxDrawdown1y, 1)],
                   ["Price return (1y, excl. dividends)", signedPercent(risk.priceReturn1y, 1)],
@@ -709,197 +654,17 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
 
 /* ── detail panels ────────────────────────────────────────────────── */
 
-interface EstimatePeriodView {
-  period: string;
-  endDate: string | null;
-  epsAvg: number | null;
-  epsLow: number | null;
-  epsHigh: number | null;
-  epsAnalysts: number | null;
-  epsYearAgo: number | null;
-  revenueAvg: number | null;
-  revenueLow: number | null;
-  revenueHigh: number | null;
-  revenueAnalysts: number | null;
-  revenueYearAgo: number | null;
-  currency: string | null;
-}
-
-interface DistributionView {
-  date: number;
-  amount: number;
-}
-
-interface DetailPayload {
-  estimates?: EstimatePeriodView[];
-  distributions?: DistributionView[];
-  distributionsTimezone?: string | null;
-  income: {
-    endDate: string | null;
-    totalRevenue: number | null;
-    costOfRevenue: number | null;
-    grossProfit: number | null;
-    researchDevelopment: number | null;
-    sellingGeneralAdministrative: number | null;
-    totalOperatingExpenses: number | null;
-    operatingIncome: number | null;
-    ebit: number | null;
-    interestExpense: number | null;
-    incomeBeforeTax: number | null;
-    incomeTaxExpense: number | null;
-    netIncome: number | null;
-  }[];
-  ownership: {
-    insidersPercentHeld: number | null;
-    institutionsPercentHeld: number | null;
-    institutionsCount: number | null;
-    topHolders: {
-      organization: string;
-      reportDate: string | null;
-      pctHeld: number | null;
-      position: number | null;
-      value: number | null;
-    }[];
-    insiders: { name: string; relation: string | null; transaction: string | null; date: string | null }[];
-  };
-  calendar: {
-    earningsDate: string | null;
-    earningsDateIsEstimate: boolean;
-    exDividendDate: string | null;
-    dividendDate: string | null;
-  };
-  filings: { date: string; type: string; title: string; url: string | null }[];
-  filingsUnsupported: boolean;
-  news: { title: string; publisher: string | null; link: string; published: string | null }[];
-  peers: {
-    symbol: string;
-    name: string | null;
-    marketCap: number | null;
-    trailingPE: number | null;
-    priceToBook: number | null;
-    dividendYield: number | null;
-  }[];
-  peerBasis: { sector: string | null; index: string | null };
-  currency: string | null;
-  balanceSheetEmpty: boolean;
-  cashFlowEmpty: boolean;
-  statements?: {
-    coverage: "covered" | "out-of-coverage" | "not-configured";
-    source: string | null;
-    income: IncomeStatement[] | null;
-    balance: BalanceSheet[] | null;
-    cashFlow: CashFlow[] | null;
-  };
-}
-
-/** Large money, compactly — statements run to twelve digits. */
-function big(v: number | null, currency: string | null): string {
-  if (v === null) return DASH;
-  const sign = v < 0 ? "−" : "";
-  const a = Math.abs(v);
-  const c = currency ? `${currency} ` : "";
-  for (const [size, suffix] of [
-    [1e12, "T"],
-    [1e9, "B"],
-    [1e6, "M"],
-    [1e3, "K"],
-  ] as [number, string][]) {
-    if (a >= size) return `${sign}${c}${(a / size).toFixed(2)}${suffix}`;
-  }
-  return `${sign}${c}${a.toFixed(0)}`;
-}
-
-const INCOME_ROWS: [string, keyof DetailPayload["income"][number]][] = [
-  ["Revenue", "totalRevenue"],
-  ["Cost of revenue", "costOfRevenue"],
-  ["Gross profit", "grossProfit"],
-  ["Research & development", "researchDevelopment"],
-  ["Selling, general & admin", "sellingGeneralAdministrative"],
-  ["Total operating expenses", "totalOperatingExpenses"],
-  ["Operating income", "operatingIncome"],
-  ["EBIT", "ebit"],
-  ["Interest expense", "interestExpense"],
-  ["Pre-tax income", "incomeBeforeTax"],
-  ["Income tax", "incomeTaxExpense"],
-  ["Net income", "netIncome"],
-];
-
-/**
- * A statement table: line items down, periods across.
- *
- * Rows with no figure in any period are dropped rather than rendered as
- * a row of em dashes — a statement is what was reported, not a list of
- * what was not.
- */
-function StatementTable<T extends { date: string | null }>({
-  periods,
-  rows,
-  currency,
-}: {
-  periods: T[];
-  rows: [string, keyof T][];
-  currency: string | null;
-}) {
-  const present = rows.filter(([, key]) =>
-    periods.some((p) => p[key] !== null && p[key] !== undefined),
-  );
-  return (
-    <div className="mt-8 overflow-x-auto">
-      <table className="w-full min-w-[42rem] border-collapse text-left">
-        <thead>
-          <tr className="border-b border-paper/15">
-            <th className="py-3 text-[0.58rem] font-medium uppercase tracking-[0.2em] text-stone">
-              Period ending
-            </th>
-            {periods.map((p) => (
-              <th
-                key={p.date ?? Math.random()}
-                className="tabular py-3 pl-6 text-right text-[0.58rem] font-medium uppercase tracking-[0.2em] text-stone"
-              >
-                {p.date ?? DASH}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {present.map(([label, key]) => (
-            <tr key={label} className="border-b border-paper/[0.07]">
-              <th
-                scope="row"
-                className="py-3 pr-6 text-left text-[0.8rem] font-normal text-paper-dim"
-              >
-                {label}
-              </th>
-              {periods.map((p, i) => (
-                <td
-                  key={i}
-                  className="tabular py-3 pl-6 text-right text-[0.85rem] text-paper"
-                >
-                  {big(p[key] as number | null, currency)}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-/** Shown where the statements provider does not reach a listing. */
-function StatementsUnavailable({ coverage }: { coverage: string }) {
-  return (
-    <Unavailable
-      title="Financial statements"
-      reason={
-        coverage === "out-of-coverage"
-          ? "The statements provider's plan covers United States listings only, and this security trades elsewhere. That is a limit of the subscription, not a statement that the company does not file — its accounts are published by its own exchange. Nothing is estimated in their place, and the quote provider's own statement feed returns these periods with every line item stripped."
-          : "No statements provider is configured, so only the figures the quote provider carries are available. Balance-sheet and cash-flow periods arrive from it with their line items stripped, which is why neither is shown rather than shown empty."
-      }
-    />
-  );
-}
-
+import {
+  H,
+  Metric,
+  MetricsGrid,
+  Pair,
+  StatementTable,
+  StatementsUnavailable,
+  ValuationRow,
+  big,
+  INCOME_ROWS,
+} from "@/components/research/primitives";
 function DetailPanel({
   tab,
   d,
@@ -1404,9 +1169,9 @@ function QualityPanel({ st }: { st: NonNullable<DetailPayload["statements"]> }) 
           <MetricsGrid
             columns={2}
             items={[
-              ["Return on invested capital", pct(roic(i, b))],
-              ["Return on equity", pct(returnOnEquity(i, b))],
-              ["Return on assets", pct(returnOnAssets(i, b))],
+              ["Return on invested capital", pct(roic(i, b)), "roic"],
+              ["Return on equity", pct(returnOnEquity(i, b)), "roe"],
+              ["Return on assets", pct(returnOnAssets(i, b)), "roa"],
               ["Effective tax rate", pct(effectiveTaxRate(i))],
               ["NOPAT", big(nopat(i), i.currency)],
               ["Invested capital", big(investedCapital(b), i.currency)],
@@ -1421,13 +1186,13 @@ function QualityPanel({ st }: { st: NonNullable<DetailPayload["statements"]> }) 
           <MetricsGrid
             columns={2}
             items={[
-              ["Free cash flow", big(freeCashFlow(c), i.currency)],
+              ["Free cash flow", big(freeCashFlow(c), i.currency), "freeCashFlow"],
               ["FCF margin", pct(fcfMargin(c, i))],
-              ["Cash conversion", pct(cashConversion(c))],
-              ["Net debt / EBITDA", x(netDebtToEbitda(i, b))],
-              ["Current ratio", x(currentRatio(b))],
-              ["Quick ratio", x(quickRatio(b))],
-              ["Interest coverage", x(interestCoverage(i), 1)],
+              ["Cash conversion", pct(cashConversion(c)), "cashConversion"],
+              ["Net debt / EBITDA", x(netDebtToEbitda(i, b)), "netDebtToEbitda"],
+              ["Current ratio", x(currentRatio(b)), "currentRatio"],
+              ["Quick ratio", x(quickRatio(b)), "quickRatio"],
+              ["Interest coverage", x(interestCoverage(i), 1), "interestCoverage"],
             ]}
           />
         </div>
@@ -1442,7 +1207,7 @@ function QualityPanel({ st }: { st: NonNullable<DetailPayload["statements"]> }) 
               ["Days sales outstanding", days(dso(i, b))],
               ["Days inventory", days(dio(i, b))],
               ["Days payable", days(dpo(i, b))],
-              ["Cash conversion cycle", days(cashConversionCycle(i, b))],
+              ["Cash conversion cycle", days(cashConversionCycle(i, b)), "cashConversionCycle"],
               [
                 `Revenue CAGR (${years}y)`,
                 pct(seriesCagr(inc.map((p) => p.revenue))),
@@ -1471,121 +1236,6 @@ function QualityPanel({ st }: { st: NonNullable<DetailPayload["statements"]> }) 
 
 /* ── small pieces ─────────────────────────────────────────────────── */
 
-function H({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="text-[0.62rem] uppercase tracking-[0.26em] text-gold">
-      {children}
-    </h2>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="text-[0.58rem] uppercase tracking-[0.18em] text-stone-dim">
-        {label}
-      </dt>
-      <dd className="mt-1.5 text-[0.85rem] text-paper-dim">{value}</dd>
-    </div>
-  );
-}
-
-function MetricsGrid({
-  items,
-  columns = 2,
-}: {
-  items: [string, string][];
-  columns?: number;
-}) {
-  return (
-    <dl
-      className={`mt-6 grid grid-cols-1 gap-x-10 ${
-        columns === 2 ? "sm:grid-cols-2" : "sm:grid-cols-3"
-      }`}
-    >
-      {items.map(([label, value]) => (
-        <div
-          key={label}
-          className="flex items-baseline justify-between gap-6 border-b border-paper/10 py-3"
-        >
-          <dt className="text-[0.72rem] text-stone">{label}</dt>
-          <dd className="tabular text-[0.9rem] text-paper">{value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
-function ValuationRow({
-  label,
-  value,
-  peer,
-  count,
-  kind = "multiple",
-}: {
-  label: string;
-  value: number | null;
-  peer: number | null;
-  count: number;
-  /** A multiple cannot be negative or zero and stay meaningful; a rate can. */
-  kind?: "multiple" | "rate";
-}) {
-  const fmt = (v: number | null) =>
-    kind === "multiple" ? multiple(v, 2) : v === null ? DASH : decimal(v, 2);
-  const direction = relativeTo(value, peer);
-  const delta =
-    value !== null && peer !== null && peer !== 0
-      ? ((value - peer) / Math.abs(peer)) * 100
-      : null;
-
-  return (
-    <tr className="border-b border-paper/[0.07]">
-      <th
-        scope="row"
-        className="py-3 pr-6 text-left text-[0.8rem] font-normal text-paper-dim"
-      >
-        {label}
-      </th>
-      <td className="tabular py-3 pl-6 text-right text-[0.88rem] text-paper">
-        {fmt(value)}
-      </td>
-      <td className="tabular py-3 pl-6 text-right text-[0.88rem] text-stone">
-        {fmt(peer)}
-      </td>
-      <td className="tabular py-3 pl-6 text-right text-[0.85rem] text-paper-dim">
-        {delta === null ? DASH : signedPercent(delta, 0)}
-      </td>
-      {/* Two different absences, and the reader deserves to know which.
-          A blank company figure means the provider does not publish this
-          multiple for this company — usually because it has no earnings.
-          A blank median means the covered universe cannot support one. */}
-      <td className="py-3 pl-6 text-[0.72rem] text-stone">
-        {direction !== null
-          ? `${direction} the median of ${count} covered companies`
-          : value === null
-            ? "Not published for this company"
-            : "No sector median available"}
-      </td>
-    </tr>
-  );
-}
-
-/**
- * Fund facts, and an honest account of what the register shows.
- *
- * ── THE COVERAGE LINE IS THE POINT ──────────────────────────────────
- * The provider returns the top ten holdings and never the full book.
- * Ten lines presented as "Holdings" reads as the whole portfolio, so
- * the weight those ten actually cover is stated beside them: ten names
- * covering 46.7% of VAS says something true, where a bare list implies
- * something false.
- *
- * Expense ratio arrives here already guarded — for ASX-listed funds the
- * provider sends a formatted 0.00%, which is not a cheap fund but a
- * missing figure. It renders as unavailable, with the reason given,
- * because understating the cost of holding an investment is the worst
- * direction for this particular number to be wrong in.
- */
 function FundPanel({
   fund,
   currency,
@@ -1593,10 +1243,10 @@ function FundPanel({
   fund: NonNullable<CompanyPayload["fund"]>;
   currency: string | null;
 }) {
-  const rows: [string, string][] = [
+  const rows: ([string, string] | [string, string, string])[] = [
     ["Issuer", fund.issuer ?? DASH],
     ["Category", fund.category ?? DASH],
-    ["Net assets", fmtCap(fund.netAssets, currency)],
+    ["Net assets", fmtCap(fund.netAssets, currency), "netAssets"],
     ["NAV", fund.navPrice === null ? DASH : decimal(fund.navPrice)],
     ["Distribution yield", percent(fund.yield === null ? null : fund.yield * 100, 2)],
     [
@@ -1615,13 +1265,13 @@ function FundPanel({
       </h2>
 
       <dl className="mt-5 grid grid-cols-1 gap-x-10 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-        {rows.map(([k, v]) => (
+        {rows.map(([k, v, def]) => (
           <div
             key={k}
             className="flex items-baseline justify-between gap-4 border-b border-paper/[0.07] pb-2"
           >
             <dt className="text-[0.68rem] uppercase tracking-[0.14em] text-stone">
-              {k}
+              <Metric label={k} definition={def} />
             </dt>
             <dd className="tabular text-right text-[0.85rem] text-paper-dim">
               {v}
