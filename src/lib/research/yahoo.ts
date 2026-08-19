@@ -28,6 +28,7 @@
  */
 
 import { isFuture } from "./clock";
+import { budgeter } from "./budget";
 import {
   expenseRatio as domainExpenseRatio,
   netAssets as domainNetAssets,
@@ -114,8 +115,19 @@ export class UpstreamError extends Error {
   }
 }
 
-/** GET with the session attached, retrying once on 401 with a fresh one. */
+/**
+ * GET with the session attached, retrying once on 401 with a fresh one.
+ *
+ * Routed through the budgeter, which deduplicates identical in-flight
+ * URLs and holds the call rather than exceeding the window. The key is
+ * the full URL because that is what identifies the answer — keying on
+ * the symbol alone would serve a profile request the quote response.
+ */
 async function authed(url: string): Promise<unknown> {
+  return budgeter.run("yahoo", url, () => authedRaw(url));
+}
+
+async function authedRaw(url: string): Promise<unknown> {
   for (let attempt = 0; attempt < 2; attempt++) {
     const s = await getSession();
     if (!s) throw new UpstreamError("Could not open a Yahoo Finance session", 503);
@@ -849,11 +861,13 @@ export async function getHistory(
   interval = "1d",
 ): Promise<History | null> {
   return cached(`h:${symbol}:${range}:${interval}`, TTL.history, async () => {
-    const r = await fetch(
-      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
-        symbol,
-      )}?range=${range}&interval=${interval}`,
-      { headers: { "User-Agent": UA } },
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
+      symbol,
+    )}?range=${range}&interval=${interval}`;
+    // The chart endpoint needs no crumb, but it is the same upstream and
+    // the same quota, so it is budgeted alongside everything else.
+    const r = await budgeter.run("yahoo", url, () =>
+      fetch(url, { headers: { "User-Agent": UA } }),
     );
     if (!r.ok) return null;
     const j = (await r.json()) as {

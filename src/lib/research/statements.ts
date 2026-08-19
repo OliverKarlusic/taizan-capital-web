@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { budgeter } from "./budget";
 
 /**
  * Financial statements, from a dedicated statements provider.
@@ -186,9 +187,15 @@ async function get<T>(
   if (hit && hit.expires > Date.now()) return hit.value as T[];
 
   try {
-    const r = await fetch(`${BASE}/${path}&apikey=${encodeURIComponent(key)}`, {
-      headers: { "User-Agent": "taizan-capital-research" },
-    });
+    // Budgeted and deduplicated. FMP's free plan allows 250 calls a
+    // day, which a single screener page view could otherwise spend a
+    // meaningful fraction of. The dedupe key omits the API key so the
+    // secret never becomes part of a map key that might be logged.
+    const r = await budgeter.run("fmp", path, () =>
+      fetch(`${BASE}/${path}&apikey=${encodeURIComponent(key)}`, {
+        headers: { "User-Agent": "taizan-capital-research" },
+      }),
+    );
     // 402 is the plan boundary, 403 a retired route, 429 the daily cap.
     // None of them is data, and none becomes a zero.
     if (!r.ok) return null;
