@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import {
   getCompany,
   getFund,
+  getFxRate,
   getHistory,
   getQuotes,
   UpstreamError,
   type Fund,
 } from "@/lib/research/yahoo";
+import type { FxRate } from "@/lib/research/fx";
 import { getUniverse, heldIn } from "@/lib/research/constituents";
 import {
   maxDrawdown,
@@ -73,6 +75,15 @@ export interface CompanyPayload {
    * about the data.
    */
   historyObservations: number;
+  /**
+   * Live rate from this listing's currency into AUD, or null.
+   *
+   * Null when the listing already trades in AUD, and null when the
+   * rate could not be fetched — in both cases the page shows native
+   * currency and offers no conversion, rather than converting at a
+   * rate it does not have.
+   */
+  fxToAud: FxRate | null;
   /** IANA zone of the listing exchange, for session dates. */
   exchangeTimezone: string | null;
   /** Fund-level data. Null for anything that is not a fund. */
@@ -135,6 +146,14 @@ export async function GET(
       (company.quote.quoteType ?? "").toUpperCase(),
     );
     const fund: Fund | null = isFund ? await getFund(symbol) : null;
+
+    // Only where the listing is not already Australian. Asking for
+    // AUD->AUD would spend a call to learn the rate is one.
+    const nativeCurrency = company.quote.currency;
+    const fxToAud: FxRate | null =
+      nativeCurrency && nativeCurrency.toUpperCase() !== "AUD"
+        ? await getFxRate(nativeCurrency, "AUD").catch(() => null)
+        : null;
 
     const history = await getHistory(symbol, "1y");
 
@@ -221,6 +240,7 @@ export async function GET(
       history: thin(history, 120),
       historyObservations: history?.closes.length ?? 0,
       exchangeTimezone: history?.exchangeTimezone ?? null,
+      fxToAud,
       fund,
     };
 

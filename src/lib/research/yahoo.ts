@@ -29,6 +29,7 @@
 
 import { isFuture } from "./clock";
 import { budgeter } from "./budget";
+import { pairSymbol, type FxRate } from "./fx";
 import {
   expenseRatio as domainExpenseRatio,
   netAssets as domainNetAssets,
@@ -1142,6 +1143,65 @@ export async function getDistributions(
       };
     } catch {
       return { rows: [], exchangeTimezone: null };
+    }
+  });
+}
+
+/* ── foreign exchange ─────────────────────────────────────────────── */
+
+/**
+ * A live rate for one currency pair.
+ *
+ * The provider quotes each direction as its own instrument, so the
+ * requested pair is fetched directly rather than inverting the other —
+ * see the note in fx.ts on why an inverted rate is worth avoiding.
+ *
+ * Cached on the quote TTL rather than the profile TTL: a rate is a
+ * price and goes stale like one.
+ */
+export async function getFxRate(
+  from: string,
+  to: string,
+): Promise<FxRate | null> {
+  const pair = pairSymbol(from, to);
+  if (!pair) return null;
+
+  return cached(`fx:${pair}`, TTL.quote, async () => {
+    try {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
+        pair,
+      )}?range=1d&interval=1d`;
+      const r = await budgeter.run("yahoo", url, () =>
+        fetch(url, { headers: { "User-Agent": UA } }),
+      );
+      if (!r.ok) return null;
+      const res = (
+        (await r.json()) as {
+          chart?: {
+            result?: {
+              meta?: { regularMarketPrice?: number; regularMarketTime?: number };
+            }[];
+          };
+        }
+      )?.chart?.result?.[0];
+
+      const rate = num(res?.meta?.regularMarketPrice);
+      // A zero or negative rate is not a rate. Publishing one would
+      // turn every converted figure on the page into a zero.
+      if (rate === null || rate <= 0) return null;
+
+      const t = num(res?.meta?.regularMarketTime);
+      return {
+        from: from.toUpperCase(),
+        to: to.toUpperCase(),
+        rate,
+        // The provider's own quote time where given, so the figure is
+        // stamped with when the rate was struck rather than when this
+        // request happened to run.
+        quotedAt: t ? new Date(t * 1000).toISOString() : new Date().toISOString(),
+      };
+    } catch {
+      return null;
     }
   });
 }

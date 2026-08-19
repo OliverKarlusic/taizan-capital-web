@@ -8,6 +8,7 @@ import { Unavailable } from "@/components/research/TerminalChrome";
 import PriceChart from "@/components/research/PriceChart";
 import { marketDate, marketDateTime, sessionDate } from "@/lib/research/clock";
 import { marketSession } from "@/lib/research/session";
+import { conversionNote, convert } from "@/lib/research/fx";
 import ThesisEditor from "@/components/research/ThesisEditor";
 import {
   cashConversion,
@@ -75,6 +76,14 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabId>("overview");
+  /**
+   * Show live figures in AUD instead of the listing's own currency.
+   *
+   * Off by default: the native currency is what the security actually
+   * trades in, and a converted price is a derived figure. The reader
+   * opts into the derivation rather than having to notice it.
+   */
+  const [inAud, setInAud] = useState(false);
   /** When this page's figures were retrieved, for the as-of stamp. */
   const [fetchedAt, setFetchedAt] = useState<string>(() => new Date().toISOString());
 
@@ -200,6 +209,20 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
    */
   const session = marketSession(data.symbol, new Date(fetchedAt));
 
+  /**
+   * Conversion is offered only where there is a rate to convert at.
+   *
+   * An AUD-listed security has none and needs none. A failed FX fetch
+   * also lands here, and the page then shows native currency with no
+   * toggle — which is the honest outcome, rather than a control that
+   * converts at a rate the page does not have.
+   */
+  const fx = data.fxToAud;
+  const showAud = inAud && !!fx;
+  const displayCurrency = showAud ? "AUD" : (quote.currency ?? "");
+  /** Live quote figures only — see fx.ts on why statements are excluded. */
+  const px = (v: number | null) => (showAud ? convert(v, fx) : v);
+
   const fund = isFund(quote.quoteType);
   const visibleTabs = TABS.filter((t) => !(fund && t.issuer));
 
@@ -238,9 +261,9 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
 
             <div className="text-right">
               <p className="tabular font-serif text-[clamp(1.8rem,3.6vw,2.8rem)] leading-none text-paper">
-                {quote.price === null ? DASH : decimal(quote.price)}
+                {px(quote.price) === null ? DASH : decimal(px(quote.price)!)}
                 <span className="ml-2 text-[0.8rem] tracking-wide text-stone">
-                  {quote.currency ?? ""}
+                  {displayCurrency}
                 </span>
               </p>
               <p
@@ -263,6 +286,34 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
                 As of {marketDateTime(fetchedAt)}
                 {session ? ` · ${session.label}` : ""} · delayed feed
               </p>
+
+              {fx ? (
+                <>
+                  <button
+                    type="button"
+                    aria-pressed={showAud}
+                    onClick={() => setInAud((v) => !v)}
+                    className={`mt-2 inline-flex min-h-11 items-center text-[0.6rem] uppercase tracking-[0.16em] transition-colors ${
+                      showAud ? "text-gold" : "text-stone hover:text-paper"
+                    }`}
+                  >
+                    {showAud
+                      ? `Showing AUD · switch to ${quote.currency}`
+                      : "Show in AUD"}
+                  </button>
+                  {/* The basis, whenever a converted figure is on screen.
+                      A converted number is only as current as the rate
+                      behind it, so the rate and its quote time are named
+                      rather than left implicit. */}
+                  {showAud ? (
+                    <p className="mt-1 max-w-[34ch] text-[0.58rem] leading-relaxed tracking-wide text-stone-dim">
+                      {conversionNote(fx)}. Statements stay in{" "}
+                      {quote.currency} — today&apos;s rate does not apply to a
+                      figure reported years ago.
+                    </p>
+                  ) : null}
+                </>
+              ) : null}
             </div>
           </div>
 
@@ -464,14 +515,14 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
               <H>Key figures</H>
               <MetricsGrid
                 items={[
-                  ["Market cap", fmtCap(quote.marketCap, quote.currency), "marketCap"],
+                  ["Market cap", fmtCap(px(quote.marketCap), displayCurrency), "marketCap"],
                   ["Trailing P/E", multiple(f.trailingPE, 1), "trailingPE"],
                   ["Forward P/E", multiple(f.forwardPE, 1), "forwardPE"],
                   ["Price / book", multiple(f.priceToBook, 1), "priceToBook"],
                   ["Dividend yield", percent(f.dividendYield, 2), "dividendYield"],
                   ["EPS (trailing)", f.eps === null ? DASH : decimal(f.eps)],
-                  ["52-week low", quote.fiftyTwoWeekLow === null ? DASH : decimal(quote.fiftyTwoWeekLow), "fiftyTwoWeekRange"],
-                  ["52-week high", quote.fiftyTwoWeekHigh === null ? DASH : decimal(quote.fiftyTwoWeekHigh), "fiftyTwoWeekRange"],
+                  ["52-week low", px(quote.fiftyTwoWeekLow) === null ? DASH : decimal(px(quote.fiftyTwoWeekLow)!), "fiftyTwoWeekRange"],
+                  ["52-week high", px(quote.fiftyTwoWeekHigh) === null ? DASH : decimal(px(quote.fiftyTwoWeekHigh)!), "fiftyTwoWeekRange"],
                 ]}
               />
             </div>
