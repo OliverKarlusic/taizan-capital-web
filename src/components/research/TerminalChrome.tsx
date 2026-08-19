@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import CommandBar from "@/components/research/CommandBar";
 
 /**
  * The Terminal's own chrome: workspace nav, and the disclaimer that has to
@@ -89,9 +90,13 @@ export function TerminalNav() {
           })}
         </nav>
 
+        <div className="ml-auto">
+          <CommandBar />
+        </div>
+
         <Link
           href="/"
-          className="group ml-auto inline-flex min-h-11 items-center gap-2 text-[0.62rem] uppercase tracking-[0.2em] text-stone transition-colors duration-300 hover:text-gold"
+          className="group inline-flex min-h-11 items-center gap-2 text-[0.62rem] uppercase tracking-[0.2em] text-stone transition-colors duration-300 hover:text-gold"
         >
           <ArrowLeft
             size={12}
