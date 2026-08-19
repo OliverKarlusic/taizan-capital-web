@@ -244,3 +244,37 @@ export function marketSession(
 
   return { state, timezone: spec.timezone, localDate: date, label };
 }
+
+/**
+ * A one-line state for a surface that spans several markets.
+ *
+ * ── WHY NOT A SINGLE STATE ──────────────────────────────────────────
+ * The screener lists ASX, NYSE and Nasdaq together, and those are open
+ * at different times — at 14:00 Sydney one is trading and the other
+ * has been shut for hours. Picking one and labelling the whole page
+ * with it would be wrong for half the rows, so both are named.
+ */
+export function sessionSummary(now: Date = new Date()): string {
+  const parts: string[] = [];
+  for (const [name, probe] of [
+    ["ASX", "BHP.AX"],
+    ["US", "AAPL"],
+  ] as const) {
+    const s = marketSession(probe, now);
+    if (!s) continue;
+    parts.push(
+      `${name} ${
+        s.state === "open"
+          ? "open"
+          : s.state === "pre"
+            ? "pre-market"
+            : s.state === "post"
+              ? "after hours"
+              : s.state === "holiday"
+                ? "holiday"
+                : "closed"
+      }`,
+    );
+  }
+  return parts.join(" · ");
+}

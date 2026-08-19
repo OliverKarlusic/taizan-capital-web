@@ -7,12 +7,8 @@ import type { CompanyPayload } from "@/app/api/research/company/[ticker]/route";
 import { Unavailable } from "@/components/research/TerminalChrome";
 import PriceChart from "@/components/research/PriceChart";
 import { marketDate, marketDateTime, sessionDate } from "@/lib/research/clock";
+import { marketSession } from "@/lib/research/session";
 import ThesisEditor from "@/components/research/ThesisEditor";
-import type {
-  BalanceSheet,
-  CashFlow,
-  IncomeStatement,
-} from "@/lib/research/statements";
 import {
   cashConversion,
   cashConversionCycle,
@@ -193,6 +189,17 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
 
   // A fund is not an issuer, so the issuer-only sections are not offered
   // rather than offered and then apologised for.
+  /**
+   * Whether this listing's market is trading right now.
+   *
+   * Computed client-side from the current instant, so it is correct for
+   * whenever the reader is looking rather than for whenever the page
+   * was built. Null for an exchange with no calendar configured, in
+   * which case the generic delayed notice stands — an unknown session
+   * is not the same claim as a closed one.
+   */
+  const session = marketSession(data.symbol, new Date(fetchedAt));
+
   const fund = isFund(quote.quoteType);
   const visibleTabs = TABS.filter((t) => !(fund && t.issuer));
 
@@ -247,7 +254,14 @@ export default function CompanyClient({ symbol }: { symbol: string }) {
                   who sees a number this prominent needs to know in the
                   same glance that it is not a real-time one. */}
               <p className="mt-2 text-[0.6rem] uppercase tracking-[0.14em] text-stone-dim">
-                As of {marketDateTime(fetchedAt)} · delayed, not real time
+                {/* Three separate facts, and none replaces another:
+                    when this was fetched, whether the market is
+                    trading, and that the feed is delayed. The session
+                    state tells the reader whether the number is still
+                    moving; the delay notice stays regardless, because a
+                    price during an open session is delayed too. */}
+                As of {marketDateTime(fetchedAt)}
+                {session ? ` · ${session.label}` : ""} · delayed feed
               </p>
             </div>
           </div>

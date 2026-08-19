@@ -5,6 +5,7 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import { useResearchStore } from "./useResearchStore";
 import { marketDateTime } from "@/lib/research/clock";
+import { sessionSummary } from "@/lib/research/session";
 import {
   DASH,
   decimal,
@@ -109,7 +110,8 @@ export default function WatchlistClient() {
         {asOf ? (
           <span className="text-stone-dim">
             Data as of {marketDateTime(asOf)}
-            {delay ? ` · delayed ~${delay} min, not real time` : " · delayed, not real time"}
+            {delay ? ` · delayed ~${delay} min` : " · delayed feed"}
+            {` · ${sessionSummary()}`}
           </span>
         ) : null}
         <button

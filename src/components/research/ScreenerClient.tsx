@@ -14,6 +14,7 @@ import {
   signedPercent,
 } from "@/lib/research/format";
 import { marketDateTime } from "@/lib/research/clock";
+import { sessionSummary } from "@/lib/research/session";
 
 /**
  * The Market Screener — the Terminal's entry point.
@@ -310,7 +311,8 @@ export default function ScreenerClient() {
                 Data as of {marketDateTime(data.asOf)}
                 {data.delayMinutes
                   ? ` · delayed ~${data.delayMinutes} min, not real time`
-                  : " · delayed, not real time"}
+                  : ""}
+                {` · ${sessionSummary()} · delayed feed`}
               </span>
               <span className="text-stone-dim">
                 {data.universe.sources
