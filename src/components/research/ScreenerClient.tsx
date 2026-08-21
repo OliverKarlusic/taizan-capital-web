@@ -16,6 +16,13 @@ import {
 import { marketDateTime } from "@/lib/research/clock";
 import { sessionSummary } from "@/lib/research/session";
 import { virtualRange } from "@/lib/research/virtual";
+import {
+  applyGroups,
+  buildStats,
+  excludedForMissingData,
+  type Group,
+} from "@/lib/research/filters";
+import FilterBuilder from "@/components/research/FilterBuilder";
 
 /**
  * The Market Screener — the Terminal's entry point.
@@ -101,6 +108,15 @@ export default function ScreenerClient() {
   const [maxPE, setMaxPE] = useState("");
   const [minYield, setMinYield] = useState("");
   const [minCap, setMinCap] = useState("");
+  /**
+   * Compound conditions, on top of the quick filters above.
+   *
+   * The three number boxes stay: "P/E under 20" is the most common
+   * request and should not need a group builder. Groups are for the
+   * questions the boxes cannot ask — a rank across the universe, or a
+   * comparison against a company's own sector.
+   */
+  const [groups, setGroups] = useState<Group[]>([]);
   const [sortKey, setSortKey] = useState<SortKey>("marketCap");
   const [sortDir, setSortDir] = useState<1 | -1>(-1);
   /**
@@ -195,6 +211,14 @@ export default function ScreenerClient() {
       out = out.filter((r) => r.marketCap !== null && r.marketCap >= cap * 1e9);
     }
 
+    // Statistics come from the full covered universe, never from the
+    // partially filtered list: a percentile computed after filtering
+    // answers a different question than the reader asked.
+    if (groups.length) {
+      const stats = buildStats(data?.rows ?? []);
+      out = applyGroups(out, groups, stats) as typeof out;
+    }
+
     out.sort((a, b) => {
       if (sortKey === "name") {
         const an = a.name ?? a.symbol;
@@ -209,7 +233,7 @@ export default function ScreenerClient() {
       return compare(av, bv, sortDir);
     });
     return out;
-  }, [data, query, market, sector, maxPE, minYield, minCap, sortKey, sortDir]);
+  }, [data, query, market, sector, maxPE, minYield, minCap, sortKey, sortDir, groups]);
 
   // Any change to what is being shown returns to the first page. Staying
   // on page 8 of a result set that now has two pages shows an empty table
@@ -219,7 +243,7 @@ export default function ScreenerClient() {
     // list. Returning to the top makes the new result set start where
     // they are looking.
     window.scrollTo({ top: Math.min(window.scrollY, listTop()), behavior: "auto" });
-  }, [query, market, sector, maxPE, minYield, minCap, sortKey, sortDir]);
+  }, [query, market, sector, maxPE, minYield, minCap, sortKey, sortDir, groups]);
 
   function listTop() {
     return listRef.current
@@ -265,10 +289,12 @@ export default function ScreenerClient() {
     setMaxPE("");
     setMinYield("");
     setMinCap("");
+    setGroups([]);
   };
 
   const filtered =
-    query || market !== "All" || sector !== "All" || maxPE || minYield || minCap;
+    query || market !== "All" || sector !== "All" || maxPE || minYield || minCap ||
+    groups.some((g) => g.conditions.length > 0);
 
   return (
     <div>
@@ -338,6 +364,14 @@ export default function ScreenerClient() {
               </button>
             ) : null}
           </div>
+
+          <FilterBuilder
+            groups={groups}
+            onChange={setGroups}
+            excluded={
+              data ? excludedForMissingData(data.rows, groups) : 0
+            }
+          />
 
           {/* Freshness sits with the result count, above the table, not in
               the footnotes — a reader has to know how old a price is
