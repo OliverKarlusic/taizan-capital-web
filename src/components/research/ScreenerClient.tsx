@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import type { ScreenerRow } from "@/app/api/research/screener/route";
@@ -15,6 +15,7 @@ import {
 } from "@/lib/research/format";
 import { marketDateTime } from "@/lib/research/clock";
 import { sessionSummary } from "@/lib/research/session";
+import { virtualRange } from "@/lib/research/virtual";
 
 /**
  * The Market Screener — the Terminal's entry point.
@@ -56,15 +57,15 @@ interface Payload {
 }
 
 /**
- * Rows rendered per page.
+ * Row heights, measured rather than guessed.
  *
- * The universe is roughly 700 constituents. Rendering all of them puts
- * ~5,000 cells in the DOM, and every keystroke in the search box then
- * re-reconciles the lot — the filter is instant and the paint is not.
- * Filtering and sorting still run across the whole universe; only the
- * slice that is on screen is mounted.
+ * The virtualiser needs a uniform height per layout. These are the
+ * rendered heights of a table row and a phone card at the current type
+ * scale; if either changes, the window drifts and rows jump as you
+ * scroll, which is why they are named here rather than inlined.
  */
-const PAGE_SIZE = 50;
+const ROW_H_TABLE = 57;
+const ROW_H_CARD = 158;
 
 const COLUMNS: {
   key: SortKey;
@@ -102,7 +103,19 @@ export default function ScreenerClient() {
   const [minCap, setMinCap] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("marketCap");
   const [sortDir, setSortDir] = useState<1 | -1>(-1);
-  const [page, setPage] = useState(0);
+  /**
+   * Where the reader is, in the list's own coordinates.
+   *
+   * The list scrolls with the page rather than inside a fixed-height
+   * box: a research table that traps the scroll wheel is a table you
+   * have to escape to read the disclosure underneath it. So the offset
+   * is derived from the window against the list's position in the
+   * document, which keeps one scrollbar on the page.
+   */
+  const listRef = useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [viewportH, setViewportH] = useState(0);
+  const [isPhone, setIsPhone] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -202,12 +215,40 @@ export default function ScreenerClient() {
   // on page 8 of a result set that now has two pages shows an empty table
   // and reads as "no matches".
   useEffect(() => {
-    setPage(0);
+    // Filtering while scrolled down leaves the reader below a shorter
+    // list. Returning to the top makes the new result set start where
+    // they are looking.
+    window.scrollTo({ top: Math.min(window.scrollY, listTop()), behavior: "auto" });
   }, [query, market, sector, maxPE, minYield, minCap, sortKey, sortDir]);
 
-  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-  const safePage = Math.min(page, pageCount - 1);
-  const visible = rows.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+  function listTop() {
+    return listRef.current
+      ? listRef.current.getBoundingClientRect().top + window.scrollY
+      : 0;
+  }
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      setViewportH(window.innerHeight);
+      setIsPhone(window.innerWidth < 768);
+      setScrollTop(Math.max(0, window.scrollY - listTop()));
+    };
+    measure();
+    window.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+    return () => {
+      window.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
+
+  const range = virtualRange({
+    count: rows.length,
+    rowHeight: isPhone ? ROW_H_CARD : ROW_H_TABLE,
+    viewportHeight: viewportH,
+    scrollTop,
+  });
+  const visible = rows.slice(range.start, range.end);
 
   const setSort = (key: SortKey) => {
     if (key === sortKey) setSortDir((d) => (d === 1 ? -1 : 1));
@@ -387,6 +428,7 @@ export default function ScreenerClient() {
                 which put the sort buttons past the right edge on a 834px
                 tablet — reachable only by a scroll gesture on a header
                 row, which nobody performs. */}
+            <div ref={listRef}>
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[42rem] border-collapse text-left">
                 <caption className="sr-only">
@@ -432,6 +474,14 @@ export default function ScreenerClient() {
                   </tr>
                 </thead>
                 <tbody>
+                  {/* Spacer rows carry the height of the rows that are
+                      not mounted, so the scrollbar reflects the whole
+                      result rather than the slice on screen. */}
+                  {range.paddingTop > 0 ? (
+                    <tr aria-hidden="true" style={{ height: range.paddingTop }}>
+                      <td colSpan={COLUMNS.length} />
+                    </tr>
+                  ) : null}
                   {visible.map((r) => (
                     <tr
                       key={r.symbol}
@@ -473,6 +523,11 @@ export default function ScreenerClient() {
                       <Num>{percent(r.dividendYield, 2)}</Num>
                     </tr>
                   ))}
+                  {range.paddingBottom > 0 ? (
+                    <tr aria-hidden="true" style={{ height: range.paddingBottom }}>
+                      <td colSpan={COLUMNS.length} />
+                    </tr>
+                  ) : null}
                 </tbody>
               </table>
             </div>
@@ -484,6 +539,9 @@ export default function ScreenerClient() {
                 and the figures as labelled pairs beneath, which is the
                 same information in the order a phone reader wants it. */}
             <ul className="space-y-3 md:hidden">
+              {range.paddingTop > 0 ? (
+                <li aria-hidden="true" style={{ height: range.paddingTop }} />
+              ) : null}
               {visible.map((r) => (
                 <li key={r.symbol}>
                   <Link
@@ -530,41 +588,27 @@ export default function ScreenerClient() {
                   </Link>
                 </li>
               ))}
+              {range.paddingBottom > 0 ? (
+                <li aria-hidden="true" style={{ height: range.paddingBottom }} />
+              ) : null}
             </ul>
 
-            {pageCount > 1 ? (
-              <nav
-                aria-label="Screener pages"
-                className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-paper/10 pt-6"
-              >
-                <p className="text-[0.65rem] tracking-wide text-stone-dim">
-                  Showing {(safePage * PAGE_SIZE + 1).toLocaleString("en-AU")}–
-                  {Math.min((safePage + 1) * PAGE_SIZE, rows.length).toLocaleString("en-AU")} of{" "}
-                  {rows.length.toLocaleString("en-AU")}
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.max(0, p - 1))}
-                    disabled={safePage === 0}
-                    className="min-h-11 border border-paper/15 px-4 text-[0.65rem] uppercase tracking-[0.2em] text-stone transition-colors duration-300 enabled:hover:border-gold/40 enabled:hover:text-gold disabled:opacity-35"
-                  >
-                    Previous
-                  </button>
-                  <span className="tabular px-2 text-[0.7rem] text-paper-dim">
-                    {safePage + 1} / {pageCount}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-                    disabled={safePage >= pageCount - 1}
-                    className="min-h-11 border border-paper/15 px-4 text-[0.65rem] uppercase tracking-[0.2em] text-stone transition-colors duration-300 enabled:hover:border-gold/40 enabled:hover:text-gold disabled:opacity-35"
-                  >
-                    Next
-                  </button>
-                </div>
-              </nav>
-            ) : null}
+            </div>
+
+            {/* The whole result, not a page of it.
+                Paging hid the size of what a filter returned: fifty rows
+                and a page control left the reader doing arithmetic to
+                learn they had matched three hundred companies. */}
+            <p className="mt-6 border-t border-paper/10 pt-5 text-[0.65rem] tracking-wide text-stone-dim">
+              {rows.length.toLocaleString("en-AU")}{" "}
+              {rows.length === 1 ? "company" : "companies"} in this result
+              {data && rows.length !== data.rows.length
+                ? ` of ${data.rows.length.toLocaleString("en-AU")} covered`
+                : ""}
+              {rows.length > visible.length
+                ? ` · ${visible.length} rendered, the rest mount as you scroll`
+                : ""}
+            </p>
 
             <p className="mt-8 max-w-[86ch] text-[0.65rem] leading-[1.85] text-stone-dim">
               An em dash means the figure is not published by the data
